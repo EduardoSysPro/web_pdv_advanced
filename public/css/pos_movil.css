@@ -1,0 +1,822 @@
+/* Estilos Modernos y Adaptados para Punto de Venta Móvil (Celulares y Tablets) */
+:root {
+    --movil-primary: #0284c7;
+    --movil-primary-dark: #0369a1;
+    --movil-success: #16a34a;
+    --movil-success-dark: #15803d;
+    --movil-danger: #dc2626;
+    --movil-danger-light: #fee2e2;
+    --movil-bg: #f8fafc;
+    --movil-card: #ffffff;
+    --movil-text: #0f172a;
+    --movil-text-muted: #64748b;
+    --movil-border: #e2e8f0;
+    --movil-bottom-height: 80px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body.pos-movil-body {
+    background-color: var(--movil-bg);
+    color: var(--movil-text);
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    padding-bottom: calc(var(--movil-bottom-height) + 16px);
+    overflow-x: hidden;
+    user-select: none;
+}
+
+/* Header Móvil */
+.movil-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: #ffffff;
+    border-bottom: 1px solid var(--movil-border);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.movil-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.movil-brand-icon {
+    width: 36px;
+    height: 36px;
+    background: #e0f2fe;
+    color: var(--movil-primary);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.movil-brand-title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.movil-brand-sub {
+    font-size: 11px;
+    color: var(--movil-text-muted);
+}
+
+.movil-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.movil-badge-caja {
+    background: #f1f5f9;
+    color: #334155;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-movil-logout {
+    background: #fef2f2;
+    color: var(--movil-danger);
+    border: none;
+    border-radius: 8px;
+    padding: 7px 11px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Barra de Búsqueda y Botón Escáner */
+.movil-search-section {
+    padding: 12px 14px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--movil-border);
+}
+
+.movil-search-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.movil-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.movil-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--movil-text-muted);
+    font-size: 15px;
+}
+
+.movil-search-input {
+    width: 100%;
+    padding: 12px 12px 12px 36px;
+    border: 1.5px solid var(--movil-border);
+    border-radius: 10px;
+    font-size: 15px;
+    background: #f8fafc;
+    transition: all 0.2s;
+    user-select: auto;
+}
+
+.movil-search-input:focus {
+    outline: none;
+    background: #ffffff;
+    border-color: var(--movil-primary);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.btn-scan-camera {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 0 16px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
+    white-space: nowrap;
+}
+
+.btn-scan-camera:active {
+    transform: scale(0.97);
+}
+
+/* Dropdown de Resultados de Búsqueda */
+.movil-search-results {
+    margin-top: 8px;
+    background: #ffffff;
+    border: 1px solid var(--movil-border);
+    border-radius: 10px;
+    max-height: 260px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.movil-search-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--movil-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.movil-search-item:last-child {
+    border-bottom: none;
+}
+
+.movil-search-item:active {
+    background: #f1f5f9;
+}
+
+.item-main-info {
+    flex: 1;
+    padding-right: 10px;
+}
+
+.item-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e293b;
+}
+
+.item-barcode {
+    font-size: 11px;
+    color: var(--movil-text-muted);
+}
+
+.item-meta {
+    text-align: right;
+}
+
+.item-price {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--movil-primary-dark);
+}
+
+.item-stock {
+    font-size: 11px;
+    color: #059669;
+}
+
+/* Área de Carrito / Lista de Artículos */
+.movil-cart-container {
+    padding: 12px 14px;
+}
+
+.movil-cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.movil-cart-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-vaciar-cart {
+    background: transparent;
+    border: none;
+    color: var(--movil-danger);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.movil-cart-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.movil-cart-item {
+    background: var(--movil-card);
+    border: 1px solid var(--movil-border);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cart-item-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.cart-item-desc {
+    flex: 1;
+    padding-right: 8px;
+}
+
+.cart-item-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+.cart-item-unit-price {
+    font-size: 12px;
+    color: var(--movil-text-muted);
+    margin-top: 2px;
+}
+
+.cart-item-subtotal {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    text-align: right;
+}
+
+.cart-item-row-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 4px;
+    border-top: 1px dashed var(--movil-border);
+}
+
+.cart-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-qty-touch {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--movil-border);
+    background: #f8fafc;
+    color: #334155;
+    font-size: 16px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.btn-qty-touch:active {
+    background: #e2e8f0;
+}
+
+.cart-item-qty {
+    min-width: 42px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.btn-remove-touch {
+    background: #fee2e2;
+    color: var(--movil-danger);
+    border: none;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn-remove-touch:active {
+    background: #fca5a5;
+}
+
+/* Estado de Carrito Vacío */
+.movil-empty-cart {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--movil-text-muted);
+}
+
+.movil-empty-icon {
+    font-size: 48px;
+    color: #cbd5e1;
+    margin-bottom: 12px;
+}
+
+.movil-empty-cart h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 4px;
+}
+
+.movil-empty-cart p {
+    font-size: 13px;
+}
+
+/* Barra Inferior Fija de Totales y Cobro */
+.movil-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--movil-bottom-height);
+    background: #ffffff;
+    border-top: 1px solid var(--movil-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    z-index: 40;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.movil-total-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.movil-total-label {
+    font-size: 11px;
+    color: var(--movil-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.movil-total-amount {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--movil-primary-dark);
+}
+
+.btn-movil-cobrar {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 0 24px;
+    height: 52px;
+    font-size: 16px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(22, 163, 74, 0.25);
+    transition: all 0.2s;
+}
+
+.btn-movil-cobrar:active {
+    transform: scale(0.97);
+}
+
+.btn-movil-cobrar:disabled {
+    background: #cbd5e1;
+    color: #94a3b8;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* Modal del Escáner de Cámara */
+.scanner-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px;
+}
+
+.scanner-modal.is-open {
+    display: flex;
+}
+
+.scanner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #ffffff;
+}
+
+.scanner-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-close-scanner {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.scanner-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+}
+
+#reader {
+    width: 100% !important;
+    max-width: 480px;
+    border: none !important;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#reader video {
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+/* Guía Láser para Escaneo de Barras 1D */
+.scanner-laser-guide {
+    position: absolute;
+    width: 85%;
+    max-width: 360px;
+    height: 140px;
+    border: 2px solid rgba(2, 132, 199, 0.7);
+    border-radius: 10px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.scanner-laser-line {
+    width: 100%;
+    height: 2.5px;
+    background: #ef4444;
+    box-shadow: 0 0 8px #ef4444, 0 0 16px #f87171;
+    animation: laserScan 2s infinite ease-in-out alternate;
+}
+
+@keyframes laserScan {
+    0% { transform: translateY(-50px); opacity: 0.8; }
+    100% { transform: translateY(50px); opacity: 0.8; }
+}
+
+.scanner-footer {
+    text-align: center;
+    color: #e2e8f0;
+    font-size: 13px;
+    padding: 10px;
+}
+
+/* Overlay de Procesamiento */
+.movil-loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.movil-loading-box {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px 30px;
+    text-align: center;
+    max-width: 280px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Modales de Cobro y Éxito */
+.modal-movil-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 90;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.modal-movil-overlay.is-open {
+    display: flex;
+}
+
+.modal-movil-sheet {
+    background: #ffffff;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--movil-border);
+}
+
+.sheet-title {
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.sheet-close {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--movil-text-muted);
+    cursor: pointer;
+}
+
+.sheet-total-banner {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.sheet-total-label {
+    font-size: 12px;
+    color: var(--movil-primary);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.sheet-total-val {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1e3a8a;
+}
+
+/* Métodos de Pago Touch */
+.metodos-touch {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.btn-metodo-touch {
+    border: 1.5px solid var(--movil-border);
+    border-radius: 10px;
+    padding: 10px 4px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.btn-metodo-touch.is-selected {
+    border-color: var(--movil-primary);
+    background: #e0f2fe;
+    color: var(--movil-primary-dark);
+}
+
+.btn-metodo-touch i {
+    font-size: 18px;
+}
+
+/* Efectivo e Ingreso */
+.campo-efectivo-touch {
+    margin-bottom: 16px;
+}
+
+.campo-efectivo-touch label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.input-efectivo-touch {
+    width: 100%;
+    padding: 12px;
+    font-size: 20px;
+    font-weight: 700;
+    border: 1.5px solid var(--movil-border);
+    border-radius: 10px;
+    text-align: center;
+    user-select: auto;
+}
+
+.input-efectivo-touch:focus {
+    outline: none;
+    border-color: var(--movil-primary);
+}
+
+.billetes-touch {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.btn-billete-touch {
+    background: #f1f5f9;
+    border: 1px solid var(--movil-border);
+    border-radius: 8px;
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+}
+
+.btn-billete-touch:active {
+    background: #e2e8f0;
+}
+
+/* Resumen Cambio */
+.resumen-cambio-touch {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.resumen-cambio-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.resumen-cambio-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--movil-success-dark);
+}
+
+.resumen-cambio-val.insuficiente {
+    color: var(--movil-danger);
+    font-size: 14px;
+}
+
+/* Botón Finalizar Cobro */
+.btn-finalizar-touch {
+    width: 100%;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.btn-finalizar-touch:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}
+
+/* Adaptación para Tablets */
+@media (min-width: 768px) {
+    .movil-app-shell {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .movil-cart-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .modal-movil-overlay {
+        align-items: center;
+    }
+
+    .modal-movil-sheet {
+        border-radius: 20px;
+    }
+
+    .movil-bottom-bar {
+        max-width: 900px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 16px 16px 0 0;
+    }
+}

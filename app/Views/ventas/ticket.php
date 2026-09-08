@@ -59,6 +59,8 @@ $anchoTicket = $configuracion['ancho_ticket'] ?? '80mm';
 $tipoComprobante = $tipoComprobante ?? ($configuracion['tipo_comprobante_default'] ?? 'recibo');
 $esFactura = $tipoComprobante === 'factura';
 $totalVenta = (float)($venta['total'] ?? 0);
+$descuentoRebaja = (float)($venta['descuento'] ?? 0);
+
 // Fallback para tickets emitidos antes de la migración de desglose ISV por venta
 $tieneDesgloseGuardado = isset($venta['importe_gravado_15']) || isset($venta['importe_gravado_18']) || isset($venta['importe_exento']);
 if ($tieneDesgloseGuardado) {
@@ -145,13 +147,25 @@ foreach ($etiquetasCopias as $etiquetaCopia):
     <div class="linea"></div>
 
     <div>
-        <div><strong>Cliente:</strong> <?= htmlspecialchars(!empty($venta['cliente_nombre']) ? $venta['cliente_nombre'] : 'Consumidor Final') ?></div>
+        <div style="text-align: center; font-weight: bold; margin-bottom: 3px;">DATOS DE CLIENTE</div>
+        <div><strong>Nombre:</strong> <?= htmlspecialchars(!empty($venta['cliente_nombre']) ? $venta['cliente_nombre'] : 'Consumidor Final') ?></div>
         <div><strong>RTN/ID:</strong> <?= htmlspecialchars(!empty($venta['cliente_rtn']) ? $venta['cliente_rtn'] : 'S/N') ?></div>
         <?php if (!empty($venta['cliente_direccion'])): ?>
             <div><strong>Dirección:</strong> <?= htmlspecialchars($venta['cliente_direccion']) ?></div>
         <?php endif; ?>
         <div><strong>Cajero:</strong> <?= htmlspecialchars($venta['cajero'] ?? 'Cajero') ?></div>
     </div>
+
+    <?php if ($esFactura): ?>
+        <div class="linea"></div>
+
+        <div>
+            <div style="text-align: center; font-weight: bold; margin-bottom: 3px;">DATOS DE ADQUIRIENTE EXONERADO</div>
+            <div><strong>Orden Compra Exenta:</strong> _________________</div>
+            <div><strong>Constancia Registro:</strong> _________________</div>
+            <div><strong>Registro SAG:</strong> _________________</div>
+        </div>
+    <?php endif; ?>
 
     <div class="linea"></div>
 
@@ -222,6 +236,10 @@ foreach ($etiquetasCopias as $etiquetaCopia):
                 <td class="text-right">L <?= number_format($isv18, 2) ?></td>
             </tr>
             <tr>
+                <td>Descuentos y Rebajas Otorgadas:</td>
+                <td class="text-right">L <?= number_format($descuentoRebaja, 2) ?></td>
+            </tr>
+            <tr>
                 <td><strong>Total a Pagar:</strong></td>
                 <td class="text-right"><strong>L <?= number_format($totalVenta, 2) ?></strong></td>
             </tr>
@@ -236,6 +254,10 @@ foreach ($etiquetasCopias as $etiquetaCopia):
         </table>
     <?php else: ?>
         <table>
+            <tr>
+                <td>Descuentos y Rebajas Otorgadas:</td>
+                <td class="text-right">L <?= number_format($descuentoRebaja, 2) ?></td>
+            </tr>
             <tr>
                 <td><strong>TOTAL:</strong></td>
                 <td class="text-right"><strong>L <?= number_format($totalVenta, 2) ?></strong></td>

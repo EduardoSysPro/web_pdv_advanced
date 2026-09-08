@@ -199,7 +199,7 @@
                 <div id="ticket-preview" style="width: 80mm; max-width: 100%; margin: 0 auto; background: #fff; padding: 10px; border: 1px solid #cbd5e1; box-shadow: 0 4px 12px rgba(15,23,42,0.08); font-family: 'Courier New'; font-size: 11px; color: #111827; line-height: 1.35;">
                     <div class="preview-header" style="text-align:center;">
                         <div id="preview-logo" style="display: block; margin-bottom:8px;">
-                            <img src="<?php echo !empty($configuracion['logotipo_path']) ? URL_BASE . htmlspecialchars($configuracion['logotipo_path']) : ''; ?>" alt="Logo" style="max-width: 72px; max-height: 36px; display: block; margin: 0 auto;">
+                            <img src="<?php echo !empty($configuracion['logotipo_path']) ? URL_BASE . htmlspecialchars(ltrim((string)$configuracion['logotipo_path'], '/')) : ''; ?>" alt="Logo" style="max-width: 72px; max-height: 36px; display: block; margin: 0 auto;">
                         </div>
                         <h2 id="preview-negocio" style="margin:0; font-size:14px; font-weight:bold;">Mi Abarrotería</h2>
                         <div id="preview-rtn">RTN: 00000000000000</div>
@@ -211,32 +211,57 @@
                     <div style="border-top:1px dashed #000; margin:8px 0;"></div>
 
                     <div id="preview-factura">
-                        <div><strong id="preview-titulo-comprobante">TICKET DE VENTA</strong></div>
-                        <div id="preview-folio">V-20260101-00001</div>
+                        <div><strong id="preview-titulo-comprobante">DOCUMENTO NO FISCAL / RECIBO INTERNO:</strong> <span id="preview-folio">REC-00000001</span></div>
                         <div id="preview-cai" style="display:none;"><strong>CAI:</strong> 0000000000000000000000000000</div>
-                        <div id="preview-rango" style="display:none;"><strong>Rango Autorizado:</strong> 000-001-01-00000001 al 000-001-01-00010000</div>
+                        <div id="preview-rango" style="display:none;"><strong>Rango Autorizado:</strong><br>000-001-01-00000001 al 000-001-01-00010000</div>
                         <div id="preview-fecha-limite" style="display:none;"><strong>Fecha Límite Emisión:</strong> 2027-12-31</div>
+                        <div><strong>Fecha Emisión:</strong> 2026-01-01 12:00:00</div>
                     </div>
 
                     <div style="border-top:1px dashed #000; margin:8px 0;"></div>
 
                     <div id="preview-cliente">
-                        <div><strong>Cliente:</strong> Consumidor Final</div>
+                        <div style="text-align:center; font-weight:bold; margin-bottom:3px;">DATOS DE CLIENTE</div>
+                        <div><strong>Nombre:</strong> Consumidor Final</div>
                         <div><strong>RTN/ID:</strong> S/N</div>
-                        <div><strong>Cajero:</strong> Usuario</div>
+                        <div id="preview-direccion-cliente" style="display:none;"><strong>Dirección:</strong> Dirección del cliente</div>
+                        <div><strong>Cajero:</strong> Cajero</div>
+                    </div>
+
+                    <div id="preview-exonerado" style="display:none;">
+                        <div style="border-top:1px dashed #000; margin:8px 0;"></div>
+                        <div style="text-align:center; font-weight:bold; margin-bottom:3px;">DATOS DE ADQUIRIENTE EXONERADO</div>
+                        <div><strong>Orden Compra Exenta:</strong> _________________</div>
+                        <div><strong>Constancia Registro:</strong> _________________</div>
+                        <div><strong>Registro SAG:</strong> _________________</div>
                     </div>
 
                     <div style="border-top:1px dashed #000; margin:8px 0;"></div>
 
                     <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left; padding:2px 0;">Cant/Descripción</th>
+                                <th style="text-align:right; padding:2px 0;">P.U.</th>
+                                <th style="text-align:right; padding:2px 0;">Total</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             <tr>
-                                <td style="padding:2px 0;">1 x Producto A</td>
-                                <td style="text-align:right; padding:2px 0;">L 20.00</td>
+                                <td colspan="3" style="padding:2px 0;">Producto A</td>
                             </tr>
                             <tr>
-                                <td style="padding:2px 0;">1 x Producto B</td>
-                                <td style="text-align:right; padding:2px 0;">L 35.00</td>
+                                <td style="padding:2px 0;">1 x</td>
+                                <td style="text-align:right; padding:2px 0;">20.00</td>
+                                <td style="text-align:right; padding:2px 0;">20.00</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" style="padding:2px 0;">Producto B [Caja x12]</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:2px 0;">1 caja x</td>
+                                <td style="text-align:right; padding:2px 0;">35.00</td>
+                                <td style="text-align:right; padding:2px 0;">35.00</td>
                             </tr>
                         </tbody>
                     </table>
@@ -248,6 +273,7 @@
                         <div style="display:flex; justify-content:space-between;"><span>ISV 15%:</span><span id="preview-isv15">L 4.57</span></div>
                         <div style="display:flex; justify-content:space-between;"><span>Importe Gravado 18%:</span><span>L 0.00</span></div>
                         <div style="display:flex; justify-content:space-between;"><span>ISV 18%:</span><span>L 0.00</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>Descuentos y Rebajas Otorgadas:</span><span>L 0.00</span></div>
                     </div>
 
                     <div style="border-top:1px dashed #000; margin:8px 0;"></div>
@@ -257,11 +283,22 @@
                         <span><strong id="preview-total-valor">L 55.00</strong></span>
                     </div>
 
+                    <div id="preview-descuento-recibo" style="display:flex; justify-content:space-between; margin-top:4px;"><span>Descuentos y Rebajas Otorgadas:</span><span>L 0.00</span></div>
+
+                    <div id="preview-pago" style="margin-top:4px;">
+                        <div id="preview-forma-pago" style="display:flex; justify-content:space-between;"><span>Forma de pago:</span><span>Efectivo</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>Efectivo / Recibido:</span><span>L 60.00</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>Cambio:</span><span>L 5.00</span></div>
+                    </div>
+
+                    <div id="preview-son" style="margin:8px 0; font-size:10px;"><strong>SON:</strong> CINCUENTA Y CINCO LEMPIRAS CON 00/100 CENTAVOS</div>
+
                     <div id="preview-mensaje" style="margin-top:8px; text-align:center; font-size:10px;">
                         ¡Gracias por su compra!
                     </div>
 
-                    <div id="preview-pie-sar" style="margin-top:8px; text-align:center; font-size:9px; display:block;">
+                    <div id="preview-copia" style="margin-top:8px; text-align:center;"><strong>*** Original: Cliente ***</strong></div>
+                    <div id="preview-pie-sar" style="margin-top:4px; text-align:center; font-size:9px; display:none;">
                         La factura es beneficio de todos, exíjala.
                     </div>
                 </div>
@@ -284,6 +321,11 @@
     const previewMensaje = document.getElementById('preview-mensaje');
     const previewPieSar = document.getElementById('preview-pie-sar');
     const previewLogo = document.getElementById('preview-logo');
+    const previewExonerado = document.getElementById('preview-exonerado');
+    const previewDireccionCliente = document.getElementById('preview-direccion-cliente');
+    const previewDescuentoRecibo = document.getElementById('preview-descuento-recibo');
+    const previewFormaPago = document.getElementById('preview-forma-pago');
+    const previewSon = document.getElementById('preview-son');
 
     function formatMoney(value) {
         return 'L ' + Number(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -318,6 +360,11 @@
         previewMensaje.textContent = mensaje || '¡Gracias por su compra!';
         previewPieSar.style.display = mostrarPieSar && esFactura ? 'block' : 'none';
         previewLogo.style.display = mostrarLogo ? 'block' : 'none';
+            previewDireccionCliente.style.display = 'none';
+            previewExonerado.style.display = esFactura ? 'block' : 'none';
+            previewDescuentoRecibo.style.display = esFactura ? 'none' : 'flex';
+            previewFormaPago.style.display = esFactura ? 'none' : 'flex';
+            previewSon.style.display = 'block';
 
         const titulo = document.getElementById('preview-titulo-comprobante');
         const folio = document.getElementById('preview-folio');
@@ -331,7 +378,7 @@
         const isv15El = document.getElementById('preview-isv15');
 
         if (esFactura) {
-            titulo.textContent = 'FACTURA';
+            titulo.textContent = 'FACTURA:';
             folio.textContent = '000-001-01-00000001';
             cai.style.display = 'block';
             rango.style.display = 'block';
@@ -342,8 +389,8 @@
             gravado15El.textContent = formatMoney(gravado15);
             isv15El.textContent = formatMoney(isv15);
         } else {
-            titulo.textContent = 'TICKET DE VENTA';
-            folio.textContent = 'V-20260101-00001';
+            titulo.textContent = 'DOCUMENTO NO FISCAL / RECIBO INTERNO:';
+            folio.textContent = 'REC-00000001';
             cai.style.display = 'none';
             rango.style.display = 'none';
             fechaLimite.style.display = 'none';

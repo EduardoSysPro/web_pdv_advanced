@@ -149,9 +149,7 @@ $mensajeTicket = $configuracion['mensaje_ticket'] ?? '¡Gracias por su compra!';
             Conserve este documento.
         </p>
 
-        <?php if (!empty($mensajeTicket)): ?>
-            <div class="centrado mini"><?php echo htmlspecialchars($mensajeTicket); ?></div>
-        <?php endif; ?>
+
     </main>
 </body>
 </html>

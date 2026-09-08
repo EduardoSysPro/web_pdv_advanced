@@ -76,6 +76,10 @@ class ProductosController extends Controller
             $_SESSION['mensaje_productos'] = 'El producto no existe.';
             $this->redirigir('productos');
         }
+        if (!empty($_SESSION['datos_producto'])) {
+            $producto = array_merge($producto, $_SESSION['datos_producto']);
+            unset($_SESSION['datos_producto']);
+        }
         $categorias = $this->modeloCategoria->obtenerTodas();
         $errores = $_SESSION['errores_productos'] ?? [];
         unset($_SESSION['errores_productos']);
@@ -102,9 +106,18 @@ class ProductosController extends Controller
         }
         if ($errores) {
             $_SESSION['errores_productos'] = $errores;
+            $_SESSION['datos_producto'] = $datos;
             $this->redirigir('productos/editar/' . $id);
         }
-        $this->modeloProducto->actualizar($id, $datos);
+        try {
+            if (!$this->modeloProducto->actualizar($id, $datos)) {
+                throw new RuntimeException('No se pudo actualizar el producto.');
+            }
+        } catch (Throwable $e) {
+            $_SESSION['errores_productos'] = ['No se pudo guardar el producto. Verifica la conexión con la base de datos.'];
+            $_SESSION['datos_producto'] = $datos;
+            $this->redirigir('productos/editar/' . $id);
+        }
         $_SESSION['mensaje_productos'] = 'Producto actualizado correctamente.';
         $this->redirigir('productos');
     }

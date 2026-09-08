@@ -793,6 +793,88 @@ body.pos-movil-body {
     cursor: not-allowed;
 }
 
+.modal-movil-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 120;
+}
+
+.modal-movil-confirm-overlay.is-open {
+    display: flex;
+}
+
+.modal-movil-confirm {
+    background: #ffffff;
+    border-radius: 20px;
+    max-width: 420px;
+    width: 100%;
+    padding: 22px 18px 18px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+    text-align: center;
+}
+
+.confirm-icon {
+    width: 66px;
+    height: 66px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: #e0f2fe;
+    color: var(--movil-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+.modal-movil-confirm h3 {
+    font-size: 22px;
+    color: #0f172a;
+    margin-bottom: 10px;
+}
+
+.modal-movil-confirm p {
+    font-size: 14px;
+    color: var(--movil-text-muted);
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+
+.confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.btn-confirm-primary,
+.btn-confirm-secondary {
+    border: none;
+    border-radius: 12px;
+    padding: 12px 10px;
+    font-size: 14px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.btn-confirm-primary {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: #ffffff;
+}
+
+.btn-confirm-secondary {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid var(--movil-border);
+}
+
 /* Adaptación para Tablets */
 @media (min-width: 768px) {
     .movil-app-shell {

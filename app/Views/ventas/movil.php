@@ -16,24 +16,31 @@
 </head>
 <body class="pos-movil-body">
     <div class="movil-app-shell">
-        <!-- Header Móvil -->
-        <header class="movil-header">
-            <div class="movil-brand">
-                <div class="movil-brand-icon">
-                    <i class="fa-solid fa-mobile-screen"></i>
-                </div>
-                <div>
-                    <div class="movil-brand-title"><?php echo htmlspecialchars($configuracion['nombre_negocio'] ?? 'Web PDV'); ?></div>
-                    <div class="movil-brand-sub"><?php echo $nombreUsuario; ?> · <?php echo $cajaNombre; ?></div>
-                </div>
-            </div>
-            <div class="movil-header-actions">
-                <a href="<?php echo URL_BASE; ?>logout" class="btn-movil-logout" title="Cerrar Sesión">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                    <span>Salir</span>
-                </a>
-            </div>
-        </header>
+<!-- Header Móvil -->
+<header class="movil-header">
+    <div class="movil-brand">
+        <div class="movil-brand-icon">
+            <i class="fa-solid fa-mobile-screen"></i>
+        </div>
+        <div>
+            <div class="movil-brand-title"><?php echo htmlspecialchars($configuracion['nombre_negocio'] ?? 'Web PDV'); ?></div>
+            <div class="movil-brand-sub"><?php echo $nombreUsuario; ?> · <?php echo $cajaNombre; ?></div>
+        </div>
+    </div>
+    <div class="movil-header-actions">
+        <!-- Botón Volver a POS Normal -->
+        <a href="<?php echo URL_BASE; ?>" class="btn-movil-logout" title="Volver a la vista normal" style="background: #b9f3fd; margin-right: 6px;">
+            <i class="fa-solid fa-desktop"></i>
+            <span>Volver</span>
+        </a>
+
+        <!-- Botón Salir -->
+        <a href="<?php echo URL_BASE; ?>logout" class="btn-movil-logout" title="Cerrar Sesión">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span>Salir</span>
+        </a>
+    </div>
+</header>
 
         <!-- Barra de Búsqueda y Escáner -->
         <section class="movil-search-section">
@@ -183,11 +190,32 @@
                 <span class="resumen-cambio-val" id="cobro-cambio-val">L 0.00</span>
             </div>
 
-            <!-- Botón Finalizar Cobro e Imprimir Ticket -->
+            <!-- Botón Finalizar Cobro -->
             <button type="button" id="btn-finalizar-venta" class="btn-finalizar-touch" disabled>
-                <i class="fa-solid fa-print"></i>
-                <span>Confirmar e Imprimir Ticket</span>
+                <i class="fa-solid fa-check"></i>
+                <span>Confirmar Cobro</span>
             </button>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación de impresión -->
+    <div id="modal-confirmar-imprimir" class="modal-movil-confirm-overlay" aria-hidden="true">
+        <div class="modal-movil-confirm">
+            <div class="confirm-icon">
+                <i class="fa-solid fa-print"></i>
+            </div>
+            <h3>¿Desea imprimir el recibo?</h3>
+            <p>La venta se registrará y podrá imprimir el comprobante ahora o dejarlo sin recibo.</p>
+            <div class="confirm-actions">
+                <button type="button" id="btn-sin-imprimir" class="btn-confirm-secondary">
+                    <i class="fa-solid fa-ban"></i>
+                    <span>No imprimir</span>
+                </button>
+                <button type="button" id="btn-confirmar-imprimir" class="btn-confirm-primary">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Imprimir recibo</span>
+                </button>
+            </div>
         </div>
     </div>
 

@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Elementos Modal Cobro
     const modalCobro = document.getElementById('modal-cobro-movil');
+    const modalConfirmarImprimir = document.getElementById('modal-confirmar-imprimir');
     const btnCerrarCobro = document.getElementById('btn-cerrar-cobro');
     const cobroTotalVal = document.getElementById('cobro-total-val');
     const inputEfectivo = document.getElementById('input-efectivo-touch');
@@ -47,6 +48,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const campoEfectivo = document.getElementById('campo-efectivo-touch');
     const resumenCambio = document.getElementById('resumen-cambio-touch');
     const btnFinalizarVenta = document.getElementById('btn-finalizar-venta');
+    const btnConfirmarImprimir = document.getElementById('btn-confirmar-imprimir');
+    const btnSinImprimir = document.getElementById('btn-sin-imprimir');
     const botonesMetodos = document.querySelectorAll('.btn-metodo-touch');
     const botonesBilletes = document.querySelectorAll('.btn-billete-touch');
 
@@ -780,8 +783,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Finalizar Venta y Reutilizar Ticket
-    btnFinalizarVenta.addEventListener('click', function () {
+    function abrirConfirmacionImpresion() {
+        if (!modalConfirmarImprimir) return false;
+        modalConfirmarImprimir.classList.add('is-open');
+        modalConfirmarImprimir.setAttribute('aria-hidden', 'false');
+        return true;
+    }
+
+    function cerrarConfirmacionImpresion() {
+        if (!modalConfirmarImprimir) return;
+        modalConfirmarImprimir.classList.remove('is-open');
+        modalConfirmarImprimir.setAttribute('aria-hidden', 'true');
+    }
+
+    function procesarVenta(imprimirRecibo) {
         const total = calcularTotal();
         const efectivo = metodoPagoSeleccionado === 'efectivo' ? (Number(inputEfectivo.value) || total) : total;
         const cambio = metodoPagoSeleccionado === 'efectivo' ? (efectivo - total) : 0;
@@ -795,6 +810,7 @@ document.addEventListener('DOMContentLoaded', function () {
             cambio: cambio,
             metodo_pago: metodoPagoSeleccionado,
             tipo_comprobante: 'recibo',
+            imprimir_recibo: imprimirRecibo,
             cliente_id: 0,
             cliente_nombre: 'Consumidor Final',
             cliente_rtn: '',
@@ -815,31 +831,48 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(res => res.json())
         .then(resp => {
             btnFinalizarVenta.disabled = false;
-            btnFinalizarVenta.innerHTML = '<i class="fa-solid fa-print"></i> Confirmar e Imprimir Ticket';
+            btnFinalizarVenta.innerHTML = '<i class="fa-solid fa-check"></i> Confirmar Cobro';
 
             if (!resp || !resp.exito) {
                 alert((resp && resp.mensaje) ? resp.mensaje : 'Error al procesar la venta.');
+                cerrarConfirmacionImpresion();
                 return;
             }
 
-            // Abrir ticket reutilizado existente
-            const ticketUrl = URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id);
-            window.open(ticketUrl, '_blank');
+            if (imprimirRecibo) {
+                const ticketUrl = URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id);
+                window.open(ticketUrl, '_blank');
+            }
 
             // Limpiar carrito y cerrar modal
             carrito = [];
             guardarCarrito();
             renderizarCarrito();
             modalCobro.classList.remove('is-open');
+            cerrarConfirmacionImpresion();
 
             alert('¡Venta registrada exitosamente! Folio: ' + (resp.folio || resp.venta_id));
         })
         .catch(err => {
             console.error('Error al guardar venta:', err);
             btnFinalizarVenta.disabled = false;
-            btnFinalizarVenta.innerHTML = '<i class="fa-solid fa-print"></i> Confirmar e Imprimir Ticket';
+            btnFinalizarVenta.innerHTML = '<i class="fa-solid fa-check"></i> Confirmar Cobro';
+            cerrarConfirmacionImpresion();
             alert('No se pudo conectar con el servidor.');
         });
+    }
+
+    btnFinalizarVenta.addEventListener('click', function () {
+        if (carrito.length === 0) return;
+        abrirConfirmacionImpresion();
+    });
+
+    btnConfirmarImprimir.addEventListener('click', function () {
+        procesarVenta(true);
+    });
+
+    btnSinImprimir.addEventListener('click', function () {
+        procesarVenta(false);
     });
 
     // ==========================================

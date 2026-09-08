@@ -41,7 +41,8 @@
 
         <!-- ================= SECCIÓN DE VENTA POR EMPAQUE (CAJA / BULTO / FARDO) ================= -->
         <?php
-            $tieneEmpaqueInicial = in_array($producto['tipo_venta'] ?? 'solo_unidad', ['solo_empaque', 'ambos'], true) || ((float)($producto['precio_empaque'] ?? 0) > 0);
+            $tieneEmpaqueInicial = in_array($producto['tipo_venta'] ?? 'solo_unidad', ['solo_empaque', 'ambos'], true)
+                || ((float)($producto['unidades_por_empaque'] ?? 0) > 1 && (float)($producto['precio_empaque'] ?? 0) > 0);
             $nombreEmpaqueActual = $producto['nombre_empaque'] ?? 'Caja';
             $opcionesEmpaqueComunes = ['Caja', 'Bulto', 'Fardo', 'Paquete', 'Display'];
             $esEmpaquePersonalizado = !in_array($nombreEmpaqueActual, $opcionesEmpaqueComunes, true);
@@ -85,7 +86,7 @@
 
                     <div class="campo">
                         <label for="unidades_por_empaque">Unidades por empaque</label>
-                        <input id="unidades_por_empaque" name="unidades_por_empaque" type="number" min="2" step="0.001" value="<?php echo htmlspecialchars((string)($producto['unidades_por_empaque'] ?? '10')); ?>" placeholder="Ej: 10, 12, 24">
+                        <input id="unidades_por_empaque" name="unidades_por_empaque" type="number" min="2" step="0.001" value="<?php echo htmlspecialchars((string)max(2, (float)($producto['unidades_por_empaque'] ?? 2))); ?>" placeholder="Ej: 2, 10, 12, 24">
                         <small style="color:#64748b; font-size:11px;">Ej: 1 caja contiene 10 unidades</small>
                     </div>
 

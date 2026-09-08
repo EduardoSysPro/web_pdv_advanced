@@ -13,9 +13,9 @@ require APP_PATH . 'Views/layouts/pos_header.php';
         <p>Ventas, rotación y rentabilidad del período seleccionado.</p>
     </div>
     <div class="reporte-acciones">
-        <button class="btn-pos btn-pos-secondary" type="button" onclick="window.print()">
+        <a class="btn-pos btn-pos-secondary" target="_blank" rel="noopener" href="<?php echo URL_BASE; ?>reportes/imprimir?periodo=<?php echo urlencode($periodoActual); ?>&fecha_inicio=<?php echo urlencode($inicio); ?>&fecha_fin=<?php echo urlencode($fin); ?>">
             <i class="fas fa-print"></i> Imprimir
-        </button>
+        </a>
         <a class="btn-pos btn-pos-primary" href="<?php echo URL_BASE; ?>reportes/exportar?periodo=<?php echo urlencode($periodoActual); ?>&fecha_inicio=<?php echo urlencode($inicio); ?>&fecha_fin=<?php echo urlencode($fin); ?>">
             <i class="fas fa-file-csv"></i> Exportar CSV
         </a>

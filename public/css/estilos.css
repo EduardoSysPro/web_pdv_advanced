@@ -38,37 +38,6 @@
     --transicion: all 0.2s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg-principal: #0f172a;
-        --bg-tarjeta: #1e293b;
-        --bg-header: #1e293b;
-        --texto-principal: #f8fafc;
-        --texto-secundario: #cbd5e1;
-        --texto-mutado: #94a3b8;
-        --borde: #334155;
-        --input-bg: #0f172a;
-        --pos-bg: #0b1120;
-        --pos-card: #151e32;
-        --pos-header-bg: #151e32;
-        --pos-header-border: #1e293b;
-        --pos-topbar-bg: #0f172a;
-        --pos-text: #f8fafc;
-        --pos-text-muted: #94a3b8;
-        --pos-table-header-bg: #1e293b;
-        --pos-table-header-text: #f8fafc;
-        --pos-table-border: #334155;
-        --pos-input-bg: #0f172a;
-        --pos-input-border: #334155;
-        --color-fondo: var(--bg-principal);
-        --color-fondo-oscuro: var(--borde);
-        --color-borde: var(--borde);
-        --color-texto: var(--texto-principal);
-        --color-texto-claro: var(--texto-mutado);
-        --color-blanco: var(--bg-tarjeta);
-    }
-}
-
 * {
     margin: 0;
     padding: 0;
@@ -99,34 +68,6 @@ body {
 .info-usuario,
 .info-fecha {
     color: var(--texto-secundario) !important;
-}
-
-@media (prefers-color-scheme: dark) {
-    .app-main,
-    .tarjeta,
-    .app-footer,
-    .tabla-catalogo,
-    .filtros-productos input,
-    .filtros-productos select,
-    .formulario-producto input,
-    .formulario-producto select,
-    .filtros-reporte input,
-    .filtros-reporte select,
-    .kpis-reportes > div,
-    .metodos-reporte > div,
-    .resumen-caja > div,
-    .corte-datos > div {
-        background-color: var(--bg-tarjeta);
-        color: var(--texto-principal);
-        border-color: var(--borde);
-    }
-
-    .tabla-catalogo tbody tr:nth-child(even),
-    .resultados-inventario a,
-    .producto-elegido,
-    .diferencia-caja {
-        background-color: var(--bg-principal);
-    }
 }
 
 body.modal-open {
@@ -750,7 +691,14 @@ body.modal-open {
 }
 .usuarios-lista {
     width: 100%;
+    margin-top: 1.5rem;
 }
+
+.usuarios-lista .tarjeta-titulo {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
 .usuarios-nuevo {
     text-decoration: none;
 }
@@ -799,8 +747,8 @@ body.modal-open {
 .kpis-reportes .kpi-ganancia { border-color: var(--color-exito); background: #f0fff4; }
 .metodos-reporte { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; }
 .reporte-acciones { display: flex; gap: .6rem; }
-.resumen-caja { display: grid; grid-template-columns: repeat(5, 1fr); gap: .8rem; margin-bottom: 1rem; }
-.resumen-caja > div, .corte-datos > div { background: var(--color-blanco); border-left: 4px solid var(--color-acento); box-shadow: var(--sombra-suave); padding: .9rem; }
+.resumen-caja { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.resumen-caja > div, .corte-datos > div { background: var(--color-blanco); border: 1px solid var(--color-borde); border-left: 4px solid var(--color-acento); border-radius: 12px; box-shadow: var(--sombra-suave); padding: 1rem; }
 .resumen-caja span, .corte-datos span { display: block; color: var(--color-texto-claro); font-size: .82rem; }
 .resumen-caja strong, .corte-datos strong { display: block; color: var(--color-primario); font-size: 1.15rem; margin-top: .25rem; }
 .resumen-caja .esperado { border-color: var(--color-exito); background: #f0fff4; }

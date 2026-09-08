@@ -254,7 +254,9 @@
                             item_key: claveItem,
                             codigo_barras: producto.codigo_barras,
                             nombre: producto.nombre,
-                            precio_unitario: producto.precio_venta,
+                            precio_lista: Number(producto.precio_venta),
+                            precio_unitario: Number(producto.precio_venta),
+                            descuento_unitario: 0,
                             cantidad: 1,
                             importe: Number(producto.precio_venta),
                             stock: Number(producto.stock || 0),
@@ -277,7 +279,9 @@
                 item_key: claveItem,
                 codigo_barras: producto.codigo_barras,
                 nombre: producto.nombre,
-                precio_unitario: producto.precio_venta,
+                precio_lista: Number(producto.precio_venta),
+                precio_unitario: Number(producto.precio_venta),
+                descuento_unitario: 0,
                 cantidad: 1,
                 importe: Number(producto.precio_venta),
                 stock: Number(producto.stock || 0),
@@ -607,7 +611,14 @@
                 mostrarMensajeModal(modalId, 'Precio inválido.', 'error');
                 return;
             }
-            fila.precio_unitario = nuevo;
+            const precioLista = Number(fila.precio_lista ?? fila.precio_unitario);
+            if (!Number.isFinite(precioLista) || nuevo > precioLista) {
+                mostrarMensajeModal(modalId, 'El precio final no puede superar el precio de lista.', 'error');
+                return;
+            }
+            fila.precio_lista = redondear(precioLista);
+            fila.precio_unitario = redondear(nuevo);
+            fila.descuento_unitario = redondear(precioLista - nuevo);
             fila.importe = redondear(fila.cantidad * fila.precio_unitario);
             guardarEstado();
             renderizarTodo();

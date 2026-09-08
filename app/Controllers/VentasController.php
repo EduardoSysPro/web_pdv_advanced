@@ -254,7 +254,7 @@ class VentasController extends Controller
             ];
         }
 
-        $total            = isset($datos['total'])            ? (float)$datos['total']            : 0;
+        $total            = 0.0;
         $efectivo         = isset($datos['efectivo'])         ? (float)$datos['efectivo']         : 0;
         $cambio           = isset($datos['cambio'])           ? (float)$datos['cambio']           : 0;
         $metodoPago       = isset($datos['metodo_pago'])      ? trim($datos['metodo_pago'])       : 'efectivo';
@@ -272,22 +272,6 @@ class VentasController extends Controller
             echo json_encode([
                 'exito' => false,
                 'mensaje' => 'No hay productos en la venta.'
-            ]);
-            return;
-        }
-
-        if ($total <= 0) {
-            echo json_encode([
-                'exito' => false,
-                'mensaje' => 'El total de la venta no es válido.'
-            ]);
-            return;
-        }
-
-        if ($metodoPago !== 'credito' && $efectivo < $total) {
-            echo json_encode([
-                'exito' => false,
-                'mensaje' => 'El efectivo recibido es menor al total.'
             ]);
             return;
         }
@@ -313,18 +297,6 @@ class VentasController extends Controller
         try {
             $pdo->beginTransaction();
 
-            if ($metodoPago === 'credito') {
-                if ($clienteId <= 0) throw new Exception('Debes seleccionar un cliente para la venta a crédito.');
-                $stmtCredito = $pdo->prepare('SELECT limite_credito, saldo_pendiente FROM clientes WHERE id = :id FOR UPDATE');
-                $stmtCredito->execute([':id' => $clienteId]);
-                $cliente = $stmtCredito->fetch(PDO::FETCH_ASSOC);
-                if (!$cliente || (float)$cliente['saldo_pendiente'] + $total > (float)$cliente['limite_credito']) {
-                    throw new Exception('La venta supera el crédito disponible del cliente.');
-                }
-                $efectivo = 0;
-                $cambio = 0;
-            }
-
             $numeracionFactura = null;
             if ($tipoComprobante === 'factura') {
                 $numeracionFactura = $this->generarNumeracionFactura($pdo, $this->modeloConfiguracion->obtenerMapa());
@@ -344,8 +316,11 @@ class VentasController extends Controller
             $hasRangoAutorizado  = $this->columnaExiste($pdo, 'ventas', 'rango_autorizado');
             $hasFechaLimite      = $this->columnaExiste($pdo, 'ventas', 'fecha_limite_emision');
             $hasDesgloseIsv      = $this->columnaExiste($pdo, 'ventas', 'importe_gravado_15');
+            $hasDescuentoVenta   = $this->columnaExiste($pdo, 'ventas', 'descuento_total');
             $hasProductoImpuesto = $this->columnaExiste($pdo, 'productos', 'tipo_impuesto');
             $hasDetalleIsv       = $this->columnaExiste($pdo, 'detalle_ventas', 'porcentaje_isv');
+            $hasPrecioLista      = $this->columnaExiste($pdo, 'detalle_ventas', 'precio_lista');
+            $hasDescuentoDetalle = $this->columnaExiste($pdo, 'detalle_ventas', 'descuento_unitario');
 
             $columnasExtra = '';
             $valoresExtra  = '';
@@ -395,6 +370,10 @@ class VentasController extends Controller
                 $columnasExtra .= ', importe_exento, importe_exonerado, importe_gravado_15, isv_15, importe_gravado_18, isv_18';
                 $valoresExtra  .= ', :importe_exento, :importe_exonerado, :importe_gravado_15, :isv_15, :importe_gravado_18, :isv_18';
             }
+            if ($hasDescuentoVenta) {
+                $columnasExtra .= ', descuento_total';
+                $valoresExtra  .= ', :descuento_total';
+            }
 
             // Primera pasada: releer cada producto desde BD (nunca confiar en el impuesto enviado por el cliente)
             // y calcular el desglose de ISV exento/15%/18% acumulado para la venta.
@@ -405,13 +384,27 @@ class VentasController extends Controller
             $isv15Total = 0.0;
             $importeGravado18 = 0.0;
             $isv18Total = 0.0;
+            $descuentoTotal = 0.0;
 
             foreach ($productos as $item) {
                 $productoId       = isset($item['id'])                 ? (int)$item['id']                 : 0;
                 $cantidad         = isset($item['cantidad'])           ? (float)$item['cantidad']         : 0.0;
-                $precioUnit       = isset($item['precio_unitario'])    ? (float)$item['precio_unitario']  : 0;
-                $subtotal         = isset($item['importe'])            ? (float)$item['importe']
-                                                                      : ($cantidad * $precioUnit);
+                $precioFinal      = isset($item['precio_unitario'])    ? round((float)$item['precio_unitario'], 2) : 0.0;
+                $precioLista      = array_key_exists('precio_lista', $item)
+                    ? round((float)$item['precio_lista'], 2)
+                    : $precioFinal;
+                $descuentoUnitario = array_key_exists('descuento_unitario', $item)
+                    ? round((float)$item['descuento_unitario'], 2)
+                    : round($precioLista - $precioFinal, 2);
+
+                if ($precioLista < 0 || $precioFinal < 0 || $descuentoUnitario < 0 || $descuentoUnitario > $precioLista) {
+                    throw new Exception('El precio o descuento del artículo no es válido.');
+                }
+                if (abs(round($precioLista - $descuentoUnitario - $precioFinal, 2)) > 0.01) {
+                    throw new Exception('El precio final y el descuento del artículo no coinciden.');
+                }
+                $subtotal         = round($cantidad * $precioFinal, 2);
+                $descuentoLinea   = round($cantidad * $descuentoUnitario, 2);
                 $tipoPresentacion = ($item['tipo_presentacion'] ?? 'unidad') === 'empaque' ? 'empaque' : 'unidad';
                 $nombrePres       = trim((string)($item['nombre_presentacion'] ?? ($tipoPresentacion === 'empaque' ? 'Caja' : 'Unidad')));
                 $factorUnidades   = max(1.0, (float)($item['factor_unidades'] ?? 1.0));
@@ -461,11 +454,15 @@ class VentasController extends Controller
                 // Total de unidades base a descontar de inventario
                 $unidadesDescontar = $cantidad * $factorUnidades;
 
+                $total += $subtotal;
+                $descuentoTotal += $descuentoLinea;
                 $itemsProcesados[] = [
                     'item' => $item,
                     'producto_id' => $productoId,
                     'cantidad' => $cantidad,
-                    'precio_unitario' => $precioUnit,
+                    'precio_unitario' => $precioFinal,
+                    'precio_lista' => $precioLista,
+                    'descuento_unitario' => $descuentoUnitario,
                     'subtotal' => $subtotal,
                     'tipo_presentacion' => $tipoPresentacion,
                     'nombre_presentacion' => $nombrePres,
@@ -476,6 +473,28 @@ class VentasController extends Controller
                     'es_exento' => $esExento,
                     'es_exonerado' => $esExonerado
                 ];
+            }
+
+            $total = round($total, 2);
+            $descuentoTotal = round($descuentoTotal, 2);
+            if ($total <= 0) {
+                throw new Exception('El total de la venta no es válido.');
+            }
+            if ($metodoPago !== 'credito' && $efectivo < $total) {
+                throw new Exception('El efectivo recibido es menor al total.');
+            }
+            if ($metodoPago === 'credito') {
+                if ($clienteId <= 0) throw new Exception('Debes seleccionar un cliente para la venta a crédito.');
+                $stmtCredito = $pdo->prepare('SELECT limite_credito, saldo_pendiente FROM clientes WHERE id = :id FOR UPDATE');
+                $stmtCredito->execute([':id' => $clienteId]);
+                $cliente = $stmtCredito->fetch(PDO::FETCH_ASSOC);
+                if (!$cliente || (float)$cliente['saldo_pendiente'] + $total > (float)$cliente['limite_credito']) {
+                    throw new Exception('La venta supera el crédito disponible del cliente.');
+                }
+                $efectivo = 0;
+                $cambio = 0;
+            } else {
+                $cambio = round($efectivo - $total, 2);
             }
 
             $sqlVenta = 'INSERT INTO ventas (folio, usuario_id' . $columnasExtra . ', total, pagado_con, cambio, metodo_pago, cliente_id, fecha_venta)
@@ -502,6 +521,9 @@ class VentasController extends Controller
                 $stmtVenta->bindValue(':importe_gravado_18', $importeGravado18,  PDO::PARAM_STR);
                 $stmtVenta->bindValue(':isv_18',             $isv18Total,        PDO::PARAM_STR);
             }
+            if ($hasDescuentoVenta) {
+                $stmtVenta->bindValue(':descuento_total', $descuentoTotal, PDO::PARAM_STR);
+            }
 
             $stmtVenta->bindValue(':total',       $total,     PDO::PARAM_STR);
             $stmtVenta->bindValue(':pagado_con',  $efectivo,  PDO::PARAM_STR);
@@ -511,10 +533,10 @@ class VentasController extends Controller
             $stmtVenta->execute();
             $ventaId = (int)$pdo->lastInsertId();
 
-            $sqlDetalle = 'INSERT INTO detalle_ventas
-                              (venta_id, producto_id, cantidad, precio_unitario, subtotal, tipo_presentacion, nombre_presentacion, factor_unidades' . ($hasDetalleIsv ? ', porcentaje_isv, monto_isv, es_exento, es_exonerado' : '') . ')
+                $sqlDetalle = 'INSERT INTO detalle_ventas
+                                        (venta_id, producto_id, cantidad, precio_unitario' . ($hasPrecioLista ? ', precio_lista' : '') . ($hasDescuentoDetalle ? ', descuento_unitario' : '') . ', subtotal, tipo_presentacion, nombre_presentacion, factor_unidades' . ($hasDetalleIsv ? ', porcentaje_isv, monto_isv, es_exento, es_exonerado' : '') . ')
                            VALUES
-                              (:venta_id, :producto_id, :cantidad, :precio_unitario, :subtotal, :tipo_presentacion, :nombre_presentacion, :factor_unidades' . ($hasDetalleIsv ? ', :porcentaje_isv, :monto_isv, :es_exento, :es_exonerado' : '') . ')';
+                                        (:venta_id, :producto_id, :cantidad, :precio_unitario' . ($hasPrecioLista ? ', :precio_lista' : '') . ($hasDescuentoDetalle ? ', :descuento_unitario' : '') . ', :subtotal, :tipo_presentacion, :nombre_presentacion, :factor_unidades' . ($hasDetalleIsv ? ', :porcentaje_isv, :monto_isv, :es_exento, :es_exonerado' : '') . ')';
             $stmtDetalle = $pdo->prepare($sqlDetalle);
 
             $sqlActualizaStock = 'UPDATE productos
@@ -532,6 +554,8 @@ class VentasController extends Controller
                 $stmtDetalle->bindValue(':producto_id',         $productoId,                     PDO::PARAM_INT);
                 $stmtDetalle->bindValue(':cantidad',            $procesado['cantidad'],          PDO::PARAM_STR);
                 $stmtDetalle->bindValue(':precio_unitario',     $procesado['precio_unitario'],   PDO::PARAM_STR);
+                if ($hasPrecioLista) $stmtDetalle->bindValue(':precio_lista', $procesado['precio_lista'], PDO::PARAM_STR);
+                if ($hasDescuentoDetalle) $stmtDetalle->bindValue(':descuento_unitario', $procesado['descuento_unitario'], PDO::PARAM_STR);
                 $stmtDetalle->bindValue(':subtotal',            $procesado['subtotal'],          PDO::PARAM_STR);
                 $stmtDetalle->bindValue(':tipo_presentacion',   $procesado['tipo_presentacion'], PDO::PARAM_STR);
                 $stmtDetalle->bindValue(':nombre_presentacion', $procesado['nombre_presentacion'], PDO::PARAM_STR);
@@ -612,6 +636,7 @@ class VentasController extends Controller
         $hasTipoComprobante = $this->columnaExiste($pdo, 'ventas', 'tipo_comprobante');
         $hasCaiVenta = $this->columnaExiste($pdo, 'ventas', 'cai');
         $hasDesgloseIsvVenta = $this->columnaExiste($pdo, 'ventas', 'importe_gravado_15');
+        $hasDescuentoVenta = $this->columnaExiste($pdo, 'ventas', 'descuento_total');
 
         $colsCliente = '';
         if ($hasTipoComprobante) $colsCliente .= ', v.tipo_comprobante';
@@ -621,6 +646,7 @@ class VentasController extends Controller
         if ($hasDir)    $colsCliente .= ', v.cliente_direccion';
         if ($hasCaiVenta) $colsCliente .= ', v.cai, v.correlativo_sar, v.rango_autorizado, v.fecha_limite_emision';
         if ($hasDesgloseIsvVenta) $colsCliente .= ', v.importe_exento, v.importe_exonerado, v.importe_gravado_15, v.isv_15, v.importe_gravado_18, v.isv_18';
+        if ($hasDescuentoVenta) $colsCliente .= ', v.descuento_total';
 
         $stmt = $pdo->prepare('SELECT v.id, v.folio, v.total, v.pagado_con, v.cambio, v.metodo_pago, v.fecha_venta,
                                       u.nombre AS cajero, c.nombre AS cliente_registrado' . $colsCliente . '
@@ -663,12 +689,16 @@ class VentasController extends Controller
         $hasNomPres  = $this->columnaExiste($pdo, 'detalle_ventas', 'nombre_presentacion');
         $hasFactor   = $this->columnaExiste($pdo, 'detalle_ventas', 'factor_unidades');
         $hasDetalleIsvTicket = $this->columnaExiste($pdo, 'detalle_ventas', 'porcentaje_isv');
+        $hasPrecioListaTicket = $this->columnaExiste($pdo, 'detalle_ventas', 'precio_lista');
+        $hasDescuentoDetalleTicket = $this->columnaExiste($pdo, 'detalle_ventas', 'descuento_unitario');
 
         $colsDetalle = '';
         if ($hasTipoPres) $colsDetalle .= ', d.tipo_presentacion';
         if ($hasNomPres)  $colsDetalle .= ', d.nombre_presentacion';
         if ($hasFactor)   $colsDetalle .= ', d.factor_unidades';
         if ($hasDetalleIsvTicket) $colsDetalle .= ', d.porcentaje_isv, d.monto_isv, d.es_exento, d.es_exonerado';
+        if ($hasPrecioListaTicket) $colsDetalle .= ', d.precio_lista';
+        if ($hasDescuentoDetalleTicket) $colsDetalle .= ', d.descuento_unitario';
 
         $stmt = $pdo->prepare('SELECT d.cantidad, d.precio_unitario, d.subtotal, p.nombre' . $colsDetalle . '
                                FROM detalle_ventas d

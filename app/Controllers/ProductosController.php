@@ -140,7 +140,7 @@ class ProductosController extends Controller
             'precio_venta' => '0.00', 'stock' => 0, 'stock_minimo' => 1,
             'unidad_medida' => 'unidad', 'permite_decimales' => 0, 'categoria_id' => null,
             'tipo_venta' => 'solo_unidad', 'nombre_empaque' => 'Caja',
-            'unidades_por_empaque' => 10, 'precio_empaque' => '0.00', 'codigo_barras_empaque' => '',
+            'unidades_por_empaque' => 2, 'precio_empaque' => '0.00', 'codigo_barras_empaque' => '',
             'tipo_impuesto' => 'gravado_15'
         ];
     }
@@ -173,9 +173,15 @@ class ProductosController extends Controller
             $nombreEmpaque = 'Caja';
         }
 
-        $unidadesPorEmpaque = max(1.0, (float)($_POST['unidades_por_empaque'] ?? 1.0));
+        $unidadesPorEmpaque = max(2.0, (float)($_POST['unidades_por_empaque'] ?? 2.0));
         $precioEmpaque = max(0.0, (float)($_POST['precio_empaque'] ?? 0.0));
         $codigoBarrasEmpaque = trim($_POST['codigo_barras_empaque'] ?? '');
+        if (!$tieneEmpaque) {
+            $unidadesPorEmpaque = 1.0;
+            $precioEmpaque = 0.0;
+            $codigoBarrasEmpaque = '';
+            $nombreEmpaque = 'Caja';
+        }
 
         $tipoImpuesto = trim((string)($_POST['tipo_impuesto'] ?? 'gravado_15'));
         if (!in_array($tipoImpuesto, ['exento', 'gravado_15', 'gravado_18', 'exonerado'], true)) {
@@ -209,7 +215,6 @@ class ProductosController extends Controller
         }
         if ($datos['nombre'] === '') $errores[] = 'El nombre del producto es obligatorio.';
         if ($datos['precio_costo'] < 0 || $datos['precio_venta'] < 0) $errores[] = 'Los precios no pueden ser negativos.';
-        if ($datos['precio_venta'] < $datos['precio_costo']) $errores[] = 'El precio de venta no puede ser menor al costo.';
         if ((float)$datos['stock'] < 0 || (float)$datos['stock_minimo'] < 0) $errores[] = 'El stock no puede ser negativo.';
 
         if ($datos['tipo_venta'] !== 'solo_unidad') {

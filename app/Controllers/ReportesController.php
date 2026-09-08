@@ -16,12 +16,15 @@ class ReportesController extends Controller
     public function index()
     {
         $this->requerirAdministrador();
-        list($fechaInicio, $fechaFin) = $this->rangoFechas();
-        $resumen = $this->modelo->obtenerResumenGeneral($fechaInicio, $fechaFin);
-        $topProductos = $this->modelo->obtenerTopProductos($fechaInicio, $fechaFin);
-        $ventas = $this->modelo->obtenerVentas($fechaInicio, $fechaFin);
-        $metodosPago = $this->modelo->obtenerVentasPorMetodoPago($fechaInicio, $fechaFin);
+        extract($this->datosReporte());
         require APP_PATH . 'Views/reportes/index.php';
+    }
+
+    public function imprimir()
+    {
+        $this->requerirAdministrador();
+        extract($this->datosReporte());
+        require APP_PATH . 'Views/reportes/imprimir.php';
     }
 
     public function ventasPorFecha()
@@ -37,6 +40,19 @@ class ReportesController extends Controller
     public function ganancias()
     {
         $this->index();
+    }
+
+    private function datosReporte()
+    {
+        list($fechaInicio, $fechaFin) = $this->rangoFechas();
+        return [
+            'fechaInicio' => $fechaInicio,
+            'fechaFin' => $fechaFin,
+            'resumen' => $this->modelo->obtenerResumenGeneral($fechaInicio, $fechaFin),
+            'topProductos' => $this->modelo->obtenerTopProductos($fechaInicio, $fechaFin),
+            'ventas' => $this->modelo->obtenerVentas($fechaInicio, $fechaFin),
+            'metodosPago' => $this->modelo->obtenerVentasPorMetodoPago($fechaInicio, $fechaFin),
+        ];
     }
 
     public function exportar()

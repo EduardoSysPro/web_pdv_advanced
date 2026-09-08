@@ -21,17 +21,21 @@ class ComprobantesController extends Controller
         $this->requerirAutenticacion();
         $busqueda = trim($_GET['busqueda'] ?? '');
         $tipoBusqueda = $_GET['tipo'] ?? 'folio'; // folio, cliente, fecha
+        $tipoComprobante = $_GET['tipo_comprobante'] ?? 'all';
+        if (!in_array($tipoComprobante, ['all', 'recibo', 'factura'], true)) {
+            $tipoComprobante = 'all';
+        }
         $comprobantes = [];
         $error = null;
 
         if ($busqueda !== '') {
-            $comprobantes = $this->buscarComprobantes($busqueda, $tipoBusqueda);
+            $comprobantes = $this->buscarComprobantes($busqueda, $tipoBusqueda, $tipoComprobante);
             if (empty($comprobantes)) {
                 $error = 'No se encontraron comprobantes con esa búsqueda.';
             }
         } else {
             // Mostrar últimos 50 comprobantes si no hay búsqueda
-            $comprobantes = $this->obtenerUltimosComprobantes(50);
+            $comprobantes = $this->obtenerUltimosComprobantes(50, $tipoComprobante);
         }
 
         $mensaje = $_SESSION['mensaje_comprobantes'] ?? null;
@@ -80,8 +84,13 @@ class ComprobantesController extends Controller
         }
 
         // Obtener detalles de la venta
+        $pdo = Database::getInstancia()->getConexion();
+        $hasPrecioLista = $this->columnaExiste($pdo, 'detalle_ventas', 'precio_lista');
+        $hasDescuentoDetalle = $this->columnaExiste($pdo, 'detalle_ventas', 'descuento_unitario');
+        $columnasDescuento = ($hasPrecioLista ? ', dv.precio_lista' : '')
+            . ($hasDescuentoDetalle ? ', dv.descuento_unitario' : '');
         $sql = "SELECT dv.cantidad, dv.precio_unitario, dv.subtotal, p.nombre,
-                       dv.tipo_presentacion, dv.nombre_presentacion, dv.factor_unidades
+                       dv.tipo_presentacion, dv.nombre_presentacion, dv.factor_unidades{$columnasDescuento}
                 FROM detalle_ventas dv
                 INNER JOIN productos p ON p.id = dv.producto_id
                 WHERE dv.venta_id = :venta_id ORDER BY dv.id ASC";
@@ -99,12 +108,25 @@ class ComprobantesController extends Controller
         require APP_PATH . 'Views/ventas/ticket.php';
     }
 
-    private function buscarComprobantes($termino, $tipo)
+    private function columnaExiste($pdo, $tabla, $columna)
+    {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :tabla AND COLUMN_NAME = :columna");
+        $stmt->execute([':tabla' => $tabla, ':columna' => $columna]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    private function buscarComprobantes($termino, $tipo, $tipoComprobante = 'all')
     {
         $pdo = Database::getInstancia()->getConexion();
         $termino = trim((string)$termino);
 
         $condicionCredito = "(v.metodo_pago <> 'credito' OR v.tipo_comprobante <> 'factura' OR COALESCE(c.saldo_pendiente, 0) <= 0)";
+        $condicionTipo = '1=1';
+        $parametrosTipo = [];
+        if (in_array($tipoComprobante, ['recibo', 'factura'], true)) {
+            $condicionTipo = 'v.tipo_comprobante = :tipo_comprobante';
+            $parametrosTipo[':tipo_comprobante'] = $tipoComprobante;
+        }
 
         if ($tipo === 'folio') {
             $sql = "SELECT v.id, v.folio, v.fecha_venta, v.total, v.tipo_comprobante, v.metodo_pago,
@@ -113,9 +135,10 @@ class ComprobantesController extends Controller
                     LEFT JOIN clientes c ON c.id = v.cliente_id
                     WHERE v.folio LIKE :termino
                       AND {$condicionCredito}
+                                            AND {$condicionTipo}
                     ORDER BY v.fecha_venta DESC LIMIT 20";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([':termino' => '%' . $termino . '%']);
+                        $stmt->execute(array_merge([':termino' => '%' . $termino . '%'], $parametrosTipo));
         } elseif ($tipo === 'cliente') {
             $sql = "SELECT v.id, v.folio, v.fecha_venta, v.total, v.tipo_comprobante, v.metodo_pago,
                            COALESCE(v.cliente_nombre, c.nombre) AS cliente
@@ -123,9 +146,10 @@ class ComprobantesController extends Controller
                     LEFT JOIN clientes c ON c.id = v.cliente_id
                     WHERE COALESCE(v.cliente_nombre, c.nombre) LIKE :termino
                       AND {$condicionCredito}
+                                            AND {$condicionTipo}
                     ORDER BY v.fecha_venta DESC LIMIT 20";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([':termino' => '%' . $termino . '%']);
+                        $stmt->execute(array_merge([':termino' => '%' . $termino . '%'], $parametrosTipo));
         } elseif ($tipo === 'fecha') {
             // Intentar parsear la fecha en formato dd/mm/yyyy o yyyy-mm-dd
             $fecha = $this->parsearFecha($termino);
@@ -138,9 +162,10 @@ class ComprobantesController extends Controller
                     LEFT JOIN clientes c ON c.id = v.cliente_id
                     WHERE DATE(v.fecha_venta) = :fecha
                       AND {$condicionCredito}
+                                            AND {$condicionTipo}
                     ORDER BY v.fecha_venta DESC LIMIT 20";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([':fecha' => $fecha]);
+                        $stmt->execute(array_merge([':fecha' => $fecha], $parametrosTipo));
         } else {
             return [];
         }
@@ -166,20 +191,30 @@ class ComprobantesController extends Controller
         return null;
     }
 
-    private function obtenerUltimosComprobantes($limite = 50)
+    private function obtenerUltimosComprobantes($limite = 50, $tipoComprobante = 'all')
     {
         $pdo = Database::getInstancia()->getConexion();
+        $condicionTipo = '1=1';
+        $parametrosTipo = [];
+        if (in_array($tipoComprobante, ['recibo', 'factura'], true)) {
+            $condicionTipo = 'v.tipo_comprobante = :tipo_comprobante';
+            $parametrosTipo[':tipo_comprobante'] = $tipoComprobante;
+        }
         $sql = "SELECT v.id, v.folio, v.fecha_venta, v.total, v.tipo_comprobante, v.metodo_pago,
                        COALESCE(v.cliente_nombre, c.nombre) AS cliente
                 FROM ventas v
                 LEFT JOIN clientes c ON c.id = v.cliente_id
-                WHERE v.metodo_pago <> 'credito'
+                WHERE (v.metodo_pago <> 'credito'
                    OR v.tipo_comprobante <> 'factura'
-                   OR COALESCE(c.saldo_pendiente, 0) <= 0
+                   OR COALESCE(c.saldo_pendiente, 0) <= 0)
+                   AND {$condicionTipo}
                 ORDER BY v.fecha_venta DESC LIMIT :limite";
         
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':limite', $limite, PDO::PARAM_INT);
+        if (isset($parametrosTipo[':tipo_comprobante'])) {
+            $stmt->bindValue(':tipo_comprobante', $parametrosTipo[':tipo_comprobante'], PDO::PARAM_STR);
+        }
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

@@ -316,6 +316,12 @@ class Producto extends Controller
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function contarProductosBajoStock()
+    {
+        $stmt = $this->pdo->query('SELECT COUNT(*) FROM productos WHERE stock <= stock_minimo');
+        return (int)$stmt->fetchColumn();
+    }
+
     public function actualizarStockManual($productoId, $cantidad, $operacion)
     {
         $cantidad = (int)$cantidad;

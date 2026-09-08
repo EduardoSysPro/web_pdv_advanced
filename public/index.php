@@ -87,6 +87,7 @@ $router->post('/usuarios/actualizar/{id}', 'UsuariosController@actualizar');
 
 $router->get('/reportes', 'ReportesController@index');
 $router->get('/reportes/filtrar', 'ReportesController@index');
+$router->get('/reportes/imprimir', 'ReportesController@imprimir');
 $router->get('/reportes/exportar', 'ReportesController@exportar');
 
 $router->get('/comprobantes', 'ComprobantesController@index');

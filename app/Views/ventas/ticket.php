@@ -59,7 +59,7 @@ $anchoTicket = $configuracion['ancho_ticket'] ?? '80mm';
 $tipoComprobante = $tipoComprobante ?? ($configuracion['tipo_comprobante_default'] ?? 'recibo');
 $esFactura = $tipoComprobante === 'factura';
 $totalVenta = (float)($venta['total'] ?? 0);
-$descuentoRebaja = (float)($venta['descuento'] ?? 0);
+$descuentoRebaja = (float)($venta['descuento_total'] ?? $venta['descuento'] ?? 0);
 
 // Fallback para tickets emitidos antes de la migración de desglose ISV por venta
 $tieneDesgloseGuardado = isset($venta['importe_gravado_15']) || isset($venta['importe_gravado_18']) || isset($venta['importe_exento']);
@@ -184,6 +184,10 @@ foreach ($etiquetasCopias as $etiquetaCopia):
                 $cantidadTexto = rtrim(rtrim(number_format($cantidadItem, 3, '.', ''), '0'), '.');
                 $nombreProducto = $item['nombre'] ?? ($item['producto_nombre'] ?? 'Producto');
                 $precioUnitario = isset($item['precio_unitario']) ? (float)$item['precio_unitario'] : 0;
+                $precioLista = isset($item['precio_lista']) ? (float)$item['precio_lista'] : $precioUnitario;
+                $descuentoUnitario = isset($item['descuento_unitario'])
+                    ? (float)$item['descuento_unitario']
+                    : max(0, $precioLista - $precioUnitario);
                 $subtotal = isset($item['subtotal']) ? (float)$item['subtotal'] : 0;
                 $tipoPres = $item['tipo_presentacion'] ?? 'unidad';
                 $nomPres  = !empty($item['nombre_presentacion']) ? $item['nombre_presentacion'] : ($tipoPres === 'empaque' ? 'Caja' : 'Unidad');
@@ -200,7 +204,12 @@ foreach ($etiquetasCopias as $etiquetaCopia):
             </tr>
             <tr>
                 <td><?= htmlspecialchars($cantidadTexto . ($tipoPres === 'empaque' ? ' ' . strtolower($nomPres) : '')) ?> x</td>
-                <td class="text-right"><?= number_format($precioUnitario, 2) ?></td>
+                <td class="text-right">
+                    <?= number_format($precioUnitario, 2) ?>
+                    <?php if ($descuentoUnitario > 0.001): ?>
+                        <br><small>Lista <?= number_format($precioLista, 2) ?> - Desc. <?= number_format($descuentoUnitario, 2) ?></small>
+                    <?php endif; ?>
+                </td>
                 <td class="text-right"><?= number_format($subtotal, 2) ?></td>
             </tr>
             <?php endforeach; ?>

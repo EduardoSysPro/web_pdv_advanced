@@ -24,6 +24,15 @@
             </select>
         </div>
 
+        <div class="campo">
+            <label for="tipo_comprobante">Tipo de comprobante</label>
+            <select id="tipo_comprobante" name="tipo_comprobante">
+                <option value="all" <?php echo ($_GET['tipo_comprobante'] ?? 'all') === 'all' ? 'selected' : ''; ?>>Todos</option>
+                <option value="factura" <?php echo ($_GET['tipo_comprobante'] ?? '') === 'factura' ? 'selected' : ''; ?>>Solo facturas</option>
+                <option value="recibo" <?php echo ($_GET['tipo_comprobante'] ?? '') === 'recibo' ? 'selected' : ''; ?>>Solo recibos</option>
+            </select>
+        </div>
+
         <div class="campo campo-ancho">
             <label for="busqueda">Término de búsqueda</label>
             <input id="busqueda" name="busqueda" value="<?php echo htmlspecialchars($_GET['busqueda'] ?? ''); ?>" placeholder="Ingresa el folio, cliente o fecha..." required>

@@ -129,6 +129,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         codigo_barras: prod.codigo_barras,
                         nombre: prod.nombre,
                         precio_venta: Number(prod.precio_venta),
+                        precio_lista: Number(prod.precio_venta),
+                        precio_unitario: Number(prod.precio_venta),
+                        descuento_unitario: 0,
                         stock: Number(prod.stock),
                         unidad_medida: prod.unidad_medida || 'unidad',
                         tipo_presentacion: prod.tipo_presentacion || 'unidad',
@@ -818,6 +821,9 @@ document.addEventListener('DOMContentLoaded', function () {
             cliente_direccion: '',
             productos: carrito.map(item => ({
                 ...item,
+                precio_lista: Number(item.precio_lista ?? item.precio_venta),
+                precio_unitario: Number(item.precio_unitario ?? item.precio_venta),
+                descuento_unitario: Number(item.descuento_unitario || 0),
                 cantidad: Number(parseFloat(String(item.cantidad)).toFixed(3))
             }))
         };

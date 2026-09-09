@@ -1,5 +1,5 @@
 <?php $tituloPagina = 'Inventario'; require APP_PATH . 'Views/layouts/pos_header.php'; ?>
-<section class="catalogo-encabezado"><div><span class="eyebrow">F4 / Operaciones</span><h1>Inventario</h1><p>Controla las existencias y registra cada ajuste.</p></div><a class="btn-pos btn-primary" href="<?php echo URL_BASE; ?>productos">Gestionar productos</a></section>
+<section class="catalogo-encabezado"><div><span class="eyebrow">F4 / Operaciones</span><h1>Inventario</h1><p>Controla las existencias y registra cada ajuste.</p></div><div style="display:flex; gap:10px;"><a class="btn-pos btn-primary" href="<?php echo URL_BASE; ?>compras">Ingresar factura de compra</a><a class="btn-pos btn-primary" href="<?php echo URL_BASE; ?>productos">Gestionar productos</a></div></section>
 <?php if ($mensaje): ?><div class="alerta alerta-exito"><?php echo htmlspecialchars($mensaje); ?></div><?php endif; ?>
 <?php if ($error): ?><div class="alerta alerta-error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
 <div class="pestanas-inventario"><a class="activa" href="#ajuste-stock">Ajuste de Stock</a><a href="#bajo-stock">Alertas de Stock Bajo <strong><?php echo count($bajoStock); ?></strong></a></div>

@@ -39,6 +39,7 @@ $router->post('/ventas/guardar', 'VentasController@guardarVenta');
 $router->get('/ventas/ticket/{id}', 'VentasController@imprimirTicket');
 
 $router->get('/productos', 'ProductosController@index');
+$router->get('/productos/exportar-csv', 'ProductosController@exportarCsv');
 $router->get('/productos/crear', 'ProductosController@crear');
 $router->post('/productos/guardar', 'ProductosController@guardar');
 $router->get('/productos/editar/{id}', 'ProductosController@editar');
@@ -55,6 +56,9 @@ $router->post('/categorias/eliminar/{id}', 'CategoriasController@eliminar');
 $router->get('/inventario', 'InventarioController@index');
 $router->post('/inventario/ajustar', 'InventarioController@ajustar');
 $router->get('/inventario/bajo-stock', 'InventarioController@bajoStock');
+
+$router->get('/compras', 'ComprasController@index');
+$router->get('/compras/buscar-producto', 'ComprasController@buscarProducto');
 
 $router->get('/clientes', 'ClientesController@index');
 $router->post('/clientes/guardar', 'ClientesController@guardar');

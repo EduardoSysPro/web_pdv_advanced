@@ -1,16 +1,16 @@
 /* Estilos Modernos y Adaptados para Punto de Venta Móvil (Celulares y Tablets) */
 :root {
-    --movil-primary: #0284c7;
-    --movil-primary-dark: #0369a1;
-    --movil-success: #16a34a;
-    --movil-success-dark: #15803d;
-    --movil-danger: #dc2626;
-    --movil-danger-light: #fee2e2;
-    --movil-bg: #f8fafc;
+    --movil-primary: #2563eb;
+    --movil-primary-dark: #1d4ed8;
+    --movil-success: #10b981;
+    --movil-success-dark: #059669;
+    --movil-danger: #ef4444;
+    --movil-danger-light: #fef2f2;
+    --movil-bg: #f1f5f9;
     --movil-card: #ffffff;
     --movil-text: #0f172a;
-    --movil-text-muted: #64748b;
-    --movil-border: #e2e8f0;
+    --movil-text-muted: #475569;
+    --movil-border: #cbd5e1;
     --movil-bottom-height: 80px;
 }
 
@@ -54,7 +54,7 @@ body.pos-movil-body {
 .movil-brand-icon {
     width: 36px;
     height: 36px;
-    background: #e0f2fe;
+    background: #dbeafe;
     color: var(--movil-primary);
     border-radius: 8px;
     display: flex;
@@ -152,7 +152,7 @@ body.pos-movil-body {
 }
 
 .btn-scan-camera {
-    background: linear-gradient(135deg, #0284c7, #0369a1);
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     color: #ffffff;
     border: none;
     border-radius: 10px;
@@ -165,7 +165,7 @@ body.pos-movil-body {
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.28);
     white-space: nowrap;
 }
 
@@ -431,7 +431,7 @@ body.pos-movil-body {
 }
 
 .btn-movil-cobrar {
-    background: linear-gradient(135deg, #16a34a, #15803d);
+    background: linear-gradient(135deg, #10b981, #059669);
     color: #ffffff;
     border: none;
     border-radius: 12px;
@@ -443,7 +443,7 @@ body.pos-movil-body {
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(22, 163, 74, 0.25);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.22);
     transition: all 0.2s;
 }
 
@@ -684,7 +684,7 @@ body.pos-movil-body {
 
 .btn-metodo-touch.is-selected {
     border-color: var(--movil-primary);
-    background: #e0f2fe;
+    background: #dbeafe;
     color: var(--movil-primary-dark);
 }
 
@@ -774,7 +774,7 @@ body.pos-movil-body {
 /* Botón Finalizar Cobro */
 .btn-finalizar-touch {
     width: 100%;
-    background: linear-gradient(135deg, #16a34a, #15803d);
+    background: linear-gradient(135deg, #10b981, #059669);
     color: #ffffff;
     border: none;
     border-radius: 12px;
@@ -865,7 +865,7 @@ body.pos-movil-body {
 }
 
 .btn-confirm-primary {
-    background: linear-gradient(135deg, #0284c7, #0369a1);
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     color: #ffffff;
 }
 

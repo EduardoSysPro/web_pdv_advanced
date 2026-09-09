@@ -52,6 +52,7 @@ class ReportesController extends Controller
             'topProductos' => $this->modelo->obtenerTopProductos($fechaInicio, $fechaFin),
             'ventas' => $this->modelo->obtenerVentas($fechaInicio, $fechaFin),
             'metodosPago' => $this->modelo->obtenerVentasPorMetodoPago($fechaInicio, $fechaFin),
+            'reportesCajas' => $this->modelo->obtenerReporteCajas($fechaInicio, $fechaFin),
         ];
     }
 

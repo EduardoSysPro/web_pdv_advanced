@@ -25,6 +25,7 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/estilos.css">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/pos.css">
+    <link rel="icon" type="image/x-icon" href="<?php echo URL_BASE; ?>favicon.ico">
 </head>
 <body class="pos-body pos-modulo-body">
     <div class="pos-app-shell" id="pos-app-shell">
@@ -41,6 +42,7 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
                 <?php if ($esAdministrador): ?>
                     <a class="pos-sidebar-link <?php echo $esRutaActiva('productos') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>productos" data-tooltip="Productos"><i class="fa-solid fa-box"></i><span>Productos</span></a>
                     <a class="pos-sidebar-link pos-sidebar-inventory-link <?php echo $esRutaActiva('inventario') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>inventario" data-tooltip="Inventario"><i class="fa-solid fa-boxes-stacked"></i><span>Inventario</span><?php if ($productosBajoStock > 0): ?><strong class="pos-stock-alert-badge" aria-label="<?php echo $productosBajoStock; ?> productos con stock bajo"><?php echo $productosBajoStock; ?></strong><?php endif; ?></a>
+                    <a class="pos-sidebar-link <?php echo $esRutaActiva('compras') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>compras" data-tooltip="Compras"><i class="fa-solid fa-truck-ramp-box"></i><span>Compras</span></a>
                 <?php endif; ?>
                 <a class="pos-sidebar-link <?php echo $esRutaActiva('caja') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>caja" data-tooltip="Corte de Caja"><i class="fa-solid fa-calculator"></i><span>Corte de Caja</span></a>
                 <a class="pos-sidebar-link <?php echo $esRutaActiva('comprobantes') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>comprobantes" data-tooltip="Comprobantes"><i class="fa-solid fa-receipt"></i><span>Reimpresión</span></a>

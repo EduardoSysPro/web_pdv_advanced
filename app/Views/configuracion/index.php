@@ -199,7 +199,7 @@
                 <div id="ticket-preview" style="width: 80mm; max-width: 100%; margin: 0 auto; background: #fff; padding: 10px; border: 1px solid #cbd5e1; box-shadow: 0 4px 12px rgba(15,23,42,0.08); font-family: 'Courier New'; font-size: 11px; color: #111827; line-height: 1.35;">
                     <div class="preview-header" style="text-align:center;">
                         <div id="preview-logo" style="display: block; margin-bottom:8px;">
-                            <img src="<?php echo !empty($configuracion['logotipo_path']) ? URL_BASE . htmlspecialchars(ltrim((string)$configuracion['logotipo_path'], '/')) : ''; ?>" alt="Logo" style="max-width: 72px; max-height: 36px; display: block; margin: 0 auto;">
+                            <img src="<?php echo !empty($configuracion['logotipo_path']) ? URL_BASE . htmlspecialchars(ltrim((string)$configuracion['logotipo_path'], '/')) : ''; ?>" alt="Logo" style="max-width: 160px; max-height: 90px; display: block; margin: 0 auto;">
                         </div>
                         <h2 id="preview-negocio" style="margin:0; font-size:14px; font-weight:bold;">Mi Abarrotería</h2>
                         <div id="preview-rtn">RTN: 00000000000000</div>

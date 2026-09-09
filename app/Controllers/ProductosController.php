@@ -29,6 +29,30 @@ class ProductosController extends Controller
         require APP_PATH . 'Views/productos/index.php';
     }
 
+    public function exportarCsv()
+    {
+        $this->requerirAdministrador();
+        $busqueda = trim($_GET['busqueda'] ?? '');
+        $categoriaId = $_GET['categoria_id'] ?? null;
+        $productos = $this->modeloProducto->obtenerParaExportar($busqueda, $categoriaId);
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="productos_etiquetas_' . date('Ymd_His') . '.csv"');
+
+        $salida = fopen('php://output', 'w');
+        fwrite($salida, "\xEF\xBB\xBF"); // BOM para que Excel detecte UTF-8
+        fputcsv($salida, ['codigo_barras', 'descripcion', 'precio_venta']);
+        foreach ($productos as $producto) {
+            fputcsv($salida, [
+                $producto['codigo_barras'],
+                $producto['nombre'],
+                number_format((float)$producto['precio_venta'], 2, '.', ''),
+            ]);
+        }
+        fclose($salida);
+        exit;
+    }
+
     public function crear()
     {
         $this->requerirAdministrador();

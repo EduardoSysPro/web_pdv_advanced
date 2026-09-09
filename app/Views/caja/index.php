@@ -8,10 +8,6 @@
     <a class="btn-pos btn-pos-primary" href="<?php echo URL_BASE; ?>ventas">Volver a ventas</a>
 </section>
 
-<?php if ($mensaje): ?>
-    <div class="alerta alerta-exito"><?php echo htmlspecialchars($mensaje); ?></div>
-<?php endif; ?>
-
 <?php if ($error): ?>
     <div class="alerta alerta-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>

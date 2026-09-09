@@ -11,7 +11,7 @@ $escapar = static function ($valor) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de ventas - <?php echo $escapar($periodo); ?></title>
+    <title>Reporte general - <?php echo $escapar($periodo); ?></title>
     <style>
         @page { size: A4 portrait; margin: 14mm; }
         * { box-sizing: border-box; }
@@ -39,8 +39,8 @@ $escapar = static function ($valor) {
 </head>
 <body>
     <header class="encabezado">
-        <h1>Reporte de ventas</h1>
-        <p>Resumen de actividad comercial y ventas</p>
+        <h1>Reporte general</h1>
+        <p>Resumen de actividad comercial, ventas y cajas</p>
         <strong>Período: <?php echo $escapar($periodo); ?></strong>
     </header>
 
@@ -98,6 +98,37 @@ $escapar = static function ($valor) {
                         <td><?php echo $escapar(ucfirst($venta['metodo_pago'])); ?></td>
                         <td class="numero"><?php echo formatearMoneda($venta['total']); ?></td>
                     </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Reportes de cajas</h2>
+        <table>
+            <thead><tr><th>Caja</th><th>Cajero</th><th>Apertura</th><th>Cierre</th><th class="numero">Fondo</th><th class="numero">Ingresos</th><th class="numero">Egresos</th><th class="numero">Declarado</th><th class="numero">Diferencia</th></tr></thead>
+            <tbody>
+                <?php if (empty($reportesCajas)): ?><tr><td class="vacio" colspan="9">No hay aperturas de caja en este período.</td></tr><?php endif; ?>
+                <?php foreach ($reportesCajas as $reporteCaja): ?>
+                    <tr>
+                        <td><?php echo $escapar($reporteCaja['caja_nombre']); ?></td>
+                        <td><?php echo $escapar($reporteCaja['cajero']); ?></td>
+                        <td><?php echo date('d/m/Y H:i', strtotime($reporteCaja['fecha_apertura'])); ?></td>
+                        <td><?php echo $reporteCaja['fecha_cierre'] ? date('d/m/Y H:i', strtotime($reporteCaja['fecha_cierre'])) : 'Abierta'; ?></td>
+                        <td class="numero"><?php echo formatearMoneda($reporteCaja['fondo_inicial']); ?></td>
+                        <td class="numero"><?php echo formatearMoneda($reporteCaja['total_ingresos']); ?></td>
+                        <td class="numero"><?php echo formatearMoneda($reporteCaja['total_egresos']); ?></td>
+                        <td class="numero"><?php echo $reporteCaja['monto_cierre'] !== null ? formatearMoneda($reporteCaja['monto_cierre']) : '-'; ?></td>
+                        <td class="numero"><?php echo $reporteCaja['diferencia'] !== null ? formatearMoneda($reporteCaja['diferencia']) : '-'; ?></td>
+                    </tr>
+                    <?php foreach ($reporteCaja['movimientos'] as $movimiento): ?>
+                        <tr>
+                            <td></td>
+                            <td colspan="3">Comprobante: <?php echo $escapar($movimiento['tipo'] === 'egreso' ? 'Egreso' : 'Ingreso'); ?> - <?php echo $escapar($movimiento['concepto'] ?: 'Sin concepto'); ?></td>
+                            <td colspan="3"><?php echo date('d/m/Y H:i', strtotime($movimiento['fecha_movimiento'])); ?> · <?php echo $escapar($movimiento['usuario_nombre']); ?></td>
+                            <td colspan="2" class="numero"><?php echo formatearMoneda($movimiento['monto']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
                 <?php endforeach; ?>
             </tbody>
         </table>

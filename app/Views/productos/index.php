@@ -7,6 +7,7 @@
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <a class="btn-pos btn-success" href="<?php echo URL_BASE; ?>productos/crear">+ Nuevo Producto</a>
+        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>productos/exportar-csv?busqueda=<?php echo urlencode($busqueda); ?>&categoria_id=<?php echo urlencode((string)$categoriaId); ?>">⬇ Exportar CSV (etiquetas)</a>
         <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>categorias">Gestionar categorías</a>
     </div>
 </section>

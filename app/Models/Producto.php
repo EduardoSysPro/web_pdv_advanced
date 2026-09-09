@@ -102,6 +102,34 @@ class Producto extends Controller
         return ['productos' => $stmt->fetchAll(), 'total' => $total, 'pagina' => $pagina, 'porPagina' => $porPagina];
     }
 
+    public function obtenerParaExportar($busqueda = '', $categoriaId = null)
+    {
+        $condiciones = [];
+        $parametros = [];
+
+        if ($busqueda !== '') {
+            $condiciones[] = '(p.nombre LIKE :busqueda OR p.codigo_barras LIKE :busqueda_codigo OR p.codigo_barras_empaque LIKE :busqueda_empaque)';
+            $parametros[':busqueda'] = '%' . $busqueda . '%';
+            $parametros[':busqueda_codigo'] = '%' . $busqueda . '%';
+            $parametros[':busqueda_empaque'] = '%' . $busqueda . '%';
+        }
+        if ($categoriaId !== null && $categoriaId !== '') {
+            $condiciones[] = 'p.categoria_id = :categoria_id';
+            $parametros[':categoria_id'] = (int)$categoriaId;
+        }
+
+        $where = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
+        $sql = 'SELECT p.codigo_barras, p.nombre, p.precio_venta
+                FROM productos p' . $where . ' ORDER BY p.nombre ASC';
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($parametros as $nombre => $valor) {
+            $stmt->bindValue($nombre, $valor, is_int($valor) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
     public function obtenerPorId($id)
     {
         $sql = 'SELECT p.id, p.codigo_barras, p.nombre, p.precio_venta, p.precio_costo,

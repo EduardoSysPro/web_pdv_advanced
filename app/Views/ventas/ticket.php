@@ -121,7 +121,7 @@ foreach ($etiquetasCopias as $etiquetaCopia):
     <div class="text-center">
         <?php if ($ticketMostrarLogo && !empty($configuracion['logotipo_path'])): ?>
             <div style="margin-bottom: 8px;">
-                <img src="<?php echo URL_BASE . htmlspecialchars($configuracion['logotipo_path']); ?>" alt="Logo" style="max-width: 72px; max-height: 36px; display: block; margin: 0 auto;">
+                <img src="<?php echo URL_BASE . htmlspecialchars($configuracion['logotipo_path']); ?>" alt="Logo" style="max-width: 160px; max-height: 90px; display: block; margin: 0 auto;">
             </div>
         <?php endif; ?>
         <h2 style="margin: 0; font-size: 14px;"><?= htmlspecialchars($configuracion['nombre_negocio'] ?? 'MI TIENDA') ?></h2>

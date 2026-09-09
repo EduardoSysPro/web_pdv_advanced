@@ -159,7 +159,82 @@ require APP_PATH . 'Views/layouts/pos_header.php';
         </table>
     </div>
 </section>
-
+<section class="tarjeta">
+    <h2 class="tarjeta-titulo">Reportes de Cajas</h2>
+    <div class="tabla-responsive">
+        <table class="tabla-catalogo tabla-reportes-caja">
+            <thead>
+                <tr>
+                    <th>Caja</th>
+                    <th>Cajero</th>
+                    <th>Apertura</th>
+                    <th>Cierre</th>
+                    <th>Fondo inicial</th>
+                    <th>Ingresos</th>
+                    <th>Egresos</th>
+                    <th>Declarado</th>
+                    <th>Diferencia</th>
+                    <th>Comprobantes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($reportesCajas)): ?>
+                    <tr><td colspan="10" class="tabla-vacia">No hay aperturas de caja en este período.</td></tr>
+                <?php endif; ?>
+                <?php foreach ($reportesCajas as $reporteCaja): ?>
+                    <tr>
+                        <td><strong><?php echo htmlspecialchars($reporteCaja['caja_nombre']); ?></strong></td>
+                        <td><?php echo htmlspecialchars($reporteCaja['cajero']); ?></td>
+                        <td><?php echo date('d/m/Y H:i', strtotime($reporteCaja['fecha_apertura'])); ?></td>
+                        <td><?php echo $reporteCaja['fecha_cierre'] ? date('d/m/Y H:i', strtotime($reporteCaja['fecha_cierre'])) : '<span class="estado-caja-abierta">Abierta</span>'; ?></td>
+                        <td><?php echo formatearMoneda($reporteCaja['fondo_inicial']); ?></td>
+                        <td class="monto-ingreso"><?php echo formatearMoneda($reporteCaja['total_ingresos']); ?></td>
+                        <td class="monto-egreso"><?php echo formatearMoneda($reporteCaja['total_egresos']); ?></td>
+                        <td><?php echo $reporteCaja['monto_cierre'] !== null ? formatearMoneda($reporteCaja['monto_cierre']) : '-'; ?></td>
+                        <td class="<?php echo (float)$reporteCaja['diferencia'] < 0 ? 'monto-egreso' : ((float)$reporteCaja['diferencia'] > 0 ? 'monto-ingreso' : ''); ?>">
+                            <?php echo $reporteCaja['diferencia'] !== null ? formatearMoneda($reporteCaja['diferencia']) : '-'; ?>
+                        </td>
+                        <td><?php echo count($reporteCaja['movimientos']); ?></td>
+                    </tr>
+                    <tr class="fila-detalle-caja">
+                        <td colspan="10">
+                            <details>
+                                <summary>Ver comprobantes de ingresos y egresos</summary>
+                                <div class="tabla-responsive comprobantes-caja">
+                                    <table class="tabla-catalogo">
+                                        <thead>
+                                            <tr>
+                                                <th>Fecha / Hora</th>
+                                                <th>Tipo</th>
+                                                <th>Concepto</th>
+                                                <th>Registrado por</th>
+                                                <th>Monto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if (empty($reporteCaja['movimientos'])): ?>
+                                                <tr><td colspan="5" class="tabla-vacia">No hay comprobantes de ingreso o egreso para esta apertura.</td></tr>
+                                            <?php endif; ?>
+                                            <?php foreach ($reporteCaja['movimientos'] as $movimiento): ?>
+                                                <tr>
+                                                    <td><?php echo date('d/m/Y H:i', strtotime($movimiento['fecha_movimiento'])); ?></td>
+                                                    <td><?php echo htmlspecialchars($movimiento['tipo'] === 'egreso' ? 'Egreso' : 'Ingreso'); ?></td>
+                                                    <td><?php echo htmlspecialchars($movimiento['concepto'] ?: 'Sin concepto'); ?></td>
+                                                    <td><?php echo htmlspecialchars($movimiento['usuario_nombre']); ?></td>
+                                                    <td class="<?php echo $movimiento['tipo'] === 'egreso' ? 'monto-egreso' : 'monto-ingreso'; ?>"><?php echo formatearMoneda($movimiento['monto']); ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </details>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</section>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const selectPeriodo = document.getElementById('periodo');

@@ -49,4 +49,101 @@ class Reporte extends Controller
         $stmt->execute([':inicio'=>$fechaInicio, ':fin'=>$fechaFin]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function obtenerReporteCajas($fechaInicio, $fechaFin)
+    {
+        $tablaTurnos = $this->existeTabla('cajas_turnos') ? 'cajas_turnos' : 'caja_cortes';
+        if (!$this->existeTabla($tablaTurnos)) {
+            return [];
+        }
+
+        $montoApertura = $tablaTurnos === 'cajas_turnos' ? 'monto_apertura' : 'fondo_inicial';
+        $montoCierre = $tablaTurnos === 'cajas_turnos' ? 'monto_cierre_real' : 'monto_declarado';
+        $unirCajas = $this->existeTabla('cajas') && $this->columnaExiste($tablaTurnos, 'caja_id');
+        $sql = "SELECT t.id, t.usuario_id, " . ($this->columnaExiste($tablaTurnos, 'caja_id') ? 't.caja_id' : 'NULL AS caja_id') . ",
+                    t.fecha_apertura, t.fecha_cierre, t.{$montoApertura} AS fondo_inicial,
+                    t.{$montoCierre} AS monto_cierre, t.diferencia, t.estado,
+                    COALESCE(u.nombre, u.usuario, 'Usuario') AS cajero,
+                    " . ($unirCajas ? "COALESCE(c.nombre, 'Caja sin asignar')" : "'Caja'" ) . " AS caja_nombre
+                FROM {$tablaTurnos} t
+                INNER JOIN usuarios u ON u.id = t.usuario_id
+                " . ($unirCajas ? 'LEFT JOIN cajas c ON c.id = t.caja_id' : '') . "
+                WHERE t.fecha_apertura BETWEEN :inicio AND :fin
+                ORDER BY t.fecha_apertura DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':inicio' => $fechaInicio, ':fin' => $fechaFin]);
+        $turnos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!$turnos || !$this->existeTabla('caja_movimientos')) {
+            return $turnos;
+        }
+
+        foreach ($turnos as &$turno) {
+            $turno['movimientos'] = [];
+            $turno['total_ingresos'] = 0.0;
+            $turno['total_egresos'] = 0.0;
+        }
+        unset($turno);
+
+        $fechaMovimiento = $this->columnaExiste('caja_movimientos', 'fecha_hora') ? 'fecha_hora' : 'fecha';
+        $usaTurnoId = $this->columnaExiste('caja_movimientos', 'turno_id');
+        $tieneCajaId = $this->columnaExiste('caja_movimientos', 'caja_id');
+        $ids = array_column($turnos, 'id');
+        $marcadores = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "SELECT cm.*, {$fechaMovimiento} AS fecha_movimiento, COALESCE(u.nombre, u.usuario, 'Usuario') AS usuario_nombre
+                FROM caja_movimientos cm
+                LEFT JOIN usuarios u ON u.id = cm.usuario_id
+                WHERE cm.tipo IN ('ingreso', 'ingreso_abono', 'egreso')";
+        $parametros = [];
+        if ($usaTurnoId) {
+            $sql .= " AND cm.turno_id IN ({$marcadores})";
+            $parametros = $ids;
+        } else {
+            $sql .= " AND {$fechaMovimiento} BETWEEN ? AND ?";
+            $parametros = [$fechaInicio, $fechaFin];
+        }
+        $sql .= " ORDER BY {$fechaMovimiento} DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($parametros);
+
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $movimiento) {
+            foreach ($turnos as &$turno) {
+                $perteneceTurno = $usaTurnoId
+                    ? (int)$movimiento['turno_id'] === (int)$turno['id']
+                    : (int)$movimiento['usuario_id'] === (int)$turno['usuario_id']
+                        && (!$tieneCajaId || !$turno['caja_id'] || (int)$movimiento['caja_id'] === (int)$turno['caja_id'])
+                        && $movimiento['fecha_movimiento'] >= $turno['fecha_apertura']
+                        && $movimiento['fecha_movimiento'] <= ($turno['fecha_cierre'] ?: $fechaFin);
+                if (!$perteneceTurno) {
+                    continue;
+                }
+
+                $turno['movimientos'][] = $movimiento;
+                if (in_array($movimiento['tipo'], ['ingreso', 'ingreso_abono'], true)) {
+                    $turno['total_ingresos'] += (float)$movimiento['monto'];
+                } else {
+                    $turno['total_egresos'] += (float)$movimiento['monto'];
+                }
+                break;
+            }
+            unset($turno);
+        }
+
+        return $turnos;
+    }
+
+    private function existeTabla($tabla)
+    {
+        $tabla = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$tabla);
+        $stmt = $this->pdo->query("SHOW TABLES LIKE '{$tabla}'");
+        return $stmt !== false && $stmt->rowCount() > 0;
+    }
+
+    private function columnaExiste($tabla, $columna)
+    {
+        $tabla = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$tabla);
+        $columna = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$columna);
+        $stmt = $this->pdo->query("SHOW COLUMNS FROM `{$tabla}` LIKE '{$columna}'");
+        return $stmt !== false && $stmt->rowCount() > 0;
+    }
 }

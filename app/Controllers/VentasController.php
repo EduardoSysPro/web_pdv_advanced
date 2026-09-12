@@ -41,7 +41,7 @@ class VentasController extends Controller
         $nombreUsuario = htmlspecialchars($_SESSION['nombre'] ?? 'Cajero Móvil');
         $rolUsuario = $_SESSION['rol'] ?? 'cajero_movil';
         $cajaNombre = htmlspecialchars($_SESSION['caja_nombre'] ?? 'Caja Móvil');
-        $sucursalNombre = htmlspecialchars($_SESSION['sucursal_nombre'] ?? 'Abarrotes Central');
+        $sucursalNombre = htmlspecialchars($_SESSION['sucursal_nombre'] ?? 'Mi Negocio');
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
         $clientes = $this->modeloCliente->obtenerTodos();
         $urlBase = URL_BASE;

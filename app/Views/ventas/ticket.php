@@ -114,8 +114,10 @@ $montoEnLetras = numeroALetras($totalVenta);
 <body onload="window.print();">
 
 <?php 
+$copiasTicket = isset($copiasTicket) ? max(1, min(5, (int)$copiasTicket)) : 2;
 $etiquetasCopias = ['Original: Cliente', 'Copia: Emisor'];
-foreach ($etiquetasCopias as $etiquetaCopia): 
+$copiasImprimir = array_slice($etiquetasCopias, 0, $copiasTicket);
+foreach ($copiasImprimir as $etiquetaCopia): 
 ?>
 <div class="ticket-copia">
     <div class="text-center">

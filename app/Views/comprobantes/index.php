@@ -74,7 +74,7 @@
                             </td>
                             <td><?php echo formatearMoneda($comprobante['total']); ?></td>
                             <td>
-                                <a href="<?php echo URL_BASE; ?>comprobantes/imprimir/<?php echo (int)$comprobante['id']; ?>" class="btn-pos btn-primary" target="_blank">Imprimir</a>
+                                <a href="<?php echo URL_BASE; ?>comprobantes/imprimir/<?php echo (int)$comprobante['id']; ?>?copias=1" class="btn-pos btn-primary" target="_blank">Imprimir</a>
                                 <button type="button" class="btn-pos btn-secondary" data-comprobante-lan="<?php echo (int)$comprobante['id']; ?>"><i class="fa-solid fa-wifi"></i> Imprimir LAN</button>
                             </td>
                         </tr>
@@ -89,6 +89,7 @@
 
 <script>
 (function () {
+    var URL_BASE = '<?php echo URL_BASE; ?>';
     var alerta = document.createElement('div');
     alerta.id = 'alerta-impresion-lan';
     alerta.style.margin = '12px 0';
@@ -100,7 +101,7 @@
             btn.disabled = true;
             alerta.className = 'alerta alerta-info';
             alerta.textContent = 'Enviando a la impresora LAN...';
-            fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(id), { method: 'GET', credentials: 'same-origin' })
+            fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(id) + '?copias=1', { method: 'GET', credentials: 'same-origin' })
                 .then(function (r) { return r.json(); })
                 .then(function (datos) {
                     alerta.textContent = datos.mensaje || 'Sin respuesta del servidor.';

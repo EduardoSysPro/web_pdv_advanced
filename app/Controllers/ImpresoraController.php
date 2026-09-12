@@ -24,7 +24,8 @@ class ImpresoraController extends Controller
         $this->requerirAutenticacion();
         $id = (int)($parametros['id'] ?? 0);
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
-        $resultado = $this->modeloImpresora->imprimirVenta($id, $configuracion);
+        $copias = (int)($_GET['copias'] ?? 2);
+        $resultado = $this->modeloImpresora->imprimirVenta($id, $configuracion, $copias);
 
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($resultado);

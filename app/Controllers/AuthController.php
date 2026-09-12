@@ -81,7 +81,7 @@ class AuthController extends Controller
         $_SESSION['rol'] = $usuarioValidado['rol'];
         $_SESSION['rol_id'] = $usuarioValidado['rol'] === 'admin' ? 1 : 2;
         $_SESSION['caja_id'] = !empty($usuarioValidado['caja_id']) ? (int)$usuarioValidado['caja_id'] : 0;
-        $_SESSION['sucursal_nombre'] = $usuarioValidado['sucursal'] ?? 'Abarrotes Central';
+        $_SESSION['sucursal_nombre'] = $usuarioValidado['sucursal'] ?? 'Mi Negocio';
         $_SESSION['caja_nombre'] = $_SESSION['caja_id'] > 0
             ? ($this->modeloUsuario->obtenerNombreCaja($_SESSION['caja_id']) ?: 'Caja no disponible')
             : 'Sin caja asignada';

@@ -92,7 +92,7 @@
         </div>
         <div class="campo">
             <label>Sucursal</label>
-            <input class="form-control-pos" value="<?php echo htmlspecialchars($_SESSION['sucursal_nombre'] ?? 'Abarrotes Central'); ?>" disabled>
+            <input class="form-control-pos" value="<?php echo htmlspecialchars($_SESSION['sucursal_nombre'] ?? 'Mi Negocio'); ?>" disabled>
         </div>
         <div class="campo campo-ancho">
             <label for="observaciones">Observaciones</label>

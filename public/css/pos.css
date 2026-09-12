@@ -1559,7 +1559,19 @@ textarea.form-control-pos:focus,
     display: flex;
     flex-direction: column;
     gap: 4px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
 }
+
+.pos-sidebar-nav::-webkit-scrollbar { width: 6px; }
+.pos-sidebar-nav::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+.pos-sidebar-nav::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.pos-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
 
 .pos-sidebar-link {
     position: relative;
@@ -1762,6 +1774,8 @@ textarea.form-control-pos:focus,
 
 .sidebar-collapsed .pos-sidebar { flex-basis: 76px; width: 76px; }
 .sidebar-collapsed .pos-workspace { margin-left: 76px; }
+.sidebar-collapsed .pos-sidebar-nav { scrollbar-width: none; }
+.sidebar-collapsed .pos-sidebar-nav::-webkit-scrollbar { display: none; }
 .sidebar-collapsed .pos-brand-text,
 .sidebar-collapsed .pos-sidebar-link > span,
 .sidebar-collapsed .pos-sidebar-section > span,
@@ -1778,6 +1792,8 @@ textarea.form-control-pos:focus,
 @media (max-width: 900px) {
     .pos-sidebar { flex-basis: 76px; width: 76px; }
     .pos-workspace { margin-left: 76px; }
+    .pos-sidebar-nav { scrollbar-width: none; }
+    .pos-sidebar-nav::-webkit-scrollbar { display: none; }
     .pos-brand-text, .pos-sidebar-link > span, .pos-sidebar-section > span, .pos-sidebar-section-chevron, .pos-sidebar-submenu, .pos-sidebar-divider { display: none; }
     .pos-sidebar-brand, .pos-sidebar-link, .pos-sidebar-section { justify-content: center; padding-right: 0; padding-left: 0; }
     .pos-sidebar-link, .pos-sidebar-section { overflow: visible; }

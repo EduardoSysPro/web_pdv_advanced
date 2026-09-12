@@ -1,7 +1,12 @@
+# Bloquea ejecución de scripts pero permite imágenes y archivos estáticos
 <IfModule mod_authz_core.c>
-    Require all denied
+    <FilesMatch "\.(php|phtml|php[0-9]|phps|pl|py|cgi|sh)$">
+        Require all denied
+    </FilesMatch>
 </IfModule>
 <IfModule !mod_authz_core.c>
-    Order allow,deny
-    Deny from all
+    <FilesMatch "\.(php|phtml|php[0-9]|phps|pl|py|cgi|sh)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
 </IfModule>

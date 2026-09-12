@@ -444,6 +444,7 @@
 
 <script>
 (function () {
+    var URL_BASE = '<?php echo URL_BASE; ?>';
     var btn = document.getElementById('btn-probar-impresora');
     var resultado = document.getElementById('resultado-impresora');
     if (!btn || !resultado) return;

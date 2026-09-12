@@ -21,7 +21,7 @@ class Impresora
     /**
      * Imprime el ticket de una venta por red. Devuelve ['exito'=>bool, 'mensaje'=>string].
      */
-    public function imprimirVenta($ventaId, array $configuracion)
+    public function imprimirVenta($ventaId, array $configuracion, int $copias = 2)
     {
         $ventaId = (int)$ventaId;
         if ($ventaId <= 0) {
@@ -59,7 +59,7 @@ class Impresora
 
         $detalles = $this->obtenerDetalles($ventaId);
 
-        return $this->enviar($configuracion, $this->construirTicket($venta, $detalles, $configuracion));
+        return $this->enviar($configuracion, $this->construirTicket($venta, $detalles, $configuracion, $copias));
     }
 
     /**
@@ -164,9 +164,10 @@ class Impresora
     }
 
     /**
-     * Construye el ticket completo (2 copias) como texto ESC/POS en columnas fijas.
+     * Construye el ticket completo como texto ESC/POS en columnas fijas.
+     * $copias controla cuántas hojas se imprimen (2 = Original + Copia).
      */
-    public function construirTicket(array $venta, array $detalles, array $configuracion)
+    public function construirTicket(array $venta, array $detalles, array $configuracion, int $copias = 2)
     {
         $ancho = ($configuracion['ancho_ticket'] ?? '80mm') === '58mm' ? self::COLS_58MM : self::COLS_80MM;
         $lineas = [];
@@ -193,11 +194,13 @@ class Impresora
             $isv18 = 0;
         }
 
-        $copias = ['Original: Cliente', 'Copia: Emisor'];
+        $etiquetasCopias = ['Original: Cliente', 'Copia: Emisor'];
+        $copias = max(1, min(5, $copias));
         $bytesTicket = '';
-        $totalCopias = count($copias);
+        $totalCopias = $copias;
 
-        foreach ($copias as $indiceCopia => $etiquetaCopia) {
+        for ($indiceCopia = 0; $indiceCopia < $copias; $indiceCopia++) {
+            $etiquetaCopia = $etiquetasCopias[$indiceCopia] ?? 'Original: Cliente';
             $lineas = [];
 
             // Encabezado del negocio

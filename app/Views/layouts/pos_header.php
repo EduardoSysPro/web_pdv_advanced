@@ -77,7 +77,7 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
                 <div class="pos-context-info">
                     <div class="pos-context-item"><i class="fa-regular fa-user"></i><span class="pos-context-label">Usuario</span><strong><?php echo $nombreUsuario; ?></strong></div>
                     <span class="pos-role-badge"><?php echo $rolEtiqueta; ?></span>
-                    <span class="pos-branch-badge"><i class="fa-solid fa-store" aria-hidden="true"></i><?php echo htmlspecialchars($_SESSION['sucursal_nombre'] ?? 'Abarrotes Central'); ?></span>
+                    <span class="pos-branch-badge"><i class="fa-solid fa-store" aria-hidden="true"></i><?php echo htmlspecialchars($_SESSION['sucursal_nombre'] ?? 'Mi Negocio'); ?></span>
                     <div class="pos-context-item"><i class="fa-solid fa-cash-register"></i><span class="pos-context-label">Caja</span><strong><?php echo htmlspecialchars($_SESSION['caja_nombre'] ?? 'Caja 01'); ?></strong></div>
                 </div>
                 <div class="pos-header-clock"><i class="fa-regular fa-calendar"></i><time id="info-fecha-hora"><?php echo date('d/m/Y H:i'); ?></time></div>

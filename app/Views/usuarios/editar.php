@@ -46,7 +46,7 @@
 
         <div class="campo form-group">
             <label for="usuario-sucursal">Sucursal</label>
-            <input id="usuario-sucursal" name="sucursal" value="<?php echo htmlspecialchars($usuario['sucursal'] ?? ''); ?>" placeholder="Ej. Abarrotes Central">
+            <input id="usuario-sucursal" name="sucursal" value="<?php echo htmlspecialchars($usuario['sucursal'] ?? ''); ?>" placeholder="Ej. Mi Negocio">
         </div>
 
         <div class="campo form-group">

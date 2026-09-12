@@ -101,6 +101,7 @@ class ComprobantesController extends Controller
 
         $tipoComprobante = $venta['tipo_comprobante'] ?? 'recibo';
         $configuracion = $this->modeloConfiguracion->obtenerTodas();
+        $copiasTicket = max(1, min(5, (int)($_GET['copias'] ?? 2)));
 
         // Mantener compatibilidad con la vista del ticket
         $venta['items'] = $detalles;

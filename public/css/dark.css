@@ -659,6 +659,18 @@
     border-color: #24334d;
 }
 
+:root[data-tema="oscuro"] .pos-sidebar-nav {
+    scrollbar-color: #2b3c57 transparent;
+}
+
+:root[data-tema="oscuro"] .pos-sidebar-nav::-webkit-scrollbar-thumb {
+    background: #2b3c57;
+}
+
+:root[data-tema="oscuro"] .pos-sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: #3b4f70;
+}
+
 :root[data-tema="oscuro"] .pos-sidebar-toggle {
     background: #131e33;
     border-color: #334155;

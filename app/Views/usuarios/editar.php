@@ -11,6 +11,7 @@
 <section class="tarjeta card-form usuarios-formulario">
     <h2 class="tarjeta-titulo">Datos del usuario</h2>
     <form method="POST" action="<?php echo URL_BASE; ?>usuarios/actualizar/<?php echo (int)$usuario['id']; ?>" class="form-grid cliente-formulario">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
         <div class="campo form-group">
             <label for="usuario-nombre">Nombre completo</label>
             <input id="usuario-nombre" name="nombre" value="<?php echo htmlspecialchars($usuario['nombre'] ?? ''); ?>" required>

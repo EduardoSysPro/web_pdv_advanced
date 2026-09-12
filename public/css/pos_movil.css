@@ -54,8 +54,8 @@ body.pos-movil-body {
 .movil-brand-icon {
     width: 36px;
     height: 36px;
-    background: #dbeafe;
-    color: var(--movil-primary);
+    background: #d1fae5;
+    color: #059669;
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -427,7 +427,7 @@ body.pos-movil-body {
 .movil-total-amount {
     font-size: 20px;
     font-weight: 800;
-    color: var(--movil-primary-dark);
+    color: #0f172a;
 }
 
 .btn-movil-cobrar {
@@ -662,7 +662,7 @@ body.pos-movil-body {
 /* Métodos de Pago Touch */
 .metodos-touch {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     margin-bottom: 16px;
 }
@@ -683,9 +683,13 @@ body.pos-movil-body {
 }
 
 .btn-metodo-touch.is-selected {
-    border-color: var(--movil-primary);
-    background: #dbeafe;
-    color: var(--movil-primary-dark);
+    border-color: rgba(37, 99, 235, 0.36);
+    background: rgba(239, 246, 255, 0.7);
+    color: #1e293b;
+}
+
+.btn-metodo-touch.is-selected i {
+    color: #2563eb;
 }
 
 .btn-metodo-touch i {
@@ -823,8 +827,8 @@ body.pos-movil-body {
     height: 66px;
     margin: 0 auto 14px;
     border-radius: 50%;
-    background: #e0f2fe;
-    color: var(--movil-primary);
+    background: #d1fae5;
+    color: #059669;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -887,6 +891,10 @@ body.pos-movil-body {
         grid-template-columns: repeat(2, 1fr);
     }
 
+    .metodos-touch {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
     .modal-movil-overlay {
         align-items: center;
     }
@@ -901,4 +909,422 @@ body.pos-movil-body {
         transform: translateX(-50%);
         border-radius: 16px 16px 0 0;
     }
+}
+
+/* ---------------- Botón Historial de Ventas de Hoy ---------------- */
+.btn-historial-movil {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+/* ---------------- Editar Precio / Descuento por Artículo ---------------- */
+.btn-price-touch {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.btn-price-touch:active {
+    background: #dbeafe;
+}
+
+.badge-descuento {
+    display: inline-block;
+    background: #dcfce7;
+    color: #059669;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 1px 6px;
+    margin-left: 6px;
+}
+
+.precio-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.precio-lista-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+.precio-lista-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.precio-lista-valor {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.precio-item-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.3;
+}
+
+.precio-campo-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.porcentajes-descuento {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.porcentajes-descuento button {
+    background: #f1f5f9;
+    border: 1px solid var(--movil-border);
+    border-radius: 8px;
+    padding: 9px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+}
+
+.porcentajes-descuento button:active {
+    background: #dbeafe;
+    border-color: #2563eb;
+}
+
+.precio-resumen {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #059669;
+    background: #f0fdf4;
+    border-radius: 10px;
+    padding: 10px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.precio-modal-body .btn-confirm-primary,
+.precio-modal-body .btn-confirm-secondary {
+    width: 100%;
+    margin-top: 2px;
+}
+
+/* ---------------- Selección de Cliente / Crédito ---------------- */
+.cobro-cliente-movil {
+    margin-bottom: 16px;
+    border: 1px solid var(--movil-border);
+    border-radius: 12px;
+    padding: 8px;
+    background: #fafbfc;
+}
+
+.btn-cliente-toggle {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.btn-cliente-toggle:hover {
+    background: #f1f5f9;
+}
+
+.btn-cliente-toggle .cliente-requerido {
+    color: #b91c1c;
+}
+
+.cliente-requerido {
+    color: #b91c1c;
+}
+
+.cliente-picker-search {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.cliente-picker-search i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--movil-text-muted);
+}
+
+.cliente-picker-search .input-efectivo-touch {
+    padding-left: 34px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.movil-cliente-results {
+    max-height: 190px;
+    overflow-y: auto;
+    margin-bottom: 8px;
+}
+
+.cliente-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--movil-border);
+    cursor: pointer;
+    color: #334155;
+}
+
+.cliente-fila:active {
+    background: #f1f5f9;
+}
+
+.cliente-fila-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.cliente-fila-sub {
+    font-size: 11px;
+    color: var(--movil-text-muted);
+    margin-top: 2px;
+}
+
+.cliente-vacio {
+    text-align: center;
+    color: var(--movil-text-muted);
+    font-size: 13px;
+    padding: 12px;
+}
+
+.cliente-seleccionado {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.cliente-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #d1fae5;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.cliente-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cliente-nombre {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cliente-datos {
+    font-size: 11px;
+    color: #475569;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cliente-datos.cliente-aviso-error {
+    color: #b91c1c;
+    font-weight: 700;
+}
+
+.btn-quitar-cliente {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* ---------------- Historial de Ventas de Hoy ---------------- */
+.sheet-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sheet-refresh {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    color: var(--movil-primary);
+    cursor: pointer;
+    padding: 4px;
+}
+
+.sheet-refresh:active {
+    transform: rotate(180deg);
+    transition: transform 0.3s;
+}
+
+.historial-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 62vh;
+    overflow-y: auto;
+}
+
+.historial-loading,
+.historial-vacio {
+    text-align: center;
+    color: var(--movil-text-muted);
+    font-size: 14px;
+    padding: 28px 12px;
+}
+
+.historial-vacio i {
+    font-size: 34px;
+    color: #cbd5e1;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.historial-total-dia {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.historial-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid var(--movil-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    gap: 8px;
+}
+
+.hist-fila-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.hist-fila-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hist-folio {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.hist-hora {
+    font-size: 12px;
+    color: var(--movil-text-muted);
+    background: #e2e8f0;
+    border-radius: 6px;
+    padding: 1px 6px;
+}
+
+.hist-fila-sub {
+    font-size: 12px;
+    color: var(--movil-text-muted);
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hist-fila-accion {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.hist-total {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.btn-reimprimir-hist {
+    width: 36px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #a7f3d0;
+    background: #ecfdf5;
+    color: #059669;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.btn-reimprimir-hist:active {
+    background: #d1fae5;
+}
+
+.btn-reimprimir-hist:disabled {
+    opacity: 0.6;
 }

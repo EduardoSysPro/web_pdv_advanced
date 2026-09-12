@@ -16,8 +16,10 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script>(function(){try{var t=localStorage.getItem('web_pdv_tema')||'claro';if(t==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo htmlspecialchars(csrf_token()); ?>">
     <title>Web PDV - <?php echo htmlspecialchars($tituloPagina ?? 'Punto de Venta'); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +27,8 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/estilos.css">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/pos.css">
+    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/dark.css">
+    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/soporte.css">
     <link rel="icon" type="image/x-icon" href="<?php echo URL_BASE; ?>favicon.ico">
 </head>
 <body class="pos-body pos-modulo-body">
@@ -42,17 +46,23 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
                 <?php if ($esAdministrador): ?>
                     <a class="pos-sidebar-link <?php echo $esRutaActiva('productos') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>productos" data-tooltip="Productos"><i class="fa-solid fa-box"></i><span>Productos</span></a>
                     <a class="pos-sidebar-link pos-sidebar-inventory-link <?php echo $esRutaActiva('inventario') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>inventario" data-tooltip="Inventario"><i class="fa-solid fa-boxes-stacked"></i><span>Inventario</span><?php if ($productosBajoStock > 0): ?><strong class="pos-stock-alert-badge" aria-label="<?php echo $productosBajoStock; ?> productos con stock bajo"><?php echo $productosBajoStock; ?></strong><?php endif; ?></a>
-                    <a class="pos-sidebar-link <?php echo $esRutaActiva('compras') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>compras" data-tooltip="Compras"><i class="fa-solid fa-truck-ramp-box"></i><span>Compras</span></a>
                 <?php endif; ?>
                 <a class="pos-sidebar-link <?php echo $esRutaActiva('caja') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>caja" data-tooltip="Corte de Caja"><i class="fa-solid fa-calculator"></i><span>Corte de Caja</span></a>
                 <a class="pos-sidebar-link <?php echo $esRutaActiva('comprobantes') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>comprobantes" data-tooltip="Comprobantes"><i class="fa-solid fa-receipt"></i><span>Reimpresión</span></a>
                 <?php if ($esAdministrador): ?>
-                    <a class="pos-sidebar-link <?php echo $esRutaActiva('reportes') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>reportes" data-tooltip="Reportes"><i class="fa-solid fa-chart-line"></i><span>Reportes</span></a>
-                <?php endif; ?>
-                <?php if ($esAdministrador): ?>
+                    <?php $adminAbierto = $esRutaActiva('compras') || $esRutaActiva('proveedores') || $esRutaActiva('reportes') || $esRutaActiva('configuracion') || $esRutaActiva('usuarios') || $esRutaActiva('soporte'); ?>
                     <div class="pos-sidebar-divider" aria-hidden="true"></div>
-                    <a class="pos-sidebar-link <?php echo $esRutaActiva('configuracion') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>configuracion" data-tooltip="Configuración"><i class="fa-solid fa-gear"></i><span>Configuración</span></a>
-                    <a class="pos-sidebar-link <?php echo $esRutaActiva('usuarios') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>usuarios" data-tooltip="Usuarios"><i class="fa-solid fa-user-gear"></i><span>Usuarios</span></a>
+                    <button type="button" class="pos-sidebar-section <?php echo $adminAbierto ? 'is-open' : ''; ?>" id="pos-sidebar-admin-toggle" aria-expanded="<?php echo $adminAbierto ? 'true' : 'false'; ?>" aria-controls="pos-sidebar-admin-submenu" data-tooltip="Administración">
+                        <i class="fa-solid fa-briefcase"></i><span>Administración</span><i class="fa-solid fa-chevron-down pos-sidebar-section-chevron" aria-hidden="true"></i>
+                    </button>
+                    <nav class="pos-sidebar-submenu" id="pos-sidebar-admin-submenu">
+                        <a class="pos-sidebar-link <?php echo $esRutaActiva('compras') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>compras" data-tooltip="Compras"><i class="fa-solid fa-truck-ramp-box"></i><span>Compras</span></a>
+                        <a class="pos-sidebar-link <?php echo $esRutaActiva('proveedores') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>proveedores" data-tooltip="Proveedores"><i class="fa-solid fa-handshake"></i><span>Proveedores</span></a>
+                        <a class="pos-sidebar-link <?php echo $esRutaActiva('reportes') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>reportes" data-tooltip="Reportes"><i class="fa-solid fa-chart-line"></i><span>Reportes</span></a>
+                        <a class="pos-sidebar-link <?php echo $esRutaActiva('configuracion') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>configuracion" data-tooltip="Configuración"><i class="fa-solid fa-gear"></i><span>Configuración</span></a>
+                        <a class="pos-sidebar-link <?php echo $esRutaActiva('usuarios') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>usuarios" data-tooltip="Usuarios"><i class="fa-solid fa-user-gear"></i><span>Usuarios</span></a>
+                        <a class="pos-sidebar-link <?php echo $esRutaActiva('soporte') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>soporte" data-tooltip="Soporte"><i class="fa-solid fa-circle-question"></i><span>Soporte</span></a>
+                    </nav>
                 <?php endif; ?>
             </nav>
 
@@ -71,6 +81,7 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
                     <div class="pos-context-item"><i class="fa-solid fa-cash-register"></i><span class="pos-context-label">Caja</span><strong><?php echo htmlspecialchars($_SESSION['caja_nombre'] ?? 'Caja 01'); ?></strong></div>
                 </div>
                 <div class="pos-header-clock"><i class="fa-regular fa-calendar"></i><time id="info-fecha-hora"><?php echo date('d/m/Y H:i'); ?></time></div>
+                <button class="pos-sidebar-toggle pos-boton-tema" id="pos-boton-tema" type="button" aria-label="Cambiar tema claro/oscuro"><i class="fa-solid fa-moon"></i></button>
             </header>
 
             <main class="app-main pos-modulo-main <?php echo htmlspecialchars($claseMain ?? ''); ?>">

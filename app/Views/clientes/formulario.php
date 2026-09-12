@@ -1,5 +1,6 @@
 <?php $esEdicion = isset($cliente['id']); $accion = $esEdicion ? URL_BASE . 'clientes/actualizar/' . (int)$cliente['id'] : URL_BASE . 'clientes/guardar'; ?>
 <form method="POST" action="<?php echo $accion; ?>" class="form-grid cliente-formulario">
+	<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
 	<div class="campo form-group"><label for="cliente-rtn">RTN / Identidad</label><input id="cliente-rtn" name="rtn_identidad" maxlength="30" value="<?php echo htmlspecialchars($cliente['rtn_identidad'] ?? ''); ?>"></div>
 	<div class="campo campo-ancho form-group"><label for="cliente-nombre">Nombre / Negocio</label><input id="cliente-nombre" name="nombre" maxlength="150" required value="<?php echo htmlspecialchars($cliente['nombre'] ?? ''); ?>"></div>
 	<div class="campo form-group"><label for="cliente-telefono">Teléfono</label><input id="cliente-telefono" name="telefono" maxlength="30" value="<?php echo htmlspecialchars($cliente['telefono'] ?? ''); ?>"></div>

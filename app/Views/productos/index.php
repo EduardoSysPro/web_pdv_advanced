@@ -70,7 +70,7 @@
                             </div>
                         <?php endif; ?>
                     </td>
-                    <td class="acciones"><a class="btn-pos btn-primary btn-pequeno" href="<?php echo URL_BASE; ?>productos/editar/<?php echo (int)$producto['id']; ?>">Editar</a><form method="POST" action="<?php echo URL_BASE; ?>productos/eliminar/<?php echo (int)$producto['id']; ?>" onsubmit="return confirm('¿Eliminar este producto?');"><button class="btn-pos btn-danger btn-pequeno" type="submit">Eliminar</button></form></td>
+                    <td class="acciones"><a class="btn-pos btn-primary btn-pequeno" href="<?php echo URL_BASE; ?>productos/editar/<?php echo (int)$producto['id']; ?>">Editar</a><form method="POST" action="<?php echo URL_BASE; ?>productos/eliminar/<?php echo (int)$producto['id']; ?>" onsubmit="return confirm('¿Eliminar este producto?');"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>"><button class="btn-pos btn-danger btn-pequeno" type="submit">Eliminar</button></form></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

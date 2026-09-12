@@ -18,6 +18,7 @@
 
 <div class="config-layout" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start; width: 100%;">
     <form id="form-configuracion" method="POST" action="<?php echo URL_BASE; ?>configuracion/guardar-empresa" enctype="multipart/form-data" class="form-grid" style="width: 100%; min-width: 0;">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
 
         <section class="tarjeta campo-ancho">
             <h2 class="tarjeta-titulo">Datos del negocio y ticket</h2>
@@ -180,6 +181,38 @@
                 <div class="campo">
                     <label>Correlativo Actual (Secuencia)</label>
                     <input type="number" name="sar_correlativo_actual" min="0" value="<?php echo htmlspecialchars($configuracion['sar_correlativo_actual'] ?? '0'); ?>">
+                </div>
+            </div>
+        </section>
+
+        <section class="tarjeta campo-ancho">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+                <h2 class="tarjeta-titulo" style="margin: 0;">Impresora térmica por red (LAN)</h2>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold;">
+                    <input type="checkbox" name="impresora_lan_activa" value="1" <?php echo (($configuracion['impresora_lan_activa'] ?? '0') === '1') ? 'checked' : ''; ?>>
+                    Activar impresión por red
+                </label>
+            </div>
+
+            <p style="margin: 0 0 1rem; color: #64748b; font-size: 13px;">
+                Imprime el ticket directo a una impresora térmica conectada a la red mediante su dirección IP
+                (puerto 9100 estándar). Mientras esté desactivada, se usa la impresión del navegador como hoy.
+            </p>
+
+            <div class="form-grid">
+                <div class="campo">
+                    <label>Dirección IP de la impresora</label>
+                    <input name="impresora_lan_ip" placeholder="Ej: 192.168.1.50" value="<?php echo htmlspecialchars($configuracion['impresora_lan_ip'] ?? ''); ?>">
+                </div>
+
+                <div class="campo">
+                    <label>Puerto</label>
+                    <input name="impresora_lan_puerto" type="number" min="1" max="65535" value="<?php echo htmlspecialchars($configuracion['impresora_lan_puerto'] ?? '9100'); ?>">
+                </div>
+
+                <div class="campo campo-ancho">
+                    <button type="button" class="btn btn-ligero" id="btn-probar-impresora"><i class="fa-solid fa-plug"></i> Probar impresión de red</button>
+                    <div id="resultado-impresora" style="margin-top: 10px;"></div>
                 </div>
             </div>
         </section>
@@ -406,6 +439,48 @@
     form.addEventListener('input', actualizarPreview);
     form.addEventListener('change', actualizarPreview);
     actualizarPreview();
+})();
+</script>
+
+<script>
+(function () {
+    var btn = document.getElementById('btn-probar-impresora');
+    var resultado = document.getElementById('resultado-impresora');
+    if (!btn || !resultado) return;
+
+    btn.addEventListener('click', function () {
+        var ip = (document.querySelector('[name="impresora_lan_ip"]')?.value || '').trim();
+        var puerto = document.querySelector('[name="impresora_lan_puerto"]')?.value || '9100';
+        if (!ip) {
+            resultado.textContent = 'Ingresa la dirección IP de la impresora primero.';
+            resultado.className = 'alerta alerta-error';
+            return;
+        }
+        btn.disabled = true;
+        resultado.textContent = 'Enviando ticket de prueba...';
+        resultado.className = 'alerta alerta-exito';
+
+        fetch(URL_BASE + 'impresora/probar', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+            body: JSON.stringify({
+                csrf_token: document.querySelector('meta[name="csrf-token"]').content,
+                ip: ip,
+                puerto: puerto
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (datos) {
+            resultado.textContent = datos.mensaje || 'Sin respuesta del servidor.';
+            resultado.className = datos.exito ? 'alerta alerta-exito' : 'alerta alerta-error';
+        })
+        .catch(function () {
+            resultado.textContent = 'No se pudo conectar con el servidor.';
+            resultado.className = 'alerta alerta-error';
+        })
+        .finally(function () { btn.disabled = false; });
+    });
 })();
 </script>
 

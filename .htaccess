@@ -1,0 +1,7 @@
+# Bloquea el acceso directo a directorios internos y respaldos de la BD
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(app|config|core|sql)(/|$) - [F,L]
+    RewriteRule ^\.git(/|$) - [F,L]
+    RewriteRule \.(sql|bak|env)$ - [F,L]
+</IfModule>

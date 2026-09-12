@@ -24,6 +24,11 @@ class Router
             $url = '/';
         }
 
+        if ($metodo === 'POST' && !$this->verificarCsrfPeticion()) {
+            http_response_code(403);
+            die('Solicitud inválida o sesión expirada. Recarga la página e intenta de nuevo.');
+        }
+
         $rutas = $metodo === 'GET' ? $this->rutasGet : $this->rutasPost;
 
         foreach ($rutas as $ruta => $controladorMetodo) {
@@ -35,6 +40,17 @@ class Router
         }
 
         $this->mostrarError404();
+    }
+
+    private function verificarCsrfPeticion()
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        if ($token === '') {
+            $contenido = file_get_contents('php://input');
+            $datos = json_decode((string)$contenido, true);
+            $token = is_array($datos) ? ($datos['csrf_token'] ?? '') : '';
+        }
+        return csrf_verificar($token);
     }
 
     private function coincidirRuta($ruta, $url)

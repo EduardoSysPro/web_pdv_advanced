@@ -75,6 +75,7 @@
                             <td><?php echo formatearMoneda($comprobante['total']); ?></td>
                             <td>
                                 <a href="<?php echo URL_BASE; ?>comprobantes/imprimir/<?php echo (int)$comprobante['id']; ?>" class="btn-pos btn-primary" target="_blank">Imprimir</a>
+                                <button type="button" class="btn-pos btn-secondary" data-comprobante-lan="<?php echo (int)$comprobante['id']; ?>"><i class="fa-solid fa-wifi"></i> Imprimir LAN</button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -85,3 +86,32 @@
 <?php endif; ?>
 
 <?php require APP_PATH . 'Views/layouts/footer.php'; ?>
+
+<script>
+(function () {
+    var alerta = document.createElement('div');
+    alerta.id = 'alerta-impresion-lan';
+    alerta.style.margin = '12px 0';
+    document.querySelector('main')?.insertBefore(alerta, document.querySelector('main')?.firstChild);
+
+    document.querySelectorAll('[data-comprobante-lan]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = btn.getAttribute('data-comprobante-lan');
+            btn.disabled = true;
+            alerta.className = 'alerta alerta-info';
+            alerta.textContent = 'Enviando a la impresora LAN...';
+            fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(id), { method: 'GET', credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (datos) {
+                    alerta.textContent = datos.mensaje || 'Sin respuesta del servidor.';
+                    alerta.className = datos.exito ? 'alerta alerta-exito' : 'alerta alerta-error';
+                })
+                .catch(function () {
+                    alerta.textContent = 'No se pudo conectar con el servidor para imprimir por LAN.';
+                    alerta.className = 'alerta alerta-error';
+                })
+                .finally(function () { btn.disabled = false; });
+        });
+    });
+})();
+</script>

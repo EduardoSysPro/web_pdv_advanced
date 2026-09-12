@@ -13,6 +13,7 @@
     <?php endforeach; ?>
 
     <form method="POST" action="<?php echo $accion; ?>" class="form-grid">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
         <div class="campo campo-ancho">
             <label for="categoria-nombre">Nombre</label>
             <input id="categoria-nombre" name="nombre" value="<?php echo htmlspecialchars($categoria['nombre'] ?? ''); ?>" maxlength="100" required>

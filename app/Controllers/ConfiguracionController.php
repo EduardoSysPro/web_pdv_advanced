@@ -31,6 +31,7 @@ class ConfiguracionController extends Controller
             'nombre_negocio', 'rtn', 'telefono', 'email', 'direccion',
             'mensaje_ticket', 'ancho_ticket', 'tipo_comprobante_default', 'impuesto_porcentaje', 'moneda_simbolo',
             'ticket_fuente', 'ticket_tamano_fuente', 'ticket_mostrar_logo', 'ticket_mostrar_sar',
+            'impresora_lan_activa', 'impresora_lan_ip', 'impresora_lan_puerto',
             'sar_cai', 'sar_rango_inicial', 'sar_rango_final', 'sar_fecha_limite', 'sar_correlativo_actual',
             'sar_punto_venta', 'sar_establecimiento', 'sar_tipo_documento'
         ];
@@ -44,6 +45,8 @@ class ConfiguracionController extends Controller
         $datos['sar_activo'] = isset($_POST['sar_activo']) ? '1' : '0';
         $datos['ticket_mostrar_logo'] = isset($_POST['ticket_mostrar_logo']) ? '1' : '0';
         $datos['ticket_mostrar_sar'] = isset($_POST['ticket_mostrar_sar']) ? '1' : '0';
+        $datos['impresora_lan_activa'] = isset($_POST['impresora_lan_activa']) ? '1' : '0';
+        $datos['impresora_lan_puerto'] = max(1, min(65535, (int)($datos['impresora_lan_puerto'] ?: 9100)));
         $datos['tipo_comprobante_default'] = in_array(($datos['tipo_comprobante_default'] ?? 'recibo'), ['recibo', 'factura'], true)
             ? $datos['tipo_comprobante_default'] : 'recibo';
         $datos['ticket_fuente'] = $datos['ticket_fuente'] ?: 'Courier New';

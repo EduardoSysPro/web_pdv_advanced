@@ -59,6 +59,11 @@ class Configuracion extends Controller
             'ticket_mostrar_logo'   => '1',
             'ticket_mostrar_sar'    => '1',
 
+            // Impresora de red (LAN)
+            'impresora_lan_activa'  => '0',
+            'impresora_lan_ip'      => '',
+            'impresora_lan_puerto'  => '9100',
+
             // Parámetros opcionales del SAR Honduras
             'sar_activo'            => '0',
             'sar_cai'               => '',

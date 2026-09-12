@@ -268,7 +268,8 @@ class Producto extends Controller
         $terminoLike = '%' . trim($termino) . '%';
         $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta, stock, stock_minimo,
                                             unidad_medida, permite_decimales,
-                                            tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque
+                                            tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque,
+                                            tipo_impuesto, porcentaje_isv
                                      FROM productos
                                      WHERE nombre LIKE :nombre
                                         OR codigo_barras LIKE :codigo
@@ -305,7 +306,9 @@ class Producto extends Controller
                     'permite_decimales' => !empty($p['permite_decimales']),
                     'tipo_presentacion' => 'unidad',
                     'nombre_presentacion' => 'Unidad',
-                    'factor_unidades'   => 1.0
+                    'factor_unidades'   => 1.0,
+                    'clave_isv'         => $p['tipo_impuesto'] ?? 'gravado_15',
+                    'porcentaje_isv'    => (float)($p['porcentaje_isv'] ?? 15)
                 ];
             }
 
@@ -326,9 +329,11 @@ class Producto extends Controller
                     'permite_decimales' => false,
                     'tipo_presentacion' => 'empaque',
                     'nombre_presentacion' => $nombreEmpaque,
-                    'factor_unidades'   => $factor
-                ];
-            }
+                    'factor_unidades'   => $factor,
+                    'clave_isv'         => $p['tipo_impuesto'] ?? 'gravado_15',
+                    'porcentaje_isv'    => (float)($p['porcentaje_isv'] ?? 15)
+            ];
+        }
         }
 
         return $resultados;

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script>(function(){try{var t=localStorage.getItem('web_pdv_tema')||'claro';if(t==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Web PDV - Terminal Móvil</title>
@@ -9,9 +10,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/pos_movil.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/dark.css">
+    <meta name="csrf-token" content="<?php echo htmlspecialchars(csrf_token()); ?>">
     <script>
         const URL_BASE = "<?php echo URL_BASE; ?>";
         const MONEDA_SIMBOLO = "<?php echo MONEDA_SIMBOLO; ?>";
+        const IMPRESORA_LAN_ACTIVA = <?php echo !empty($impresoraLanActiva) ? 'true' : 'false'; ?>;
+        const CLIENTES_REGISTRADOS = <?php echo json_encode(array_map(function ($c) {
+            return [
+                'id'              => (int)$c['id'],
+                'nombre'          => (string)$c['nombre'],
+                'rtn'             => !empty($c['rtn_identidad']) ? (string)$c['rtn_identidad'] : '',
+                'telefono'        => !empty($c['telefono']) ? (string)$c['telefono'] : '',
+                'direccion'       => !empty($c['direccion']) ? (string)$c['direccion'] : '',
+                'limite_credito'  => (float)$c['limite_credito'],
+                'saldo_pendiente' => (float)$c['saldo_pendiente']
+            ];
+        }, $clientes)); ?>;
     </script>
 </head>
 <body class="pos-movil-body">
@@ -28,6 +43,15 @@
         </div>
     </div>
     <div class="movil-header-actions">
+        <!-- Botón Tema -->
+        <button class="btn-tema-movil" id="pos-boton-tema" type="button" aria-label="Cambiar tema claro/oscuro" title="Cambiar tema"><i class="fa-solid fa-moon"></i></button>
+
+        <!-- Botón Historial de Ventas de Hoy -->
+        <button class="btn-movil-logout btn-historial-movil" id="btn-abrir-historial" type="button" title="Ventas de hoy">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Hoy</span>
+        </button>
+
         <!-- Botón Volver a POS Normal -->
         <a href="<?php echo URL_BASE; ?>" class="btn-movil-logout" title="Volver a la vista normal" style="background: #b9f3fd; margin-right: 6px;">
             <i class="fa-solid fa-desktop"></i>
@@ -83,7 +107,7 @@
                     <i class="fa-solid fa-cart-arrow-down"></i>
                 </div>
                 <h3>Carrito vacío</h3>
-                <p>Usa el buscador o escanea con la cámara para añadir artículos a la venta.</p>
+                <p>Usa el buscador o escanea con un lector de códigos de barras.</p>
             </div>
         </main>
 
@@ -125,6 +149,76 @@
         </div>
     </div>
 
+    <!-- Modal editar precio/descuento por artículo -->
+    <div id="modal-precio-movil" class="modal-movil-overlay" aria-hidden="true">
+        <div class="modal-movil-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title" id="precio-titulo">Editar precio</div>
+                <button type="button" id="btn-cerrar-precio" class="sheet-close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="precio-modal-body">
+                <div class="precio-lista-row">
+                    <span class="precio-lista-label">Precio de lista</span>
+                    <span class="precio-lista-valor" id="precio-lista-val">L 0.00</span>
+                </div>
+                <div class="precio-item-nombre" id="precio-item-nombre"></div>
+
+                <label for="input-precio-movil" class="precio-campo-label">Precio final por unidad:</label>
+                <input
+                    type="number"
+                    id="input-precio-movil"
+                    class="input-efectivo-touch"
+                    step="0.01"
+                    min="0"
+                    inputmode="decimal">
+
+                <div class="porcentajes-descuento">
+                    <button type="button" data-por="0">0%</button>
+                    <button type="button" data-por="5">5%</button>
+                    <button type="button" data-por="10">10%</button>
+                    <button type="button" data-por="15">15%</button>
+                    <button type="button" data-por="20">20%</button>
+                    <button type="button" data-por="25">25%</button>
+                    <button type="button" data-por="50">50%</button>
+                </div>
+
+                <div class="precio-resumen" id="precio-resumen">Sin descuento</div>
+
+                <button type="button" id="btn-quitar-descuento" class="btn-confirm-secondary" style="display: none;">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Quitar descuento</span>
+                </button>
+                <button type="button" id="btn-aplicar-precio" class="btn-confirm-primary">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Aplicar precio</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Historial de Ventas de Hoy -->
+    <div id="modal-historial-movil" class="modal-movil-overlay" aria-hidden="true">
+        <div class="modal-movil-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title"><i class="fa-solid fa-clock-rotate-left"></i> Ventas de Hoy</div>
+                <div class="sheet-header-actions">
+                    <button type="button" id="btn-refrescar-historial" class="sheet-refresh" title="Actualizar">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                    <button type="button" id="btn-cerrar-historial" class="sheet-close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="historial-body" id="historial-body">
+                <div class="historial-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando ventas de hoy...</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Overlay de carga/procesamiento de código -->
     <div id="movil-loading-overlay" class="movil-loading-overlay" style="display: none;">
         <div class="movil-loading-box">
@@ -163,6 +257,10 @@
                     <i class="fa-solid fa-building-columns"></i>
                     <span>Transfer</span>
                 </button>
+                <button type="button" class="btn-metodo-touch" data-metodo="credito">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                    <span>Crédito</span>
+                </button>
             </div>
 
             <!-- Campo Efectivo -->
@@ -188,6 +286,46 @@
             <div class="resumen-cambio-touch" id="resumen-cambio-touch">
                 <span class="resumen-cambio-label">Cambio:</span>
                 <span class="resumen-cambio-val" id="cobro-cambio-val">L 0.00</span>
+            </div>
+
+            <!-- Resumen de Crédito -->
+            <div class="resumen-cambio-touch" id="resumen-credito-touch" style="display: none;">
+                <span class="resumen-cambio-label">Se abonará al saldo:</span>
+                <span class="resumen-cambio-val" id="cobro-credito-val">L 0.00</span>
+            </div>
+
+            <!-- Selección de Cliente -->
+            <div class="cobro-cliente-movil" id="cobro-cliente-movil">
+                <button type="button" class="btn-cliente-toggle" id="btn-toggle-cliente">
+                    <i class="fa-solid fa-user"></i>
+                    <span id="cliente-select-label">Agregar cliente (opcional)</span>
+                </button>
+
+                <div class="cliente-picker-wrap" id="cliente-picker-wrap" style="display: none;">
+                    <div class="cliente-picker-search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input
+                            type="text"
+                            id="movil-input-cliente"
+                            class="input-efectivo-touch"
+                            placeholder="Buscar cliente por nombre o RTN..."
+                            autocomplete="off">
+                    </div>
+                    <div id="movil-cliente-results" class="movil-cliente-results"></div>
+                </div>
+
+                <div class="cliente-seleccionado" id="cliente-seleccionado" style="display: none;">
+                    <div class="cliente-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="cliente-info">
+                        <div class="cliente-nombre" id="cliente-nombre-txt"></div>
+                        <div class="cliente-datos" id="cliente-datos-txt"></div>
+                    </div>
+                    <button type="button" class="btn-quitar-cliente" id="btn-quitar-cliente">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Botón Finalizar Cobro -->
@@ -223,5 +361,33 @@
     <script src="<?php echo URL_BASE; ?>js/html5-qrcode.min.js"></script>
     <script src="<?php echo URL_BASE; ?>js/quagga.min.js"></script>
     <script src="<?php echo URL_BASE; ?>js/pos_movil.js?v=<?php echo time(); ?>"></script>
+    <script>
+        (function () {
+            var botonTema = document.getElementById('pos-boton-tema');
+            var temaKey = 'web_pdv_tema';
+
+            function iconoTema(t) {
+                return t === 'oscuro' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+            }
+
+            function actualizarIconoTema(t) {
+                if (!botonTema) return;
+                botonTema.innerHTML = iconoTema(t);
+                botonTema.setAttribute('aria-label', t === 'oscuro' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+            }
+
+            function aplicarTema(t) {
+                document.documentElement.setAttribute('data-tema', t);
+                actualizarIconoTema(t);
+                try { localStorage.setItem(temaKey, t); } catch (e) {}
+            }
+
+            actualizarIconoTema(document.documentElement.getAttribute('data-tema') === 'oscuro' ? 'oscuro' : 'claro');
+            botonTema.addEventListener('click', function () {
+                var actual = document.documentElement.getAttribute('data-tema') === 'oscuro' ? 'oscuro' : 'claro';
+                aplicarTema(actual === 'oscuro' ? 'claro' : 'oscuro');
+            });
+        }());
+    </script>
 </body>
 </html>

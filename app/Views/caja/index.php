@@ -48,6 +48,7 @@
         <h2 class="tarjeta-titulo">Apertura de Caja</h2>
         <p>Registra el efectivo con el que inicia tu turno.</p>
         <form method="POST" action="<?php echo URL_BASE; ?>caja/abrir" class="caja-form">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
             <?php if (!empty($cajaSinAsignar)): ?><div class="campo"><label for="caja_id">Caja para este turno</label><select class="form-control-pos" id="caja_id" name="caja_id" required><?php foreach ($cajasDisponibles as $cajaDisponible): ?><option value="<?php echo (int)$cajaDisponible['id']; ?>"><?php echo htmlspecialchars($cajaDisponible['nombre']); ?></option><?php endforeach; ?></select></div><?php endif; ?>
             <div class="campo">
                 <label for="fondo_inicial">Fondo inicial (L)</label>
@@ -88,6 +89,7 @@
         </div>
 
         <form method="POST" action="<?php echo URL_BASE; ?>caja/movimiento" class="caja-form">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
             <input type="hidden" name="tipo" id="tipo-movimiento" value="ingreso">
 
             <div class="campo">
@@ -119,6 +121,7 @@
         </div>
 
         <form method="POST" action="<?php echo URL_BASE; ?>caja/cerrar" class="caja-form" id="form-cierre">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
             <div class="campo">
                 <label for="monto_declarado">Efectivo contado físicamente (L)</label>
                 <input class="form-control-pos" id="monto_declarado" name="monto_declarado" type="number" min="0" step="0.01" placeholder="0.00" required>

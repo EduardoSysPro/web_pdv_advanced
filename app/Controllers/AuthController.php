@@ -2,15 +2,18 @@
 
 require_once CORE_PATH . 'Controller.php';
 require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Usuario.php';
+require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'LoginIntento.php';
 
 class AuthController extends Controller
 {
     private $modeloUsuario;
+    private $modeloLoginIntento;
 
     public function __construct()
     {
         parent::__construct();
         $this->modeloUsuario = new Usuario();
+        $this->modeloLoginIntento = new LoginIntento();
     }
 
     public function login()
@@ -38,8 +41,14 @@ class AuthController extends Controller
             $this->redirigir('login');
         }
 
+        if (!csrf_verificar($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error_login'] = 'La sesión expiró. Recarga la página e intenta de nuevo.';
+            $this->redirigir('login');
+        }
+
         $usuario = isset($_POST['usuario']) ? trim($_POST['usuario']) : '';
         $password = isset($_POST['password']) ? $_POST['password'] : '';
+        $ipCliente = $this->ipCliente();
 
         $_SESSION['usuario_intento'] = $usuario;
 
@@ -48,12 +57,21 @@ class AuthController extends Controller
             $this->redirigir('login');
         }
 
+        $minutosBloqueo = $this->modeloLoginIntento->minutosBloqueado($usuario, $ipCliente);
+        if ($minutosBloqueo > 0) {
+            $_SESSION['error_login'] = 'Demasiados intentos fallidos. Intenta de nuevo en ' . $minutosBloqueo . ' minuto(s).';
+            $this->redirigir('login');
+        }
+
         $usuarioValidado = $this->modeloUsuario->validarCredenciales($usuario, $password);
 
         if (!$usuarioValidado) {
+            $this->modeloLoginIntento->registrar($usuario, $ipCliente);
             $_SESSION['error_login'] = 'Usuario o contraseña incorrectos.';
             $this->redirigir('login');
         }
+
+        $this->modeloLoginIntento->limpiar($usuario, $ipCliente);
 
         session_regenerate_id(true);
 
@@ -119,5 +137,10 @@ class AuthController extends Controller
 
         session_destroy();
         $this->redirigir('login');
+    }
+
+    private function ipCliente()
+    {
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 }

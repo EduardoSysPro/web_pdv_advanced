@@ -19,6 +19,18 @@
     const CLAVE_SESSION_STORAGE = 'web_pdv_tickets';
     const CLAVE_TICKET_ACTIVO  = 'web_pdv_ticket_activo';
 
+    function obtenerCsrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    }
+
+    function imprimirVentaPorLan(ventaId, tipo) {
+        return fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(ventaId) + (tipo ? '?tipo=' + encodeURIComponent(tipo) : ''), {
+            method: 'GET',
+            credentials: 'same-origin'
+        }).then(r => r.json());
+    }
+
     /**
      * Estado del POS:
      *  - tickets: [ { id, nombre, productos: [...], pagadoCon, cambio } ]
@@ -987,6 +999,7 @@
         const url = URL_BASE + 'ventas/buscar-producto';
         const cuerpo = new URLSearchParams();
         cuerpo.append('codigo', codigo);
+        cuerpo.append('csrf_token', obtenerCsrfToken());
 
         return fetch(url, {
             method: 'POST',
@@ -1105,6 +1118,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
             headers: { 'Content-Type': 'application/json; charset=UTF-8' },
             credentials: 'same-origin',
             body: JSON.stringify({
+                csrf_token: obtenerCsrfToken(),
                 total: total,
                 efectivo: pagadoN,
                 cambio: cambio,
@@ -1132,6 +1146,19 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
             if (esFacturaCredito) {
                 if (ventanaTicket) ventanaTicket.close();
                 alert('Factura a crédito registrada. Se emitirá cuando el cliente haya pagado el total de la factura.');
+            } else if (document.getElementById('cobro-imprimir-lan')?.checked) {
+                if (ventanaTicket) ventanaTicket.close();
+                imprimirVentaPorLan(resp.venta_id, tipoComprobante).then(info => {
+                    if (info.exito === true) {
+                        alert('Ticket impreso en la impresora de red (LAN).\nFolio: ' + resp.folio);
+                    } else {
+                        alert('No se pudo imprimir por LAN: ' + (info.mensaje || 'error desconocido') + '\nSe abrirá el ticket para imprimirlo por el navegador.');
+                        window.open(URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id) + '?tipo=' + encodeURIComponent(tipoComprobante), '_blank');
+                    }
+                }).catch(() => {
+                    alert('No se pudo imprimir por la impresora LAN. Se abrirá el ticket para imprimirlo por el navegador.');
+                    window.open(URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id) + '?tipo=' + encodeURIComponent(tipoComprobante), '_blank');
+                });
             } else if (ventanaTicket) {
                 ventanaTicket.location = URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id) + '?tipo=' + encodeURIComponent(tipoComprobante);
             }
@@ -1600,7 +1627,8 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
                     rtn_identidad: rtn,
                     telefono: telefono,
                     direccion: direccion,
-                    limite_credito: '0'
+                    limite_credito: '0',
+                    csrf_token: obtenerCsrfToken()
                 }).toString()
             })
             .then(resp => resp.json())

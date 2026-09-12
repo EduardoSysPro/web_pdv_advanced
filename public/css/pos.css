@@ -1625,6 +1625,69 @@ textarea.form-control-pos:focus,
     background: #e2e8f0;
 }
 
+.pos-sidebar-section {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 46px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #475569;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.pos-sidebar-section > i {
+    width: 20px;
+    flex: 0 0 20px;
+    font-size: 16px;
+    text-align: center;
+}
+
+.pos-sidebar-section-chevron {
+    margin-left: auto;
+    width: 14px !important;
+    flex: 0 0 14px !important;
+    font-size: 12px !important;
+    transition: transform 0.2s ease;
+}
+
+.pos-sidebar-section.is-open .pos-sidebar-section-chevron {
+    transform: rotate(180deg);
+}
+
+.pos-sidebar-section:hover {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.pos-sidebar-submenu {
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    padding: 2px 0 4px;
+}
+
+.pos-sidebar-section.is-open + .pos-sidebar-submenu {
+    display: flex;
+}
+
+.pos-sidebar-submenu .pos-sidebar-link {
+    min-height: 40px;
+    padding-left: 26px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
 .pos-sidebar-bottom {
     margin-top: auto;
     padding-top: 14px;
@@ -1701,18 +1764,23 @@ textarea.form-control-pos:focus,
 .sidebar-collapsed .pos-workspace { margin-left: 76px; }
 .sidebar-collapsed .pos-brand-text,
 .sidebar-collapsed .pos-sidebar-link > span,
+.sidebar-collapsed .pos-sidebar-section > span,
+.sidebar-collapsed .pos-sidebar-section-chevron,
+.sidebar-collapsed .pos-sidebar-submenu,
 .sidebar-collapsed .pos-sidebar-divider { display: none; }
 .sidebar-collapsed .pos-sidebar-brand { justify-content: center; padding-right: 0; padding-left: 0; }
-.sidebar-collapsed .pos-sidebar-link { justify-content: center; padding: 0; overflow: visible; }
+.sidebar-collapsed .pos-sidebar-link,
+.sidebar-collapsed .pos-sidebar-section { justify-content: center; padding: 0; overflow: visible; }
 .sidebar-collapsed .pos-sidebar-inventory-link .pos-stock-alert-badge { top: 2px; right: 3px; }
-.sidebar-collapsed .pos-sidebar-link:hover::after { content: attr(data-tooltip); position: absolute; left: calc(100% + 12px); z-index: 30; padding: 7px 10px; border-radius: 7px; background: #0f172a; box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22); color: #fff; font-size: 12px; white-space: nowrap; }
+.sidebar-collapsed .pos-sidebar-link:hover::after,
+.sidebar-collapsed .pos-sidebar-section:hover::after { content: attr(data-tooltip); position: absolute; left: calc(100% + 12px); z-index: 30; padding: 7px 10px; border-radius: 7px; background: #0f172a; box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22); color: #fff; font-size: 12px; white-space: nowrap; }
 
 @media (max-width: 900px) {
     .pos-sidebar { flex-basis: 76px; width: 76px; }
     .pos-workspace { margin-left: 76px; }
-    .pos-brand-text, .pos-sidebar-link > span, .pos-sidebar-divider { display: none; }
-    .pos-sidebar-brand, .pos-sidebar-link { justify-content: center; padding-right: 0; padding-left: 0; }
-    .pos-sidebar-link { overflow: visible; }
+    .pos-brand-text, .pos-sidebar-link > span, .pos-sidebar-section > span, .pos-sidebar-section-chevron, .pos-sidebar-submenu, .pos-sidebar-divider { display: none; }
+    .pos-sidebar-brand, .pos-sidebar-link, .pos-sidebar-section { justify-content: center; padding-right: 0; padding-left: 0; }
+    .pos-sidebar-link, .pos-sidebar-section { overflow: visible; }
     .pos-sidebar-inventory-link .pos-stock-alert-badge { top: 2px; right: 3px; }
     .pos-context-info { gap: 10px; }
     .pos-context-label { display: none; }
@@ -1770,3 +1838,10 @@ body.pos-body.pos-modulo-body {
     .pos-ventas-main { padding: 12px; overflow: visible; }
     .pos-ventas-main .pos-totales { margin: 0 -12px -12px; }
 }
+
+/* Detalle de compras */
+.campo-label { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--color-texto-claro,#718096); margin-bottom: 2px; }
+.totales-detalle > div { background: var(--color-tarjeta,#fff); border: 1px solid var(--color-borde,#e2e8f0); border-radius: 8px; padding: 10px 12px; }
+.totales-detalle span { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--color-texto-claro,#718096); }
+.totales-detalle strong { font-size: 1.02rem; color: var(--color-texto,#1e293b); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 600; }

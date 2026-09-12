@@ -12,6 +12,7 @@ $fechaActual = date('d/m/Y H:i');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="csrf-token" content="<?php echo htmlspecialchars(csrf_token()); ?>">
     <title>Web PDV - Sistema de Punto de Venta</title>
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/estilos.css">
 </head>

@@ -242,6 +242,15 @@
                 </div>
 
                 <div id="cobro-mensaje" class="cobro-mensaje"></div>
+
+                <!-- Impresión por red (LAN) -->
+                <div class="campo cobro-campo" style="margin-top: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                        <input type="checkbox" id="cobro-imprimir-lan" <?php echo !empty($impresoraLanActiva) ? 'checked' : ''; ?>>
+                        <i class="fa-solid fa-wifi" aria-hidden="true"></i> Imprimir en impresora de red (LAN)
+                    </label>
+                    <small style="color: #64748b; display: block; margin-top: 2px;">Si lo desmarcas, el comprobante se imprime con el diálogo del navegador.</small>
+                </div>
             </div>
 
             <div class="modal-pie">

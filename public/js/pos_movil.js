@@ -4,12 +4,21 @@
  */
 
 document.addEventListener('DOMContentLoaded', function () {
+    function obtenerCsrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    }
+
     // Estado del carrito
     let carrito = [];
     let metodoPagoSeleccionado = 'efectivo';
+    let clienteSeleccionado = null;
+    let clavePrecioEditar = null;
     let html5QrCode = null;
     let isScannerRunning = false;
     let debounceBusqueda = null;
+    let debounceCliente = null;
+    const CLIENTES = (typeof CLIENTES_REGISTRADOS !== 'undefined' && Array.isArray(CLIENTES_REGISTRADOS)) ? CLIENTES_REGISTRADOS : [];
 
     // Elementos DOM principales
     const inputBusqueda = document.getElementById('movil-search-input');
@@ -52,6 +61,38 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnSinImprimir = document.getElementById('btn-sin-imprimir');
     const botonesMetodos = document.querySelectorAll('.btn-metodo-touch');
     const botonesBilletes = document.querySelectorAll('.btn-billete-touch');
+
+    // Elementos Cliente / Crédito
+    const resumenCredito = document.getElementById('resumen-credito-touch');
+    const cobroCreditoVal = document.getElementById('cobro-credito-val');
+    const btnToggleCliente = document.getElementById('btn-toggle-cliente');
+    const clienteSelectLabel = document.getElementById('cliente-select-label');
+    const clientePickerWrap = document.getElementById('cliente-picker-wrap');
+    const inputCliente = document.getElementById('movil-input-cliente');
+    const clienteResults = document.getElementById('movil-cliente-results');
+    const clienteSeleccionadoPanel = document.getElementById('cliente-seleccionado');
+    const clienteNombreTxt = document.getElementById('cliente-nombre-txt');
+    const clienteDatosTxt = document.getElementById('cliente-datos-txt');
+    const btnQuitarCliente = document.getElementById('btn-quitar-cliente');
+
+    // Elementos Modal Precio / Descuento
+    const modalPrecio = document.getElementById('modal-precio-movil');
+    const btnCerrarPrecio = document.getElementById('btn-cerrar-precio');
+    const precioTitulo = document.getElementById('precio-titulo');
+    const precioListaVal = document.getElementById('precio-lista-val');
+    const precioItemNombre = document.getElementById('precio-item-nombre');
+    const inputPrecio = document.getElementById('input-precio-movil');
+    const btnAplicarPrecio = document.getElementById('btn-aplicar-precio');
+    const btnQuitarDescuento = document.getElementById('btn-quitar-descuento');
+    const precioResumen = document.getElementById('precio-resumen');
+    const botonesPorcentaje = document.querySelectorAll('.porcentajes-descuento button');
+
+    // Elementos Historial de Ventas de Hoy
+    const btnAbrirHistorial = document.getElementById('btn-abrir-historial');
+    const modalHistorial = document.getElementById('modal-historial-movil');
+    const btnCerrarHistorial = document.getElementById('btn-cerrar-historial');
+    const btnRefrescarHistorial = document.getElementById('btn-refrescar-historial');
+    const historialBody = document.getElementById('historial-body');
 
     // Recuperar carrito guardado si existe en sessionStorage
     try {
@@ -152,6 +193,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function buscarPorCodigoDirecto(codigo) {
         const body = new URLSearchParams();
         body.append('codigo', codigo);
+        body.append('csrf_token', obtenerCsrfToken());
 
         fetch(URL_BASE + 'ventas/buscar-producto', {
             method: 'POST',
@@ -188,7 +230,10 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             carrito.push({
                 ...producto,
-                cantidad: 1
+                cantidad: 1,
+                precio_lista: Number(producto.precio_lista ?? producto.precio_venta),
+                precio_unitario: Number(producto.precio_unitario ?? producto.precio_venta),
+                descuento_unitario: Number(producto.descuento_unitario || 0)
             });
         }
 
@@ -232,6 +277,304 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (e) {}
     }
 
+    function round2(n) {
+        return Math.round((Number(n) || 0) * 100) / 100;
+    }
+
+    // ==========================================
+    // DESCUENTO / EDICIÓN DE PRECIO POR ARTÍCULO
+    // ==========================================
+    function abrirModalPrecio(key) {
+        const item = carrito.find(p => (p.item_key || String(p.id)) === key);
+        if (!item) return;
+        clavePrecioEditar = key;
+
+        precioTitulo.textContent = 'Editar precio · ' + item.nombre;
+        precioItemNombre.textContent = item.nombre;
+        const lista = round2(item.precio_lista ?? item.precio_venta);
+        precioListaVal.textContent = MONEDA_SIMBOLO + formatear(lista);
+        inputPrecio.value = round2(item.precio_venta).toFixed(2);
+        btnQuitarDescuento.style.display = (Number(item.descuento_unitario) > 0.004) ? 'inline-flex' : 'none';
+        actualizarResumenPrecio();
+        modalPrecio.classList.add('is-open');
+        modalPrecio.setAttribute('aria-hidden', 'false');
+        inputPrecio.focus();
+    }
+
+    function cerrarModalPrecio() {
+        modalPrecio.classList.remove('is-open');
+        modalPrecio.setAttribute('aria-hidden', 'true');
+        clavePrecioEditar = null;
+    }
+
+    function actualizarResumenPrecio() {
+        const item = carrito.find(p => (p.item_key || String(p.id)) === clavePrecioEditar);
+        if (!item) return;
+        const lista = round2(item.precio_lista ?? item.precio_venta);
+        const final = round2(inputPrecio.value);
+
+        if (final >= lista) {
+            precioResumen.textContent = 'Sin descuento';
+        } else {
+            const desc = round2(lista - final);
+            const por = lista > 0 ? Math.round((desc / lista) * 100) : 0;
+            precioResumen.textContent = 'Descuento: ' + MONEDA_SIMBOLO + formatear(desc) + ' (' + por + '%)';
+        }
+    }
+
+    function aplicarPrecioItem() {
+        const item = carrito.find(p => (p.item_key || String(p.id)) === clavePrecioEditar);
+        if (!item) return;
+        const lista = round2(item.precio_lista ?? item.precio_venta);
+        let final = round2(inputPrecio.value);
+
+        if (final < 0) final = 0;
+        if (final > lista) {
+            alert('El precio no puede ser mayor que el precio de lista (' + MONEDA_SIMBOLO + formatear(lista) + ').');
+            inputPrecio.value = lista.toFixed(2);
+            final = lista;
+        }
+
+        item.precio_venta = final;
+        item.precio_unitario = final;
+        item.descuento_unitario = round2(lista - final);
+
+        guardarCarrito();
+        renderizarCarrito();
+        cerrarModalPrecio();
+    }
+
+    btnCerrarPrecio.addEventListener('click', cerrarModalPrecio);
+    btnAplicarPrecio.addEventListener('click', aplicarPrecioItem);
+    inputPrecio.addEventListener('input', actualizarResumenPrecio);
+
+    btnQuitarDescuento.addEventListener('click', function () {
+        const item = carrito.find(p => (p.item_key || String(p.id)) === clavePrecioEditar);
+        if (!item) return;
+        const lista = round2(item.precio_lista ?? item.precio_venta);
+        item.precio_venta = lista;
+        item.precio_unitario = lista;
+        item.descuento_unitario = 0;
+        guardarCarrito();
+        renderizarCarrito();
+        cerrarModalPrecio();
+    });
+
+    botonesPorcentaje.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const item = carrito.find(p => (p.item_key || String(p.id)) === clavePrecioEditar);
+            if (!item) return;
+            const por = Number(this.dataset.por) || 0;
+            const lista = round2(item.precio_lista ?? item.precio_venta);
+            inputPrecio.value = round2(lista * (1 - por / 100)).toFixed(2);
+            actualizarResumenPrecio();
+        });
+    });
+
+    // ==========================================
+    // SELECCIÓN DE CLIENTE (opcional / requerido en crédito)
+    // ==========================================
+    function etiquetaCliente(c) {
+        const saldo = Number(c.saldo_pendiente) || 0;
+        return 'Saldo ' + MONEDA_SIMBOLO + formatear(saldo) + (c.rtn ? ' · RTN ' + c.rtn : '');
+    }
+
+    function esModoCredito() {
+        return metodoPagoSeleccionado === 'credito';
+    }
+
+    function actualizarClienteUI() {
+        if (esModoCredito() && !clienteSeleccionado) {
+            clienteSelectLabel.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Cliente requerido (crédito)';
+            clienteSelectLabel.classList.add('cliente-requerido');
+        } else {
+            clienteSelectLabel.innerHTML = '<i class="fa-solid fa-user"></i> Agregar cliente (opcional)';
+            clienteSelectLabel.classList.remove('cliente-requerido');
+        }
+
+        if (clienteSeleccionado) {
+            clienteNombreTxt.textContent = clienteSeleccionado.nombre;
+            clienteDatosTxt.textContent = etiquetaCliente(clienteSeleccionado);
+            clienteSeleccionadoPanel.style.display = 'flex';
+            clientePickerWrap.style.display = 'none';
+            btnToggleCliente.style.display = 'none';
+        } else {
+            clienteSeleccionadoPanel.style.display = 'none';
+            btnToggleCliente.style.display = 'flex';
+        }
+    }
+
+    function filtrarClientes() {
+        const termino = (inputCliente.value || '').trim().toLowerCase();
+        let lista = CLIENTES;
+        if (termino) {
+            lista = lista.filter(c => (c.nombre || '').toLowerCase().includes(termino) || (c.rtn || '').toLowerCase().includes(termino));
+        }
+        lista = lista.slice(0, 30);
+
+        if (lista.length === 0) {
+            clienteResults.innerHTML = '<div class="cliente-vacio">Sin clientes coincidentes</div>';
+            return;
+        }
+
+        clienteResults.innerHTML = lista.map(c => `
+            <div class="cliente-fila" data-id="${c.id}">
+                <div class="cliente-fila-main">
+                    <div class="cliente-fila-nombre">${escapar(c.nombre)}</div>
+                    <div class="cliente-fila-sub">${escapar(etiquetaCliente(c))}</div>
+                </div>
+                <i class="fa-solid fa-plus"></i>
+            </div>
+        `).join('');
+
+        clienteResults.querySelectorAll('.cliente-fila').forEach(row => {
+            row.addEventListener('click', function () {
+                const c = CLIENTES.find(x => x.id === Number(this.dataset.id));
+                if (c) seleccionarCliente(c);
+            });
+        });
+    }
+
+    function seleccionarCliente(c) {
+        clienteSeleccionado = c;
+        actualizarClienteUI();
+        actualizarEstadoCobro();
+        vibrar();
+    }
+
+    btnToggleCliente.addEventListener('click', function () {
+        const visible = clientePickerWrap.style.display !== 'none';
+        clientePickerWrap.style.display = visible ? 'none' : 'block';
+        if (!visible) {
+            inputCliente.value = '';
+            filtrarClientes();
+            inputCliente.focus();
+        }
+    });
+
+    inputCliente.addEventListener('input', function () {
+        clearTimeout(debounceCliente);
+        debounceCliente = setTimeout(filtrarClientes, 150);
+    });
+
+    btnQuitarCliente.addEventListener('click', function () {
+        clienteSeleccionado = null;
+        actualizarClienteUI();
+        actualizarEstadoCobro();
+    });
+
+    // ==========================================
+    // HISTORIAL DE VENTAS DE HOY
+    // ==========================================
+    function etiquetaMetodo(m) {
+        const mapa = {
+            'efectivo': 'Efectivo',
+            'tarjeta': 'Tarjeta',
+            'transferencia': 'Transferencia',
+            'credito': 'Crédito'
+        };
+        return mapa[m] || m || '—';
+    }
+
+    function reimprimirVenta(id, btn) {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        }
+
+        if (IMPRESORA_LAN_ACTIVA) {
+            fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(id), { method: 'GET', credentials: 'same-origin' })
+                .then(r => r.json())
+                .then(info => {
+                    alert(info && info.exito === true ? 'Ticket enviado a la impresora LAN.' : 'No se pudo imprimir por LAN: ' + (info && info.mensaje || 'error desconocido'));
+                })
+                .catch(() => alert('No se pudo conectar con la impresora LAN.'))
+                .finally(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-print"></i>';
+                    }
+                });
+        } else {
+            window.open(URL_BASE + 'ventas/ticket/' + encodeURIComponent(id), '_blank');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-print"></i>';
+            }
+        }
+    }
+
+    function renderHistorial(ventas) {
+        if (!ventas || ventas.length === 0) {
+            historialBody.innerHTML = `
+                <div class="historial-vacio">
+                    <i class="fa-solid fa-receipt"></i>
+                    <p>Aún no hay ventas registradas hoy.</p>
+                </div>`;
+            return;
+        }
+
+        const totalDia = ventas.reduce((acc, x) => acc + (Number(x.total) || 0), 0);
+
+        historialBody.innerHTML = `
+            <div class="historial-total-dia">
+                <span>Total del día</span>
+                <span>${MONEDA_SIMBOLO}${formatear(totalDia)}</span>
+            </div>
+            ${ventas.map(x => `
+                <div class="historial-fila">
+                    <div class="hist-fila-info">
+                        <div class="hist-fila-top">
+                            <span class="hist-folio">${escapar(x.folio)}</span>
+                            <span class="hist-hora">${escapar(x.hora)}</span>
+                        </div>
+                        <div class="hist-fila-sub">${escapar(x.cliente)} · ${escapar(etiquetaMetodo(x.metodo_pago))}</div>
+                    </div>
+                    <div class="hist-fila-accion">
+                        <span class="hist-total">${MONEDA_SIMBOLO}${formatear(x.total)}</span>
+                        <button type="button" class="btn-reimprimir-hist" data-id="${x.id}" title="Reimprimir">
+                            <i class="fa-solid fa-print"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('')}`;
+
+        historialBody.querySelectorAll('.btn-reimprimir-hist').forEach(btn => {
+            btn.addEventListener('click', function () {
+                reimprimirVenta(this.dataset.id, this);
+            });
+        });
+    }
+
+    function cargarHistorialHoy() {
+        historialBody.innerHTML = '<div class="historial-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando ventas de hoy...</div>';
+        fetch(URL_BASE + 'ventas/historial-hoy', { credentials: 'same-origin' })
+            .then(res => res.json())
+            .then(data => {
+                if (!data || !data.exito) {
+                    historialBody.innerHTML = '<div class="historial-vacio"><i class="fa-solid fa-triangle-exclamation"></i><p>No se pudo consultar el historial.</p></div>';
+                    return;
+                }
+                renderHistorial(data.ventas);
+            })
+            .catch(() => {
+                historialBody.innerHTML = '<div class="historial-vacio"><i class="fa-solid fa-triangle-exclamation"></i><p>No se pudo conectar con el servidor.</p></div>';
+            });
+    }
+
+    btnAbrirHistorial.addEventListener('click', function () {
+        modalHistorial.classList.add('is-open');
+        modalHistorial.setAttribute('aria-hidden', 'false');
+        cargarHistorialHoy();
+    });
+
+    btnCerrarHistorial.addEventListener('click', function () {
+        modalHistorial.classList.remove('is-open');
+        modalHistorial.setAttribute('aria-hidden', 'true');
+    });
+
+    btnRefrescarHistorial.addEventListener('click', cargarHistorialHoy);
+
     function calcularTotal() {
         return carrito.reduce((acc, item) => acc + (Number(item.precio_venta) * Number(item.cantidad)), 0);
     }
@@ -256,18 +599,27 @@ document.addEventListener('DOMContentLoaded', function () {
         listaCarrito.innerHTML = carrito.map(item => {
             const key = item.item_key || String(item.id);
             const subtotal = Number(item.precio_venta) * Number(item.cantidad);
+            const descuentoUnit = Number(item.descuento_unitario || 0);
+            const badgeDesc = descuentoUnit > 0.004
+                ? `<span class="badge-descuento">-${MONEDA_SIMBOLO}${formatear(descuentoUnit)}</span>`
+                : '';
 
             return `
                 <div class="movil-cart-item" data-key="${key}">
                     <div class="cart-item-row-top">
                         <div class="cart-item-desc">
                             <div class="cart-item-title">${escapar(item.nombre)}</div>
-                            <div class="cart-item-unit-price">${MONEDA_SIMBOLO}${formatear(item.precio_venta)} c/u</div>
+                            <div class="cart-item-unit-price">
+                                ${MONEDA_SIMBOLO}${formatear(item.precio_venta)} c/u${badgeDesc}
+                            </div>
                         </div>
                         <div class="cart-item-subtotal">${MONEDA_SIMBOLO}${formatear(subtotal)}</div>
                     </div>
                     <div class="cart-item-row-bottom">
                         <div class="cart-item-controls">
+                            <button type="button" class="btn-price-touch" data-action="precio" data-key="${key}" title="Editar precio o aplicar descuento">
+                                <i class="fa-solid fa-tags"></i>
+                            </button>
                             <button type="button" class="btn-qty-touch" data-action="restar" data-key="${key}">-</button>
                             <span class="cart-item-qty">${item.cantidad}</span>
                             <button type="button" class="btn-qty-touch" data-action="sumar" data-key="${key}">+</button>
@@ -286,6 +638,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 const key = this.dataset.key;
                 const action = this.dataset.action;
                 cambiarCantidad(key, action === 'sumar' ? 1 : -1);
+            });
+        });
+
+        listaCarrito.querySelectorAll('.btn-price-touch').forEach(btn => {
+            btn.addEventListener('click', function () {
+                abrirModalPrecio(this.dataset.key);
             });
         });
 
@@ -717,11 +1075,21 @@ document.addEventListener('DOMContentLoaded', function () {
         const total = calcularTotal();
         cobroTotalVal.textContent = MONEDA_SIMBOLO + formatear(total);
         inputEfectivo.value = '';
+
+        // Resetear estado de cobro
+        metodoPagoSeleccionado = 'efectivo';
+        botonesMetodos.forEach(b => b.classList.remove('is-selected'));
+        botonesMetodos[0].classList.add('is-selected');
+        clienteSeleccionado = null;
+        actualizarClienteUI();
+        clientePickerWrap.style.display = 'none';
+        campoEfectivo.style.display = 'block';
+        resumenCambio.style.display = 'flex';
+        resumenCredito.style.display = 'none';
+
         actualizarEstadoCobro();
         modalCobro.classList.add('is-open');
-        if (metodoPagoSeleccionado === 'efectivo') {
-            inputEfectivo.focus();
-        }
+        inputEfectivo.focus();
     });
 
     btnCerrarCobro.addEventListener('click', function () {
@@ -735,13 +1103,24 @@ document.addEventListener('DOMContentLoaded', function () {
             this.classList.add('is-selected');
             metodoPagoSeleccionado = this.dataset.metodo;
 
-            if (metodoPagoSeleccionado === 'efectivo') {
-                campoEfectivo.style.display = 'block';
-                resumenCambio.style.display = 'flex';
+            const esCredito = metodoPagoSeleccionado === 'credito';
+            const esEfectivo = metodoPagoSeleccionado === 'efectivo';
+
+            campoEfectivo.style.display = esEfectivo ? 'block' : 'none';
+            resumenCambio.style.display = esEfectivo ? 'flex' : 'none';
+            resumenCredito.style.display = esCredito ? 'flex' : 'none';
+
+            if (esCredito) {
+                cobroCreditoVal.textContent = MONEDA_SIMBOLO + formatear(calcularTotal());
+                if (!clienteSeleccionado) {
+                    clientePickerWrap.style.display = 'block';
+                    inputCliente.focus();
+                }
             } else {
-                campoEfectivo.style.display = 'none';
-                resumenCambio.style.display = 'none';
+                clientePickerWrap.style.display = 'none';
             }
+
+            actualizarClienteUI();
             actualizarEstadoCobro();
         });
     });
@@ -766,13 +1145,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function actualizarEstadoCobro() {
         const total = calcularTotal();
-        const efectivo = Number(inputEfectivo.value) || 0;
+
+        if (metodoPagoSeleccionado === 'credito') {
+            if (clienteSeleccionado) {
+                cobroCreditoVal.textContent = MONEDA_SIMBOLO + formatear(total);
+            }
+            if (!clienteSeleccionado) {
+                btnFinalizarVenta.disabled = true;
+                return;
+            }
+
+            const saldo = Number(clienteSeleccionado.saldo_pendiente) || 0;
+            const limite = Number(clienteSeleccionado.limite_credito) || 0;
+            const excede = (saldo + total) > (limite + 0.001);
+
+            if (excede) {
+                clienteDatosTxt.textContent = 'Excede el límite de crédito (' + MONEDA_SIMBOLO + formatear(limite) + ')';
+                clienteDatosTxt.classList.add('cliente-aviso-error');
+                btnFinalizarVenta.disabled = true;
+            } else {
+                clienteDatosTxt.classList.remove('cliente-aviso-error');
+                btnFinalizarVenta.disabled = false;
+            }
+            return;
+        }
 
         if (metodoPagoSeleccionado !== 'efectivo') {
             btnFinalizarVenta.disabled = false;
             return;
         }
 
+        const efectivo = Number(inputEfectivo.value) || 0;
         const cambio = efectivo - total;
         if (efectivo >= total && total > 0) {
             cobroCambioVal.textContent = MONEDA_SIMBOLO + formatear(cambio);
@@ -801,24 +1204,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function procesarVenta(imprimirRecibo) {
         const total = calcularTotal();
-        const efectivo = metodoPagoSeleccionado === 'efectivo' ? (Number(inputEfectivo.value) || total) : total;
-        const cambio = metodoPagoSeleccionado === 'efectivo' ? (efectivo - total) : 0;
+        const esCredito = metodoPagoSeleccionado === 'credito';
+        const efectivo = esCredito
+            ? total
+            : (metodoPagoSeleccionado === 'efectivo' ? (Number(inputEfectivo.value) || total) : total);
+        const cambio = esCredito ? 0 : (metodoPagoSeleccionado === 'efectivo' ? (efectivo - total) : 0);
 
         btnFinalizarVenta.disabled = true;
         btnFinalizarVenta.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
 
         const payload = {
+            csrf_token: obtenerCsrfToken(),
             total: total,
             efectivo: efectivo,
             cambio: cambio,
             metodo_pago: metodoPagoSeleccionado,
             tipo_comprobante: 'recibo',
             imprimir_recibo: imprimirRecibo,
-            cliente_id: 0,
-            cliente_nombre: 'Consumidor Final',
-            cliente_rtn: '',
-            cliente_telefono: '',
-            cliente_direccion: '',
+            cliente_id: clienteSeleccionado ? Number(clienteSeleccionado.id) : 0,
+            cliente_nombre: clienteSeleccionado ? (clienteSeleccionado.nombre || 'Consumidor Final') : 'Consumidor Final',
+            cliente_rtn: clienteSeleccionado ? (clienteSeleccionado.rtn || '') : '',
+            cliente_telefono: clienteSeleccionado ? (clienteSeleccionado.telefono || '') : '',
+            cliente_direccion: clienteSeleccionado ? (clienteSeleccionado.direccion || '') : '',
             productos: carrito.map(item => ({
                 ...item,
                 precio_lista: Number(item.precio_lista ?? item.precio_venta),
@@ -846,14 +1253,23 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (imprimirRecibo) {
-                const ticketUrl = URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id);
-                window.open(ticketUrl, '_blank');
+                if (IMPRESORA_LAN_ACTIVA) {
+                    fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(resp.venta_id), { method: 'GET', credentials: 'same-origin' })
+                        .then(r => r.json())
+                        .then(info => alert(info && info.exito === true ? 'Ticket impreso en la impresora LAN.' : 'No se pudo imprimir por LAN: ' + (info && info.mensaje || 'error desconocido')))
+                        .catch(() => alert('No se pudo imprimir por la impresora LAN.'));
+                } else {
+                    const ticketUrl = URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id);
+                    window.open(ticketUrl, '_blank');
+                }
             }
 
             // Limpiar carrito y cerrar modal
             carrito = [];
             guardarCarrito();
             renderizarCarrito();
+            clienteSeleccionado = null;
+            actualizarClienteUI();
             modalCobro.classList.remove('is-open');
             cerrarConfirmacionImpresion();
 

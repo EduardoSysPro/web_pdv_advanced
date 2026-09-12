@@ -9,6 +9,9 @@ $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 define('URL_BASE', "{$protocolo}://{$host}/web_pdv/public/");
 date_default_timezone_set('America/Tegucigalpa');
 
+// En producción con certificado SSL configurado, cambia a true para forzar HTTPS
+define('FORZAR_HTTPS', false);
+
 define('MONEDA_SIMBOLO',  'L ');
 define('MONEDA_ISO',      'HNL');
 define('ISV_PORCENTAJE',  15);

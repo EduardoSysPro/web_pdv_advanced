@@ -38,7 +38,7 @@
                             <td>
                                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
                                     <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>categorias/editar/<?php echo (int)$categoria['id']; ?>">Editar</a>
-                                    <form method="POST" action="<?php echo URL_BASE; ?>categorias/eliminar/<?php echo (int)$categoria['id']; ?>" onsubmit="return confirm('¿Deseas eliminar esta categoría?');" style="display:inline;">
+                                    <form method="POST" action="<?php echo URL_BASE; ?>categorias/eliminar/<?php echo (int)$categoria['id']; ?>" onsubmit="return confirm('¿Deseas eliminar esta categoría?');" style="display:inline;"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
                                         <button type="submit" class="btn-pos btn-danger">Eliminar</button>
                                     </form>
                                 </div>

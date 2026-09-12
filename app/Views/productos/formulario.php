@@ -3,6 +3,7 @@
 <section class="tarjeta formulario-producto">
     <?php foreach (($errores ?? []) as $error): ?><div class="alerta alerta-error"><?php echo htmlspecialchars($error); ?></div><?php endforeach; ?>
     <form method="POST" action="<?php echo $accion; ?>" id="form-producto">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
         <div class="form-grid">
             <div class="campo">
                 <label for="codigo_barras">Código de barras</label>

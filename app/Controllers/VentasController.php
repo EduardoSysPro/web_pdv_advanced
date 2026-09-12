@@ -29,6 +29,8 @@ class VentasController extends Controller
         $fechaActual = date('d/m/Y H:i');
         $urlBase = URL_BASE;
         $clientes = $this->modeloCliente->obtenerTodos();
+        $configuracion = $this->modeloConfiguracion->obtenerMapa();
+        $impresoraLanActiva = (string)($configuracion['impresora_lan_activa'] ?? '0') === '1' && trim((string)($configuracion['impresora_lan_ip'] ?? '')) !== '';
 
         require_once __DIR__ . '/../Views/ventas/index.php';
     }
@@ -43,6 +45,7 @@ class VentasController extends Controller
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
         $clientes = $this->modeloCliente->obtenerTodos();
         $urlBase = URL_BASE;
+        $impresoraLanActiva = (string)($configuracion['impresora_lan_activa'] ?? '0') === '1' && trim((string)($configuracion['impresora_lan_ip'] ?? '')) !== '';
 
         require_once APP_PATH . 'Views' . DIRECTORY_SEPARATOR . 'ventas' . DIRECTORY_SEPARATOR . 'movil.php';
     }
@@ -139,6 +142,50 @@ class VentasController extends Controller
         header('Content-Type: application/json; charset=utf-8');
         $termino = trim($_GET['q'] ?? $_POST['q'] ?? '');
         echo json_encode($termino === '' ? [] : $this->modeloProducto->buscarProductosAjax($termino));
+    }
+
+    /**
+     * Devuelve las ventas registradas el día de hoy (para la terminal móvil),
+     * filtradas por la caja o el usuario en sesión.
+     */
+    public function historialHoy()
+    {
+        $this->requerirAutenticacion();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $pdo = Database::getInstancia()->getConexion();
+        $usuarioId = (int)($_SESSION['id'] ?? 0);
+        $cajaId = (int)($_SESSION['caja_id'] ?? 0);
+        $hasCaja = $this->columnaExiste($pdo, 'ventas', 'caja_id');
+
+        $condiciones = ['DATE(v.fecha_venta) = CURDATE()'];
+        $params = [];
+        if ($hasCaja && $cajaId > 0) {
+            $condiciones[] = 'v.caja_id = :caja_id';
+            $params[':caja_id'] = $cajaId;
+        } else {
+            $condiciones[] = 'v.usuario_id = :usuario_id';
+            $params[':usuario_id'] = $usuarioId;
+        }
+
+        $sql = "SELECT v.id, v.folio,
+                       DATE_FORMAT(v.fecha_venta, '%H:%i') AS hora,
+                       v.total, v.metodo_pago,
+                       COALESCE(v.cliente_nombre, c.nombre, 'Consumidor Final') AS cliente
+                FROM ventas v
+                LEFT JOIN clientes c ON c.id = v.cliente_id
+                WHERE " . implode(' AND ', $condiciones) . "
+                ORDER BY v.fecha_venta DESC
+                LIMIT 100";
+
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $ventas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode(['exito' => true, 'ventas' => $ventas]);
+        } catch (Exception $e) {
+            echo json_encode(['exito' => false, 'mensaje' => 'No se pudo consultar el historial del día.']);
+        }
     }
 
     /**

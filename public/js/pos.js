@@ -42,6 +42,10 @@
         contadorTickets: 0
     };
 
+    // Evita que confirmarCobro() se ejecute dos veces al mismo tiempo
+    // (doble click o Enter + click) y duplique la venta/impresión.
+    let procesandoVenta = false;
+
     // ============================================================
     // FUNCIONES DE PERSISTENCIA (sessionStorage)
     // ============================================================
@@ -1095,8 +1099,10 @@
     }
 
     function confirmarCobro() {
+        if (procesandoVenta) return;
+        procesandoVenta = true;
         const ticket = obtenerTicketActivo();
-        if (!ticket) return;
+        if (!ticket) { procesandoVenta = false; return; }
         const total = Number(document.getElementById('modal-cobro')?.dataset.total || 0);
         const metodoPago = document.querySelector('input[name="cobro-metodo"]:checked')?.value || 'efectivo';
         const tipoComprobante = obtenerTipoComprobanteSeleccionado();
@@ -1138,6 +1144,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
         .then(resp => resp.json()).then(resp => {
             if (!resp || resp.exito !== true) { 
                 if (ventanaTicket) ventanaTicket.close(); 
+                procesandoVenta = false;
                 alert(resp?.mensaje || 'No se pudo registrar la venta.'); 
                 return; 
             }
@@ -1145,6 +1152,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
             const esFacturaCredito = metodoPago === 'credito' && tipoComprobante === 'factura';
             if (esFacturaCredito) {
                 if (ventanaTicket) ventanaTicket.close();
+                procesandoVenta = false;
                 alert('Factura a crédito registrada. Se emitirá cuando el cliente haya pagado el total de la factura.');
             } else if (document.getElementById('cobro-imprimir-lan')?.checked) {
                 if (ventanaTicket) ventanaTicket.close();
@@ -1163,6 +1171,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
                 ventanaTicket.location = URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id) + '?tipo=' + encodeURIComponent(tipoComprobante);
             }
             cerrarModalCobro();
+            procesandoVenta = false;
             
             // Limpiar inputs opcionales tras completar cobro
             if (document.getElementById('cliente_nombre')) document.getElementById('cliente_nombre').value = '';
@@ -1174,6 +1183,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
             guardarEstado(); renderizarTodo();
         }).catch(() => { 
             if (ventanaTicket) ventanaTicket.close(); 
+            procesandoVenta = false;
             alert('No se pudo conectar con el servidor para registrar la venta.'); 
         });
     }

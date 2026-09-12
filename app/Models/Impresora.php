@@ -87,7 +87,7 @@ class Impresora
             $lineas[] = ['txt' => $this->centrar($configuracion['mensaje_ticket'], $ancho), 'bold' => false];
         }
 
-        return $this->enviar(['impresora_lan_ip' => $ip, 'impresora_lan_puerto' => $puerto], $this->construirBytes($lineas));
+        return $this->enviar(['impresora_lan_ip' => $ip, 'impresora_lan_puerto' => $puerto], $this->construirBytes($lineas, true, true));
     }
 
     /**
@@ -104,12 +104,31 @@ class Impresora
         }
 
         stream_set_timeout($fp, 5);
-        $escrito = @fwrite($fp, $bytes);
+        $totalLongitud = strlen($bytes);
+        $escrito = 0;
+        $error = false;
+        while ($escrito < $totalLongitud) {
+            $parcial = @fwrite($fp, substr($bytes, $escrito));
+            if ($parcial === false || $parcial === 0) {
+                $error = true;
+                break;
+            }
+            $escrito += $parcial;
+        }
+        @fflush($fp);                      // Vaciar el búfer de envío
         $info = stream_get_meta_data($fp);
+
+        // Esperar para que la impresora procese el búfer completo e incluso
+        // ejecute el corte mecánico (GS V) antes de cerrar el socket.
+        usleep(600000);
+
         @fclose($fp);
 
-        if ($escrito === false || !empty($info['timed_out'])) {
-            return ['exito' => false, 'mensaje' => 'Se conectó a la impresora pero no se pudieron enviar los datos (' . $host . ':' . $puerto . ').'];
+        if ($error || $escrito < $totalLongitud) {
+            return ['exito' => false, 'mensaje' => 'Se conectó a la impresora pero no se pudieron enviar todos los datos (' . $host . ':' . $puerto . ').'];
+        }
+        if (!empty($info['timed_out'])) {
+            return ['exito' => false, 'mensaje' => 'Se conectó a la impresora pero la transmisión tardó demasiado (' . $host . ':' . $puerto . ').'];
         }
 
         return ['exito' => true, 'mensaje' => 'Ticket impreso correctamente en la impresora LAN (' . $host . ':' . $puerto . ').'];
@@ -175,7 +194,12 @@ class Impresora
         }
 
         $copias = ['Original: Cliente', 'Copia: Emisor'];
-        foreach ($copias as $etiquetaCopia) {
+        $bytesTicket = '';
+        $totalCopias = count($copias);
+
+        foreach ($copias as $indiceCopia => $etiquetaCopia) {
+            $lineas = [];
+
             // Encabezado del negocio
             $lineas[] = ['txt' => $this->centrar($configuracion['nombre_negocio'] ?? 'MI TIENDA', $ancho), 'bold' => true];
             if (!empty($configuracion['rtn'])) $lineas[] = ['txt' => $this->centrar('RTN: ' . $configuracion['rtn'], $ancho), 'bold' => false];
@@ -271,15 +295,20 @@ class Impresora
             }
             $lineas[] = ['txt' => $this->centrar($configuracion['mensaje_ticket'] ?? '¡Gracias por su compra!', $ancho), 'bold' => false];
             $lineas[] = ['txt' => '', 'bold' => false];
+
+            $bytesTicket .= $this->construirBytes($lineas, true, $indiceCopia === $totalCopias - 1);
         }
 
-        return $this->construirBytes($lineas);
+        return $bytesTicket;
     }
 
     /**
-     * Convierte las líneas a comandos ESC/POS (texto + corte de papel).
+     * Convierte las líneas a comandos ESC/POS (texto + corte de papel opcional).
+     * $cortar = true: alimenta 3 líneas y corta al finalizar este bloque.
+     * $protegerFin = true: agrega líneas de relleno DESPUÉS del corte para que el
+     * comando de corte no vaya al final del búfer y se pierda al cerrar el socket.
      */
-    public function construirBytes(array $lineas)
+    public function construirBytes(array $lineas, bool $cortar = true, bool $protegerFin = false)
     {
         $bytes  = "\x1b\x40"; // Inicializar impresora
         $bytes .= "\x1b\x74\x1a"; // Página de códigos Latin-1/CP850
@@ -289,8 +318,13 @@ class Impresora
             $bytes .= $texto . "\x0a";
         }
         $bytes .= "\x1b\x45\x00"; // Quitar negrita
-        $bytes .= "\x1b\x64\x03"; // Alimentar 3 líneas antes del corte
-        $bytes .= "\x1d\x56\x42"; // Corte de papel (parcial)
+        if ($cortar) {
+            $bytes .= "\x1b\x64\x03"; // Alimentar 3 líneas antes del corte
+            $bytes .= "\x1d\x56\x42"; // Corte de papel (parcial)
+        }
+        if ($protegerFin) {
+            $bytes .= "\x1b\x64\x07"; // Alimentar 7 líneas tras el último corte
+        }
         return $bytes;
     }
 

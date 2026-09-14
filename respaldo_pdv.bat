@@ -21,11 +21,15 @@ set "DB_PASS="
 set "DB_HOST=localhost"
 set "DB_PORT=3306"
 
-:: Ruta a mysqldump en WampServer
-set "MYSQLDUMP=C:\wamp64\bin\mysql\mysql8.4.7\bin\mysqldump.exe"
+:: Ruta a mysqldump en XAMPP (o WampServer como alternativa)
+set "MYSQLDUMP=C:\xampp\mysql\bin\mysqldump.exe"
 
-:: Si cambia de versión o no existe en la ruta fija, buscarlo automáticamente en WampServer
+:: Si no existe en la ruta fija, buscarlo automáticamente en XAMPP y WampServer
 if not exist "%MYSQLDUMP%" (
+    for /f "delims=" %%f in ('dir /b /s "C:\xampp\mysql\bin\*mysqldump.exe" 2^>nul') do (
+        set "MYSQLDUMP=%%f"
+        goto :dump_encontrado
+    )
     for /f "delims=" %%f in ('dir /b /s "C:\wamp64\bin\mysql\*mysqldump.exe" 2^>nul') do (
         set "MYSQLDUMP=%%f"
         goto :dump_encontrado
@@ -56,17 +60,24 @@ if not "%DB_PASS%"=="" (
     set "AUTH_PASS=--password=%DB_PASS%"
 )
 
-:: Registrar inicio en log
+:: Registrar inicio en log (incluye contexto de ejecución para depurar el Programador de tareas)
 echo [%TIMESTAMP%] Iniciando respaldo de '%DB_NAME%'... >> "%LOG%"
+echo [%TIMESTAMP%] Usuario: %USERNAME% ^| OneDrive: "%OneDrive%" ^| mysqldump: "%MYSQLDUMP%" >> "%LOG%"
+
+if not exist "%MYSQLDUMP%" (
+    echo [%TIMESTAMP%] ERROR: No se encontro mysqldump.exe en XAMPP ni WampServer >> "%LOG%"
+    endlocal
+    exit /b 1
+)
 
 :: Ejecutar mysqldump
 "%MYSQLDUMP%" --host=%DB_HOST% --port=%DB_PORT% --user=%DB_USER% %AUTH_PASS% --databases %DB_NAME% --routines --triggers --single-transaction --quick --default-character-set=utf8mb4 > "%ARCHIVO%" 2>> "%LOG%"
 
-if %ERRORLEVEL% equ 0 (
+if !ERRORLEVEL! equ 0 (
     echo [%TIMESTAMP%] Respaldo generado exitosamente: %ARCHIVO% >> "%LOG%"
     echo Respaldo completado con exito: %ARCHIVO%
 ) else (
-    echo [%TIMESTAMP%] ERROR al generar el respaldo. Codigo: %ERRORLEVEL% >> "%LOG%"
+    echo [%TIMESTAMP%] ERROR al generar el respaldo. Codigo: !ERRORLEVEL! >> "%LOG%"
     echo ERROR: Ocurrio un problema al generar el respaldo. Revisa %LOG%
 )
 

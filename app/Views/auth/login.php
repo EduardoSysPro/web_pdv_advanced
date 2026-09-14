@@ -35,12 +35,7 @@
                     adaptado a la forma de trabajar de tu negocio.
                 </p>
 
-                <ul class="login-hero__sectores" aria-label="Negocios que puedes administrar">
-                    <li><i class="fa-solid fa-cart-shopping"></i><span>Abarrotes</span></li>
-                    <li><i class="fa-solid fa-store"></i><span>Tiendas de barrio</span></li>
-                    <li><i class="fa-solid fa-basket-shopping"></i><span>Minimarkets</span></li>
-                    <li><i class="fa-solid fa-shop"></i><span>Pulperías</span></li>
-                </ul>
+                
 
                 <div class="login-hero__features">
                     <span><i class="fa-solid fa-bolt"></i> Ventas rápidas</span>

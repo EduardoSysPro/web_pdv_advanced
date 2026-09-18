@@ -1328,3 +1328,364 @@ body.pos-movil-body {
 .btn-reimprimir-hist:disabled {
     opacity: 0.6;
 }
+
+/* ---------------- Vista Móvil de Cotizaciones ---------------- */
+/* La vista móvil no carga pos.css ni estilos.css; se estiliza aquí lo esencial. */
+
+/* Sección plegable de datos del cliente */
+.movil-cot-contenido .cot-seccion-plegable legend {
+    width: 100%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.movil-cot-contenido .cot-seccion-plegable .cot-seccion-leyenda {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.movil-cot-contenido .cot-seccion-plegable .cot-seccion-leyenda-texto {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: .3px;
+    color: var(--movil-text);
+}
+
+.movil-cot-contenido .cot-seccion-plegable .cot-seccion-leyenda-texto i {
+    color: var(--movil-primary);
+}
+
+.movil-cot-contenido .cot-seccion-plegable .cot-plegar-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--movil-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--movil-text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: transform 0.25s, border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.movil-cot-contenido .cot-seccion-plegable .cot-plegar-btn:hover {
+    background: #f1f5f9;
+    border-color: var(--movil-primary);
+    color: var(--movil-primary);
+}
+
+.movil-cot-contenido .cot-seccion-plegable[data-abierto="false"] .cot-plegar-btn {
+    transform: rotate(-90deg);
+}
+
+.movil-cot-contenido .cot-seccion-plegable[data-abierto="false"] #cot-cliente-contenido {
+    display: none;
+}
+
+.movil-cot-contenido .tabla-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.movil-cot-contenido .text-right {
+    text-align: right;
+}
+
+/* Inputs y textareas del formulario */
+.movil-cot-contenido .form-control-pos,
+.movil-cot-contenido input.form-control-pos,
+.movil-cot-contenido select.form-control-pos,
+.movil-cot-contenido textarea.form-control-pos,
+.movil-cot-contenido #cot-cliente-selector,
+.movil-cot-contenido #cot-busqueda-input {
+    width: 100%;
+    min-height: 50px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--movil-border);
+    border-radius: 12px;
+    background: #ffffff;
+    color: var(--movil-text);
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.25;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+    outline: none;
+    user-select: auto;
+}
+
+.movil-cot-contenido .form-control-pos::placeholder {
+    color: var(--movil-text-muted);
+}
+
+.movil-cot-contenido .form-control-pos:focus,
+.movil-cot-contenido input.form-control-pos:focus,
+.movil-cot-contenido select.form-control-pos:focus,
+.movil-cot-contenido textarea.form-control-pos:focus,
+.movil-cot-contenido #cot-busqueda-input:focus {
+    border-color: var(--movil-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    background: #ffffff;
+}
+
+.movil-cot-contenido textarea.form-control-pos {
+    min-height: 96px;
+    resize: vertical;
+}
+
+.movil-cot-contenido .form-control-pos[readonly],
+.movil-cot-contenido input.form-control-pos[readonly] {
+    background: #f1f5f9;
+    color: var(--movil-text-muted);
+}
+
+/* Buscador: preserva el espacio para el icono de búsqueda */
+.movil-cot-contenido .cot-busqueda-input {
+    padding-right: 44px;
+}
+
+/* Inputs numéricos del carrito */
+.movil-cot-contenido .cot-carrito input[type="number"].form-control-pos {
+    width: 100%;
+    min-width: 72px;
+    min-height: 42px;
+    padding: 8px 10px;
+    border: 1.5px solid var(--movil-border);
+    border-radius: 10px;
+    background: #ffffff;
+    color: var(--movil-text);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: right;
+}
+
+.movil-cot-contenido .cot-carrito input[type="number"].form-control-pos:focus {
+    border-color: var(--movil-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    background: #ffffff;
+}
+
+/* Tablas del editor */
+.movil-cot-contenido .table-pos {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+}
+
+.movil-cot-contenido .table-pos thead th {
+    background: #f1f5f9;
+    color: #475569;
+    border-bottom: 1px solid var(--movil-border);
+    padding: 10px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.movil-cot-contenido .table-pos tbody td {
+    padding: 12px;
+    border-bottom: 1px solid var(--movil-border);
+    color: var(--movil-text);
+    vertical-align: middle;
+}
+
+/* Botones de acción */
+.movil-cot-contenido .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.12s, box-shadow 0.2s, filter 0.2s;
+}
+
+.movil-cot-contenido .btn:active {
+    transform: scale(0.98);
+}
+
+.movil-cot-contenido .btn-exito {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+}
+
+.movil-cot-contenido .btn-secondary {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid var(--movil-border);
+}
+
+.movil-cot-contenido .btn-danger {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+/* ---------------- Carrito compacto (tarjetas) en pantallas pequeñas ---------------- */
+@media (max-width: 767px) {
+    .movil-cot-contenido .cot-carrito-wrap {
+        overflow: visible;
+    }
+
+    .movil-cot-contenido .cot-carrito {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .movil-cot-contenido .cot-carrito thead {
+        display: none;
+    }
+
+    .movil-cot-contenido .cot-carrito tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .movil-cot-contenido .cot-carrito tr {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+        background: var(--movil-card);
+        border: 1px solid var(--movil-border);
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Fila superior: nombre + importe + botón eliminar */
+    .movil-cot-contenido .cot-carrito .cot-celda-nombre {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 32px;
+        padding: 0;
+        padding-right: 116px;
+        margin-bottom: 8px;
+        font-size: 14px;
+        line-height: 1.25;
+        border-bottom: none;
+    }
+
+    .movil-cot-contenido .cot-carrito .cot-celda-nombre::before {
+        content: none;
+    }
+
+    .movil-cot-contenido .cot-carrito .cot-celda-nombre img {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        flex-shrink: 0;
+    }
+
+    .movil-cot-contenido .cot-carrito .cot-celda-nombre span {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    /* Importe y eliminar flotan arriba a la derecha */
+    .movil-cot-contenido .cot-carrito td:last-child {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: auto;
+        padding: 0;
+        display: block;
+    }
+
+    .movil-cot-contenido .cot-carrito td:last-child::before {
+        content: none;
+    }
+
+    .movil-cot-contenido .cot-carrito .btn-danger.btn-pequeno {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+    }
+
+    /* Cuadrícula de inputs: 2 columnas */
+    .movil-cot-contenido .cot-carrito .cot-celda-nombre {
+        width: 100%;
+        flex-basis: 100%;
+    }
+
+    .movil-cot-contenido .cot-carrito .cot-celda-input {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 calc(50% - 6px);
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: stretch;
+        padding: 0;
+        margin: 0;
+    }
+
+    .movil-cot-contenido .cot-carrito .cot-celda-input::before {
+        content: attr(data-label);
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--movil-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .movil-cot-contenido .cot-carrito .cot-celda-importe {
+        position: absolute;
+        top: 10px;
+        right: 44px;
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--movil-primary-dark);
+        text-align: right;
+        width: auto;
+        padding: 0;
+        background: var(--movil-card);
+    }
+
+    .movil-cot-contenido .cot-carrito .cot-celda-importe::before {
+        content: none;
+    }
+
+    .movil-cot-contenido .cot-carrito input[type="number"].form-control-pos {
+        width: 100%;
+        min-width: 0;
+        min-height: 36px;
+        padding: 4px 8px;
+        font-size: 14px;
+    }
+}

@@ -6,7 +6,7 @@ $protocolo = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : 
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost'; 
 
 // Define la URL Base de forma totalmente dinámica
-define('URL_BASE', "{$protocolo}://{$host}/web_pdv/public/");
+define('URL_BASE', "{$protocolo}://{$host}/web_pdv_advanced/public/");
 date_default_timezone_set('America/Tegucigalpa');
 
 // En producción con certificado SSL configurado, cambia a true para forzar HTTPS

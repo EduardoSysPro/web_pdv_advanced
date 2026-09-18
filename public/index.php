@@ -41,6 +41,19 @@ $router->post('/autenticar', 'AuthController@autenticar');
 $router->get('/logout', 'AuthController@logout');
 
 $router->get('/movil', 'VentasController@movil');
+
+$router->get('/cotizaciones', 'CotizacionesController@index');
+$router->get('/cotizaciones/crear', 'CotizacionesController@crear');
+$router->post('/cotizaciones/guardar', 'CotizacionesController@guardar');
+$router->post('/cotizaciones/actualizar/{id}', 'CotizacionesController@actualizar');
+$router->get('/cotizaciones/ver/{id}', 'CotizacionesController@ver');
+$router->get('/cotizaciones/imprimir/{id}', 'CotizacionesController@imprimir');
+$router->get('/cotizaciones/editar/{id}', 'CotizacionesController@editar');
+$router->post('/cotizaciones/cancelar/{id}', 'CotizacionesController@cancelar');
+$router->get('/cotizaciones/facturar/{id}', 'CotizacionesController@facturar');
+$router->get('/cotizaciones/pendientes', 'CotizacionesController@pendientes');
+$router->get('/cotizaciones/buscar-productos', 'CotizacionesController@buscarProductosAjax');
+
 $router->get('/ventas', 'VentasController@index');
 $router->post('/ventas/buscar-producto', 'VentasController@buscarProducto');
 $router->get('/ventas/buscar-producto',  'VentasController@buscarProducto');
@@ -133,5 +146,6 @@ $router->get('/comprobantes/imprimir/{id}', 'ComprobantesController@imprimir');
 $router->get('/impresora/imprimir-venta/{id}', 'ImpresoraController@imprimirVenta');
 $router->post('/impresora/imprimir-venta/{id}', 'ImpresoraController@imprimirVenta');
 $router->post('/impresora/probar', 'ImpresoraController@probar');
+$router->post('/impresora/escaneo-lan', 'ImpresoraController@escaneoLan');
 
 $router->procesar();

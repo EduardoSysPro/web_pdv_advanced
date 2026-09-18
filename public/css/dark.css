@@ -85,6 +85,13 @@
     --movil-text: #e2e8f0;
     --movil-text-muted: #94a3b8;
     --movil-border: #334155;
+
+    /* cotizaciones.css */
+    --superficie-carta: #0f172a;
+    --texto-suave: #94a3b8;
+    --fondo-suave: #111a2e;
+    --primario: #60a5fa;
+    --texto: #e2e8f0;
 }
 
 /* ------------------------------------------------------------
@@ -158,6 +165,29 @@
     background-color: #0c2638;
     color: #7dd3fc;
     border-color: #155e75;
+}
+
+:root[data-tema="oscuro"] .lan-analizador-item {
+    background: #0f172a;
+    border-color: #24334d;
+}
+
+:root[data-tema="oscuro"] .lan-analizador-item:hover {
+    border-color: #60a5fa;
+}
+
+:root[data-tema="oscuro"] .lan-analizador-icono {
+    background: #16203a;
+    color: #7dd3fc;
+}
+
+:root[data-tema="oscuro"] .lan-analizador-info strong {
+    color: #e2e8f0;
+}
+
+:root[data-tema="oscuro"] .lan-analizador-titulo,
+:root[data-tema="oscuro"] .lan-analizador-info small {
+    color: #94a3b8;
 }
 
 :root[data-tema="oscuro"] .tabla-catalogo {
@@ -911,6 +941,99 @@
     background: #131e33;
     color: #cbd5e1;
     border-color: #334155;
+}
+
+/* ---------------- NUEVAS UI MÓVIL (cliente/crédito, precio, historial) ---------------- */
+
+/* ---------------- Vista Móvil de Cotizaciones ---------------- */
+
+:root[data-tema="oscuro"] .movil-cot-contenido .cot-seccion-plegable .cot-seccion-leyenda-texto {
+    color: #e2e8f0;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .cot-seccion-plegable .cot-plegar-btn {
+    background: transparent;
+    color: #94a3b8;
+    border-color: #334155;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .cot-seccion-plegable .cot-plegar-btn:hover {
+    background: #131e33;
+    border-color: #60a5fa;
+    color: #60a5fa;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .form-control-pos,
+:root[data-tema="oscuro"] .movil-cot-contenido input.form-control-pos,
+:root[data-tema="oscuro"] .movil-cot-contenido select.form-control-pos,
+:root[data-tema="oscuro"] .movil-cot-contenido textarea.form-control-pos,
+:root[data-tema="oscuro"] .movil-cot-contenido #cot-cliente-selector,
+:root[data-tema="oscuro"] .movil-cot-contenido #cot-busqueda-input {
+    background: #111a2e;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .form-control-pos:focus,
+:root[data-tema="oscuro"] .movil-cot-contenido input.form-control-pos:focus,
+:root[data-tema="oscuro"] .movil-cot-contenido select.form-control-pos:focus,
+:root[data-tema="oscuro"] .movil-cot-contenido textarea.form-control-pos:focus,
+:root[data-tema="oscuro"] .movil-cot-contenido #cot-busqueda-input:focus {
+    background: #131e33;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .form-control-pos[readonly],
+:root[data-tema="oscuro"] .movil-cot-contenido input.form-control-pos[readonly] {
+    background: #131e33;
+    color: #94a3b8;
+    border-color: #24334d;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido input,
+:root[data-tema="oscuro"] .movil-cot-contenido select,
+:root[data-tema="oscuro"] .movil-cot-contenido textarea {
+    background-color: #111a2e;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .cot-carrito input[type="number"].form-control-pos {
+    background: #111a2e;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .cot-carrito input[type="number"].form-control-pos:focus {
+    background: #131e33;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .table-pos thead th {
+    background: #111a2e;
+    color: #94a3b8;
+    border-bottom-color: #24334d;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .table-pos tbody td {
+    border-bottom-color: #24334d;
+    color: #e2e8f0;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .btn-secondary {
+    background: #131e33;
+    color: #cbd5e1;
+    border-color: #334155;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .btn-danger {
+    background: #2a1218;
+    color: #f87171;
+    border-color: #7f1d1d;
+}
+
+:root[data-tema="oscuro"] .movil-cot-contenido .btn-exito {
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
 }
 
 /* ---------------- NUEVAS UI MÓVIL (cliente/crédito, precio, historial) ---------------- */

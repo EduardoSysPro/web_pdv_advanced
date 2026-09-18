@@ -1066,7 +1066,26 @@
         const efectivo = document.getElementById('cobro-efectivo');
         if (totalElemento) totalElemento.textContent = formatearMonto(totales.total);
         if (efectivo) { efectivo.value = ''; efectivo.focus(); }
+        prellenarClienteDesdeTicket(ticket);
         actualizarCobroModal();
+    }
+
+    function prellenarClienteDesdeTicket(ticket) {
+        const datos = (ticket && ticket.cliente) ? ticket.cliente : null;
+        if (!datos) return;
+        const nombre = document.getElementById('cliente_nombre');
+        const rtn = document.getElementById('cliente_rtn');
+        const tel = document.getElementById('cliente_telefono');
+        const dir = document.getElementById('cliente_direccion');
+        if (nombre) nombre.value = datos.nombre || '';
+        if (rtn) rtn.value = datos.rtn || '';
+        if (tel) tel.value = datos.telefono || '';
+        if (dir) dir.value = datos.direccion || '';
+        const selectCredito = document.getElementById('cobro-cliente');
+        if (selectCredito && datos.id) {
+            const coincide = Array.from(selectCredito.options).some(function (op) { return String(op.value) === String(datos.id); });
+            if (coincide) selectCredito.value = String(datos.id);
+        }
     }
 
     function cerrarModalCobro() {
@@ -1074,6 +1093,122 @@
         if (modal) { modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); }
         actualizarEstadoModalOpen();
         enfocarInputCodigo();
+    }
+
+    // ============================================================
+    // COTIZACIONES (cargar cotizaciones pendientes en el ticket)
+    // ============================================================
+
+    function abrirModalCotizaciones() {
+        const modal = document.getElementById('modal-cotizaciones');
+        if (!modal) return;
+        modal.hidden = false;
+        const estadoParrafo = document.getElementById('cot-pendientes-estado');
+        const cuerpo = document.querySelector('#tabla-cotizaciones-pendientes tbody');
+        if (estadoParrafo) estadoParrafo.textContent = 'Cargando cotizaciones pendientes...';
+        if (cuerpo) cuerpo.innerHTML = '';
+
+        fetch(URL_BASE + 'cotizaciones/pendientes', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(data => {
+                if (!data || data.exito !== true) {
+                    if (estadoParrafo) estadoParrafo.textContent = (data && data.mensaje) ? data.mensaje : 'No se pudieron cargar las cotizaciones.';
+                    return;
+                }
+                const lista = data.cotizaciones || [];
+                if (estadoParrafo) estadoParrafo.textContent = lista.length === 0 ? 'No hay cotizaciones pendientes.' : '';
+                if (!cuerpo) return;
+                cuerpo.innerHTML = '';
+                lista.forEach(c => {
+                    const tr = document.createElement('tr');
+                    const tdF = document.createElement('td');
+                    tdF.innerHTML = '<strong>' + c.folio + '</strong>';
+                    const tdFe = document.createElement('td');
+                    tdFe.textContent = String(c.creada_en || '').slice(0, 16);
+                    const tdV = document.createElement('td');
+                    tdV.textContent = c.vendedor || '';
+                    const tdC = document.createElement('td');
+                    tdC.textContent = c.cliente_nombre || 'Consumidor Final';
+                    const tdR = document.createElement('td');
+                    tdR.textContent = c.cliente_rtn || '—';
+                    const tdT = document.createElement('td');
+                    tdT.className = 'text-right';
+                    tdT.textContent = formatearMonto(c.total);
+                    const tdA = document.createElement('td');
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn-pos-success btn-pequeno';
+                    btn.innerHTML = '<i class="fa-solid fa-download" aria-hidden="true"></i> Cargar';
+                    btn.addEventListener('click', function () { cargarCotizacionEnTicket(c.id); });
+                    tdA.appendChild(btn);
+                    tr.appendChild(tdF); tr.appendChild(tdFe); tr.appendChild(tdV); tr.appendChild(tdC); tr.appendChild(tdR); tr.appendChild(tdT); tr.appendChild(tdA);
+                    cuerpo.appendChild(tr);
+                });
+            })
+            .catch(() => { if (estadoParrafo) estadoParrafo.textContent = 'Error de conexión al cargar cotizaciones.'; });
+    }
+
+    function cerrarModalCotizaciones() {
+        const modal = document.getElementById('modal-cotizaciones');
+        if (modal) modal.hidden = true;
+        enfocarInputCodigo();
+    }
+
+    /**
+     * Carga una cotización pendiente en el POS.
+     * Abre un ticket nuevo (o usa el activo si está vacío), inserta los artículos
+     * con sus cantidades/precios/descuentos y recuerda la cotización para facturarla.
+     */
+    function cargarCotizacionEnTicket(idCotizacion) {
+        const idNum = Number(idCotizacion);
+        if (!idNum) return;
+
+        fetch(URL_BASE + 'cotizaciones/facturar/' + idNum, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(resp => {
+                if (!resp || resp.exito !== true) {
+                    alert((resp && resp.mensaje) || 'No se pudo cargar la cotización.');
+                    return;
+                }
+                const cot = resp.cotizacion;
+                const hayTicketsConItems = estado.tickets.some(t => t.productos.length > 0);
+                const ticket = hayTicketsConItems ? crearNuevoTicket(true) : obtenerTicketActivo();
+                ticket.nombre = 'Cot ' + cot.folio;
+                ticket.cotizacion_id = Number(cot.id || 0);
+                ticket.cotizacion_folio = cot.folio || '';
+                ticket.cliente = {
+                    id: Number(cot.cliente_id || 0),
+                    nombre: cot.cliente_nombre || '',
+                    rtn: cot.cliente_rtn || '',
+                    telefono: cot.cliente_telefono || '',
+                    direccion: cot.cliente_direccion || ''
+                };
+                ticket.productos = (cot.items || []).map(function (it) {
+                    return {
+                        id: it.id,
+                        item_key: it.item_key || (it.id + '_' + (it.tipo_presentacion || 'unidad')),
+                        codigo_barras: it.codigo_barras || '',
+                        nombre: it.nombre,
+                        precio_lista: Number(it.precio_lista || 0),
+                        precio_unitario: Number(it.precio_unitario || 0),
+                        descuento_unitario: Number(it.descuento_unitario || 0),
+                        cantidad: Number(it.cantidad || 1),
+                        importe: redondear(Number(it.cantidad || 1) * Number(it.precio_unitario || 0)),
+                        stock: Number(it.stock || 0),
+                        unidad_medida: it.unidad_medida || 'unidad',
+                        permite_decimales: !!it.permite_decimales,
+                        tipo_presentacion: it.tipo_presentacion || 'unidad',
+                        nombre_presentacion: it.nombre_presentacion || 'Unidad',
+                        factor_unidades: Math.max(1, Number(it.factor_unidades || 1))
+                    };
+                });
+                guardarEstado();
+                renderizarTodo();
+                cerrarModalCotizaciones();
+                const totalCot = calcularTotales(ticket).total;
+                alert('Cotización ' + cot.folio + ' cargada en ' + (hayTicketsConItems ? 'un nuevo ticket' : 'el ticket actual') + '.\nTotal: ' + formatearMonto(totalCot) + '\nPuedes ajustar cantidades, precios o descuentos antes de cobrar.');
+            })
+            .catch(() => alert('No se pudo conectar con el servidor para cargar la cotización.'));
     }
 
     function obtenerTipoComprobanteSeleccionado() {
@@ -1116,6 +1251,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
         const clienteRtn = document.getElementById('cliente_rtn')?.value.trim() || '';
         const clienteTelefono = document.getElementById('cliente_telefono')?.value.trim() || '';
         const clienteDireccion = document.getElementById('cliente_direccion')?.value.trim() || '';
+        const cotizacionIdCobro = Number(ticket.cotizacion_id || 0);
 
         const ventanaTicket = window.open('', 'TicketImpresion', 'width=400,height=600,top=100,left=300,toolbar=no,location=no,status=no,menubar=no');
         
@@ -1130,6 +1266,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
                 cambio: cambio,
                 metodo_pago: metodoPago,
                 tipo_comprobante: tipoComprobante,
+                cotizacion_id: cotizacionIdCobro,
                 cliente_id: clienteId,
                 cliente_nombre: clienteNombre,
                 cliente_rtn: clienteRtn,
@@ -1180,6 +1317,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
             if (document.getElementById('cliente_direccion')) document.getElementById('cliente_direccion').value = '';
 
             ticket.productos = []; ticket.pagadoCon = 0; ticket.cambio = 0;
+            ticket.cotizacion_id = null; ticket.cotizacion_folio = null; ticket.cliente = null;
             guardarEstado(); renderizarTodo();
         }).catch(() => { 
             if (ventanaTicket) ventanaTicket.close(); 
@@ -1491,6 +1629,10 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
         });
         document.querySelectorAll('[data-busqueda-cerrar]').forEach(elemento => elemento.addEventListener('click', cerrarModalBusquedaProductos));
 
+        const btnCargarCot = document.getElementById('btn-cargar-cotizacion');
+        if (btnCargarCot) btnCargarCot.addEventListener('click', abrirModalCotizaciones);
+        document.querySelectorAll('[data-cot-cerrar]').forEach(elemento => elemento.addEventListener('click', cerrarModalCotizaciones));
+
         document.querySelectorAll('[data-modal-cerrar]').forEach(elemento => elemento.addEventListener('click', cerrarModalCobro));
         const efectivoCobro = document.getElementById('cobro-efectivo');
         if (efectivoCobro) efectivoCobro.addEventListener('input', actualizarCobroModal);
@@ -1694,7 +1836,18 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
         enfocarInputCodigo();
 
         console.log('[POS] Sistema inicializado. Tickets cargados:', estado.tickets.length);
+
+        // 6) Carga automática de cotización (?cotizar=ID o desde vista móvil)
+        if (typeof COTIZACION_A_CARGAR !== 'undefined' && COTIZACION_A_CARGAR && COTIZACION_A_CARGAR.id) {
+            window.setTimeout(function () {
+                if (window.POS_cargarCotizacion) window.POS_cargarCotizacion(COTIZACION_A_CARGAR.id);
+            }, 300);
+        }
     });
+
+    // Exponer funciones útiles para enlaces externos (vista lista cotizaciones, etc.)
+    window.POS_cargarCotizacion = cargarCotizacionEnTicket;
+    window.POS_abrirModalCotizaciones = abrirModalCotizaciones;
 
 })();
 const inputRtn = document.getElementById('cliente_rtn');

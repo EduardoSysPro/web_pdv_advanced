@@ -90,9 +90,9 @@ class AuthController extends Controller
 
         unset($_SESSION['usuario_intento']);
 
-        // Si el usuario es de tipo Móvil -> va directo a la interfaz táctil /movil
-        if ($_SESSION['rol'] === 'cajero_movil') {
-            $this->redirigir('movil');
+        // Si el usuario es Vendedor (o Cajero Móvil, ahora vendedor) -> va al módulo de cotizaciones
+        if (in_array($_SESSION['rol'], ['vendedor', 'cajero_movil'], true)) {
+            $this->redirigir('cotizaciones');
             return;
         }
 

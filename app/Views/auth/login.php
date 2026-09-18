@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="csrf-token" content="<?php echo htmlspecialchars(csrf_token()); ?>">
     <title>Iniciar Sesi&oacute;n - Web PDV</title>
+    <link rel="icon" type="image/x-icon" href="<?php echo URL_BASE; ?>favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/estilos.css">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/login.css">

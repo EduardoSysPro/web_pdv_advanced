@@ -31,6 +31,7 @@
             <label for="usuario-rol">Rol</label>
             <select id="usuario-rol" name="rol">
                 <option value="cajero" <?php echo (($usuario['rol'] ?? 'cajero') === 'cajero') ? 'selected' : ''; ?>>Cajero</option>
+                <option value="vendedor" <?php echo (($usuario['rol'] ?? 'cajero') === 'vendedor') ? 'selected' : ''; ?>>Vendedor (Cotizaciones)</option>
                 <option value="cajero_movil" <?php echo (($usuario['rol'] ?? 'cajero') === 'cajero_movil') ? 'selected' : ''; ?>>Cajero Móvil (Celular / Tablet)</option>
                 <option value="admin" <?php echo (($usuario['rol'] ?? 'cajero') === 'admin') ? 'selected' : ''; ?>>Administrador</option>
             </select>

@@ -27,7 +27,7 @@ CREATE TABLE usuarios (
     nombre      VARCHAR(100) NOT NULL COMMENT 'Nombre completo del usuario',
     usuario     VARCHAR(50)  NOT NULL COMMENT 'Nombre de usuario para iniciar sesión',
     password    VARCHAR(255) NOT NULL COMMENT 'Contraseña hasheada con bcrypt',
-    rol         ENUM('admin', 'cajero', 'cajero_movil') NOT NULL DEFAULT 'cajero' COMMENT 'Rol del usuario en el sistema',
+    rol         ENUM('admin', 'cajero', 'cajero_movil', 'vendedor') NOT NULL DEFAULT 'cajero' COMMENT 'Rol del usuario en el sistema',
     estado      TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1 = Activo, 0 = Inactivo',
     caja_id     INT NULL COMMENT 'Caja predeterminada del usuario',
     sucursal    VARCHAR(120) NULL COMMENT 'Sucursal asignada',
@@ -95,6 +95,7 @@ CREATE TABLE productos (
     precio_empaque  DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Precio de venta por empaque',
     tipo_impuesto   ENUM('exento','gravado_15','gravado_18','exonerado') NOT NULL DEFAULT 'gravado_15' COMMENT 'Régimen de ISV del producto',
     porcentaje_isv  DECIMAL(5,2) NOT NULL DEFAULT 15.00 COMMENT 'Porcentaje de ISV aplicado',
+    imagen          VARCHAR(255) NULL COMMENT 'Ruta de la foto del producto (uploads/productos/...)',
     codigo_barras_empaque VARCHAR(50) NULL COMMENT 'Código de barras exclusivo del empaque',
     categoria_id    INT NULL COMMENT 'Llave foránea hacia la categoría del producto',
     creado_en       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Fecha y hora de alta del producto',
@@ -364,6 +365,72 @@ CREATE TABLE detalle_ventas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Detalle de productos por venta';
 
 -- =============================================================
+-- TABLA: cotizaciones
+-- Cotizaciones creadas por el rol Vendedor, pendientes de facturar
+-- =============================================================
+CREATE TABLE cotizaciones (
+    id                    INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identificador único de la cotización',
+    folio                 VARCHAR(20) NOT NULL COMMENT 'Número de folio interno (COT-00000001)',
+    vendedor_id           INT NOT NULL COMMENT 'Usuario vendedor que creó la cotización',
+    cliente_id            INT NULL COMMENT 'Cliente del catálogo (opcional)',
+    cliente_nombre        VARCHAR(150) NULL COMMENT 'Nombre / razón social del cliente',
+    cliente_rtn           VARCHAR(30) NULL COMMENT 'RTN o identidad del cliente',
+    cliente_telefono      VARCHAR(30) NULL COMMENT 'Teléfono del cliente',
+    cliente_direccion     VARCHAR(255) NULL COMMENT 'Dirección del cliente',
+    estado                ENUM('pendiente', 'facturada', 'cancelada') NOT NULL DEFAULT 'pendiente'
+                          COMMENT 'pendiente = lista para facturar, facturada = ya convertida en venta',
+    venta_id              INT NULL COMMENT 'Venta generada cuando la cotización fue facturada en caja',
+    importe_exento        DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    importe_exonerado     DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    importe_gravado_15    DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    isv_15                DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    importe_gravado_18    DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    isv_18                DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    subtotal              DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Suma de líneas antes de descuento',
+    descuento_total       DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Total de descuentos otorgados',
+    total                 DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Monto total de la cotización',
+    observaciones         VARCHAR(255) NULL COMMENT 'Notas u observaciones del vendedor',
+    fecha_validez         DATE NULL COMMENT 'Fecha hasta la que la cotización tiene validez',
+    creada_en             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Fecha y hora de creación',
+    UNIQUE KEY idx_cotizaciones_folio (folio),
+    KEY idx_cotizaciones_estado (estado),
+    KEY idx_cotizaciones_vendedor (vendedor_id),
+    KEY idx_cotizaciones_cliente (cliente_id),
+    KEY idx_cotizaciones_venta (venta_id),
+    KEY idx_cotizaciones_creada (creada_en),
+    CONSTRAINT fk_cot_vendedor FOREIGN KEY (vendedor_id) REFERENCES usuarios (id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_cot_cliente  FOREIGN KEY (cliente_id)  REFERENCES clientes (id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_cot_venta    FOREIGN KEY (venta_id)    REFERENCES ventas (id)   ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Cotizaciones creadas por vendedores';
+
+-- =============================================================
+-- TABLA: detalle_cotizaciones
+-- Líneas de productos por cotización
+-- =============================================================
+CREATE TABLE detalle_cotizaciones (
+    id                  INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identificador único del detalle',
+    cotizacion_id       INT NOT NULL COMMENT 'Llave foránea hacia la cotización',
+    producto_id         INT NULL COMMENT 'Producto cotizado',
+    nombre_producto     VARCHAR(150) NULL COMMENT 'Nombre del producto al momento de cotizar',
+    cantidad            DECIMAL(10,3) NOT NULL DEFAULT 1.000 COMMENT 'Cantidad cotizada',
+    precio_lista        DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Precio antes del descuento',
+    precio_unitario     DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Precio final por unidad',
+    descuento_unitario  DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Descuento fijo por unidad',
+    subtotal            DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Subtotal = cantidad * precio_unitario',
+    tipo_presentacion   ENUM('unidad', 'empaque') NOT NULL DEFAULT 'unidad' COMMENT 'Presentación cotizada',
+    nombre_presentacion VARCHAR(50) NOT NULL DEFAULT 'Unidad' COMMENT 'Nombre de la presentación',
+    factor_unidades     DECIMAL(10,3) NOT NULL DEFAULT 1.000 COMMENT 'Factor de unidades del empaque',
+    porcentaje_isv      DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT 'Porcentaje de ISV de la línea',
+    monto_isv           DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Monto de ISV de la línea',
+    es_exento           TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = exento de ISV',
+    es_exonerado        TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = exonerado de ISV',
+    KEY idx_detalle_cotizaciones_cotizacion (cotizacion_id),
+    KEY idx_detalle_cotizaciones_producto (producto_id),
+    CONSTRAINT fk_detalle_cot_cotizacion FOREIGN KEY (cotizacion_id) REFERENCES cotizaciones (id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_detalle_cot_producto FOREIGN KEY (producto_id) REFERENCES productos (id) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Líneas de productos por cotización';
+
+-- =============================================================
 -- TABLA: caja_movimientos
 -- Registro de movimientos de efectivo en caja
 -- =============================================================
@@ -459,7 +526,10 @@ INSERT INTO configuracion (clave, valor) VALUES
 ('sar_correlativo_actual', '1'),
 ('sar_punto_venta', '001'),
 ('sar_establecimiento', '001'),
-('sar_tipo_documento', '01');
+('sar_tipo_documento', '01'),
+('cotizacion_dias_validez', '15'),
+('cotizacion_mostrar_precios', '1'),
+('cotizacion_mensaje', 'Cotización sujeta a confirmación de precio y disponibilidad en caja.');
 
 -- Inserción de usuarios base del sistema
 -- Password inicial: password  (hash bcrypt válido con cost = 10)
@@ -467,7 +537,8 @@ INSERT INTO configuracion (clave, valor) VALUES
 INSERT INTO usuarios (nombre, usuario, password, rol, estado, caja_id, sucursal, caja) VALUES
 ('Admin', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1, 1, NULL, NULL),
 ('Cajero Principal', 'cajero', '$2y$10$uFaZvFrwaw3uV/ACRDgs2eRqP7KFg01yutDioFbbXQQ1r8u.L51Lu', 'cajero', 1, 1, 'Mi Negocio', ''),
-('Cajero Móvil', 'movil', '$2y$10$uFaZvFrwaw3uV/ACRDgs2eRqP7KFg01yutDioFbbXQQ1r8u.L51Lu', 'cajero_movil', 1, 1, 'Mi Negocio', '');
+('Cajero Móvil', 'movil', '$2y$10$uFaZvFrwaw3uV/ACRDgs2eRqP7KFg01yutDioFbbXQQ1r8u.L51Lu', 'cajero_movil', 1, 1, 'Mi Negocio', ''),
+('Vendedor Principal', 'vendedor', '$2y$10$uFaZvFrwaw3uV/ACRDgs2eRqP7KFg01yutDioFbbXQQ1r8u.L51Lu', 'vendedor', 1, NULL, 'Mi Negocio', '');
 
 -- Inserción de cliente de prueba para ventas a crédito
 INSERT INTO clientes (rtn_identidad, nombre, telefono, direccion, limite_credito, saldo_pendiente) VALUES

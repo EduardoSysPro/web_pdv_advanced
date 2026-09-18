@@ -31,6 +31,7 @@ class Producto extends Controller
                     p.codigo_barras_empaque,
                     p.tipo_impuesto,
                     p.porcentaje_isv,
+                    p.imagen,
                     p.categoria_id,
                     c.nombre AS categoria_nombre
                 FROM productos p
@@ -88,7 +89,7 @@ class Producto extends Controller
         $sql = 'SELECT p.id, p.codigo_barras, p.nombre, p.precio_costo, p.precio_venta,
                        p.stock, p.stock_minimo, p.categoria_id, c.nombre AS categoria_nombre,
                        p.tipo_venta, p.nombre_empaque, p.unidades_por_empaque, p.precio_empaque, p.codigo_barras_empaque,
-                       p.tipo_impuesto, p.porcentaje_isv
+                       p.tipo_impuesto, p.porcentaje_isv, p.imagen
                 FROM productos p LEFT JOIN categorias c ON c.id = p.categoria_id' . $where .
                 ' ORDER BY p.nombre ASC LIMIT :limite OFFSET :offset';
         $stmt = $this->pdo->prepare($sql);
@@ -136,7 +137,7 @@ class Producto extends Controller
                        p.stock, p.stock_minimo, p.categoria_id, c.nombre AS categoria_nombre,
                        p.unidad_medida, p.permite_decimales,
                        p.tipo_venta, p.nombre_empaque, p.unidades_por_empaque, p.precio_empaque, p.codigo_barras_empaque,
-                       p.tipo_impuesto, p.porcentaje_isv
+                       p.tipo_impuesto, p.porcentaje_isv, p.imagen
                 FROM productos p LEFT JOIN categorias c ON c.id = p.categoria_id
                 WHERE p.id = :id LIMIT 1';
         $stmt = $this->pdo->prepare($sql);
@@ -185,8 +186,8 @@ class Producto extends Controller
 
     public function insertar($datos)
     {
-        $stmt = $this->pdo->prepare('INSERT INTO productos (codigo_barras, nombre, precio_costo, precio_venta, stock, stock_minimo, unidad_medida, permite_decimales, categoria_id, tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque, tipo_impuesto, porcentaje_isv)
-                VALUES (:codigo_barras, :nombre, :precio_costo, :precio_venta, :stock, :stock_minimo, :unidad_medida, :permite_decimales, :categoria_id, :tipo_venta, :nombre_empaque, :unidades_por_empaque, :precio_empaque, :codigo_barras_empaque, :tipo_impuesto, :porcentaje_isv)');
+        $stmt = $this->pdo->prepare('INSERT INTO productos (codigo_barras, nombre, precio_costo, precio_venta, stock, stock_minimo, unidad_medida, permite_decimales, categoria_id, tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque, tipo_impuesto, porcentaje_isv, imagen)
+                VALUES (:codigo_barras, :nombre, :precio_costo, :precio_venta, :stock, :stock_minimo, :unidad_medida, :permite_decimales, :categoria_id, :tipo_venta, :nombre_empaque, :unidades_por_empaque, :precio_empaque, :codigo_barras_empaque, :tipo_impuesto, :porcentaje_isv, :imagen)');
         $this->vincularDatos($stmt, $datos);
         return $stmt->execute();
     }
@@ -198,7 +199,7 @@ class Producto extends Controller
                 stock_minimo = :stock_minimo, unidad_medida = :unidad_medida, permite_decimales = :permite_decimales, categoria_id = :categoria_id,
                 tipo_venta = :tipo_venta, nombre_empaque = :nombre_empaque, unidades_por_empaque = :unidades_por_empaque,
                 precio_empaque = :precio_empaque, codigo_barras_empaque = :codigo_barras_empaque,
-                tipo_impuesto = :tipo_impuesto, porcentaje_isv = :porcentaje_isv WHERE id = :id');
+                tipo_impuesto = :tipo_impuesto, porcentaje_isv = :porcentaje_isv, imagen = :imagen WHERE id = :id');
         $this->vincularDatos($stmt, $datos);
         $stmt->bindValue(':id', (int)$id, PDO::PARAM_INT);
         return $stmt->execute();
@@ -241,6 +242,12 @@ class Producto extends Controller
         $stmt->bindValue(':codigo_barras_empaque', $codigoBarrasEmpaque !== '' ? $codigoBarrasEmpaque : null, $codigoBarrasEmpaque !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
         $stmt->bindValue(':tipo_impuesto', $tipoImpuesto, PDO::PARAM_STR);
         $stmt->bindValue(':porcentaje_isv', $porcentajeIsv, PDO::PARAM_STR);
+        $imagen = trim((string)($datos['imagen'] ?? ''));
+        if ($imagen === '') {
+            $stmt->bindValue(':imagen', null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(':imagen', $imagen, PDO::PARAM_STR);
+        }
     }
 
     public function buscarPorNombreOCodigo($termino, $limite = 20)
@@ -269,7 +276,7 @@ class Producto extends Controller
         $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta, stock, stock_minimo,
                                             unidad_medida, permite_decimales,
                                             tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque,
-                                            tipo_impuesto, porcentaje_isv
+                                            tipo_impuesto, porcentaje_isv, imagen
                                      FROM productos
                                      WHERE nombre LIKE :nombre
                                         OR codigo_barras LIKE :codigo
@@ -308,7 +315,8 @@ class Producto extends Controller
                     'nombre_presentacion' => 'Unidad',
                     'factor_unidades'   => 1.0,
                     'clave_isv'         => $p['tipo_impuesto'] ?? 'gravado_15',
-                    'porcentaje_isv'    => (float)($p['porcentaje_isv'] ?? 15)
+                    'porcentaje_isv'    => (float)($p['porcentaje_isv'] ?? 15),
+                    'imagen'            => (string)($p['imagen'] ?? '')
                 ];
             }
 
@@ -331,9 +339,10 @@ class Producto extends Controller
                     'nombre_presentacion' => $nombreEmpaque,
                     'factor_unidades'   => $factor,
                     'clave_isv'         => $p['tipo_impuesto'] ?? 'gravado_15',
-                    'porcentaje_isv'    => (float)($p['porcentaje_isv'] ?? 15)
-            ];
-        }
+                    'porcentaje_isv'    => (float)($p['porcentaje_isv'] ?? 15),
+                    'imagen'            => (string)($p['imagen'] ?? '')
+                ];
+            }
         }
 
         return $resultados;

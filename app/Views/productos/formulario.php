@@ -2,7 +2,7 @@
 <section class="catalogo-encabezado"><div><span class="eyebrow">F3 / Catálogo</span><h1><?php echo htmlspecialchars($titulo); ?></h1><p>Completa la información comercial y de inventario.</p></div><a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>productos">Volver al catálogo</a></section>
 <section class="tarjeta formulario-producto">
     <?php foreach (($errores ?? []) as $error): ?><div class="alerta alerta-error"><?php echo htmlspecialchars($error); ?></div><?php endforeach; ?>
-    <form method="POST" action="<?php echo $accion; ?>" id="form-producto">
+    <form method="POST" action="<?php echo $accion; ?>" id="form-producto" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
         <div class="form-grid">
             <div class="campo">
@@ -40,7 +40,25 @@
             </div>
         </div>
 
-        <!-- ================= SECCIÓN DE VENTA POR EMPAQUE (CAJA / BULTO / FARDO) ================= -->
+        <!-- ================= FOTO DEL PRODUCTO (OPCIONAL) ================= -->
+        <div class="campo campo-ancho" style="margin-top:20px; padding-top:16px; border-top:1px solid #dbe1ea;">
+            <label for="imagen" style="font-weight:700; font-size:14px; color:#1e293b;">📷 Foto del producto (opcional)</label>
+            <input id="imagen" name="imagen" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:6px;">
+            <small style="color:#64748b; font-size:12px;">JPG, PNG o WebP de hasta 2 MB. Se mostrará en el buscador del vendedor y del POS.</small>
+            <?php if (!empty($producto['imagen'])): ?>
+                <div id="imagen-actual" style="margin-top:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <img src="<?php echo URL_BASE; ?>uploads/productos/<?php echo htmlspecialchars($producto['imagen']); ?>" alt="Foto del producto" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+                        <input type="checkbox" name="quitar_imagen" value="1" id="quitar_imagen"> Quitar foto actual
+                    </label>
+                </div>
+            <?php else: ?>
+                <div id="imagen-actual"></div>
+            <?php endif; ?>
+            <div id="vista-previa-imagen" style="margin-top:10px; display:none;">
+                <img id="img-previa-producto" alt="Vista previa" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
+            </div>
+        </div>
         <?php
             $tieneEmpaqueInicial = in_array($producto['tipo_venta'] ?? 'solo_unidad', ['solo_empaque', 'ambos'], true)
                 || ((float)($producto['unidades_por_empaque'] ?? 0) > 1 && (float)($producto['precio_empaque'] ?? 0) > 0);
@@ -198,6 +216,29 @@
     calcular();
     actualizarUnidad();
     actualizarPreviewCodigo();
+
+    // ================= FOTO DEL PRODUCTO (PREVIEW) =================
+    const inputImagen = document.getElementById('imagen');
+    const previaImagen = document.getElementById('vista-previa-imagen');
+    const imagenPreviaImg = document.getElementById('img-previa-producto');
+    const chkQuitar = document.getElementById('quitar_imagen');
+    if (inputImagen && previaImagen) {
+        inputImagen.addEventListener('change', function () {
+            if (this.files && this.files.length > 0) {
+                const archivo = this.files[0];
+                if (archivo.size > 2 * 1024 * 1024) {
+                    alert('La imagen no puede superar los 2 MB.');
+                    this.value = '';
+                    return;
+                }
+                imagenPreviaImg.src = URL.createObjectURL(archivo);
+                previaImagen.style.display = 'block';
+                if (chkQuitar) chkQuitar.checked = false;
+            } else {
+                previaImagen.style.display = 'none';
+            }
+        });
+    }
 
     // ================= LÓGICA INTERACTIVA DE EMPAQUES =================
     const tieneEmpaqueChk = document.getElementById('tiene_empaque');

@@ -588,6 +588,16 @@ body.modal-open {
 .paginacion a { padding: .35rem .65rem; border: 1px solid var(--color-borde); border-radius: 4px; color: var(--color-primario); text-decoration: none; }
 .paginacion a.activa { background: var(--color-primario); color: var(--color-blanco); }
 .alerta-exito { background: #c6f6d5; color: var(--color-exito); border: 1px solid #9ae6b4; }
+.alerta-info { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; flex-wrap: wrap; }
+.lan-analizador-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.lan-analizador-titulo { font-weight: 700; font-size: 0.85rem; color: var(--color-texto-claro); text-transform: uppercase; letter-spacing: 0.04em; }
+.lan-analizador-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--color-borde); border-radius: var(--radio-pequeno); background: var(--color-blanco); }
+.lan-analizador-item:hover { border-color: var(--color-acento); }
+.lan-analizador-icono { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 10px; background: var(--color-fondo-oscuro); color: var(--color-texto-claro); }
+.lan-analizador-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.lan-analizador-info strong { font-size: 0.9rem; color: var(--color-texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lan-analizador-info small { font-size: 0.78rem; color: var(--color-texto-claro); font-family: 'Courier New', monospace; }
+.lan-analizador-usar { white-space: nowrap; }
 .formulario-producto { max-width: 900px; margin: 0 auto; }
 .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 .campo-ancho { grid-column: span 2; }

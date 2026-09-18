@@ -8,7 +8,7 @@ class Database
     private function __construct()
     {
         $host = 'localhost';
-        $dbname = 'web_pdv_db';
+        $dbname = 'web_pdv_advanced_db';
         $usuario = 'root';
         $contrasena = '';
         $charset = 'utf8mb4';

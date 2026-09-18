@@ -75,6 +75,11 @@ class ProductosController extends Controller
             $datos['codigo_barras'] = $this->generarCodigoInterno();
         }
         $errores = $this->validarDatos($datos);
+        $imagenProcesada = $this->procesarImagenProducto('');
+        if ($imagenProcesada['error'] !== '') {
+            $errores[] = $imagenProcesada['error'];
+        }
+        $datos['imagen'] = $imagenProcesada['nombre'];
         if (!$errores && $this->modeloProducto->codigoBarrasExiste($datos['codigo_barras'])) {
             $errores[] = 'El código de barras ya está registrado.';
         }
@@ -122,6 +127,12 @@ class ProductosController extends Controller
             $datos['codigo_barras'] = $this->generarCodigoInterno();
         }
         $errores = $this->validarDatos($datos);
+        $producto = $this->modeloProducto->obtenerPorId($id);
+        $imagenProcesada = $this->procesarImagenProducto($producto ? ($producto['imagen'] ?? '') : '');
+        if ($imagenProcesada['error'] !== '') {
+            $errores[] = $imagenProcesada['error'];
+        }
+        $datos['imagen'] = $imagenProcesada['nombre'];
         if (!$errores && $this->modeloProducto->codigoBarrasExiste($datos['codigo_barras'], $id)) {
             $errores[] = 'El código de barras ya está registrado por otro producto.';
         }
@@ -151,10 +162,88 @@ class ProductosController extends Controller
         $this->requerirAdministrador();
         $id = (int)($parametros['id'] ?? 0);
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id > 0) {
+            $producto = $this->modeloProducto->obtenerPorId($id);
             $this->modeloProducto->eliminar($id);
+            if ($producto && !empty($producto['imagen'])) {
+                $this->eliminarArchivoImagen((string)$producto['imagen']);
+            }
             $_SESSION['mensaje_productos'] = 'Producto eliminado correctamente.';
         }
         $this->redirigir('productos');
+    }
+
+    private function procesarImagenProducto($nombreActual)
+    {
+        $resultado = ['nombre' => (string)$nombreActual, 'error' => ''];
+        $quitar = isset($_POST['quitar_imagen']);
+        $subio = !empty($_FILES['imagen']['name']);
+
+        if (!$subio && !$quitar) {
+            return $resultado;
+        }
+
+        if ($quitar && !$subio) {
+            $this->eliminarArchivoImagen((string)$nombreActual);
+            $resultado['nombre'] = '';
+            return $resultado;
+        }
+
+        if (!isset($_FILES['imagen']) || $_FILES['imagen']['error'] !== UPLOAD_ERR_OK) {
+            $resultado['error'] = 'No se pudo cargar la imagen del producto.';
+            return $resultado;
+        }
+
+        $tmp = $_FILES['imagen']['tmp_name'];
+        $info = @getimagesize($tmp);
+        if ($info === false) {
+            $resultado['error'] = 'El archivo seleccionado no es una imagen válida.';
+            return $resultado;
+        }
+
+        $mimePermitidos = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp'
+        ];
+        $mime = $info['mime'] ?? '';
+        if (!isset($mimePermitidos[$mime])) {
+            $resultado['error'] = 'Solo se permiten imágenes en formato JPG, PNG o WebP.';
+            return $resultado;
+        }
+        if ($_FILES['imagen']['size'] > 2 * 1024 * 1024) {
+            $resultado['error'] = 'La imagen no puede superar los 2 MB.';
+            return $resultado;
+        }
+
+        $directorio = PUBLIC_PATH . 'uploads' . DIRECTORY_SEPARATOR . 'productos' . DIRECTORY_SEPARATOR;
+        if (!is_dir($directorio) && !mkdir($directorio, 0755, true) && !is_dir($directorio)) {
+            $resultado['error'] = 'No se pudo crear el directorio de imágenes de productos.';
+            return $resultado;
+        }
+
+        $nombre = 'prod_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $mimePermitidos[$mime];
+        if (!move_uploaded_file($tmp, $directorio . $nombre)) {
+            $resultado['error'] = 'No se pudo guardar la imagen del producto.';
+            return $resultado;
+        }
+
+        if ((string)$nombreActual !== '' && $nombreActual !== $nombre) {
+            $this->eliminarArchivoImagen((string)$nombreActual);
+        }
+
+        $resultado['nombre'] = $nombre;
+        return $resultado;
+    }
+
+    private function eliminarArchivoImagen($nombre)
+    {
+        if ($nombre === '') {
+            return;
+        }
+        $ruta = PUBLIC_PATH . 'uploads' . DIRECTORY_SEPARATOR . 'productos' . DIRECTORY_SEPARATOR . $nombre;
+        if (is_file($ruta)) {
+            @unlink($ruta);
+        }
     }
 
     private function datosVacios()
@@ -165,7 +254,7 @@ class ProductosController extends Controller
             'unidad_medida' => 'unidad', 'permite_decimales' => 0, 'categoria_id' => null,
             'tipo_venta' => 'solo_unidad', 'nombre_empaque' => 'Caja',
             'unidades_por_empaque' => 2, 'precio_empaque' => '0.00', 'codigo_barras_empaque' => '',
-            'tipo_impuesto' => 'gravado_15'
+            'tipo_impuesto' => 'gravado_15', 'imagen' => ''
         ];
     }
 
@@ -227,7 +316,8 @@ class ProductosController extends Controller
             'unidades_por_empaque' => $unidadesPorEmpaque,
             'precio_empaque' => $precioEmpaque,
             'codigo_barras_empaque' => $codigoBarrasEmpaque !== '' ? $codigoBarrasEmpaque : null,
-            'tipo_impuesto' => $tipoImpuesto
+            'tipo_impuesto' => $tipoImpuesto,
+            'imagen' => ''
         ];
     }
 

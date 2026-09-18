@@ -7,7 +7,8 @@ if ($esAdministrador) {
     require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Producto.php';
     $productosBajoStock = (new Producto())->contarProductosBajoStock();
 }
-$rolEtiqueta = $esAdministrador ? 'ADMINISTRADOR' : 'CAJERO';
+$esVendedor = in_array(strtolower((string)$rolUsuario), ['vendedor', 'cajero_movil'], true);
+$rolEtiqueta = $esAdministrador ? 'ADMINISTRADOR' : ($esVendedor ? 'VENDEDOR' : 'CAJERO');
 $rutaActual = trim((string)($_GET['url'] ?? ''), '/');
 $esRutaActiva = static function ($ruta) use ($rutaActual) {
     return $rutaActual === $ruta || strpos($rutaActual, $ruta . '/') === 0;
@@ -40,15 +41,22 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
             </div>
 
             <nav class="pos-sidebar-nav">
-                <a class="pos-sidebar-link <?php echo $esRutaActiva('ventas') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>ventas" data-tooltip="Ventas"><i class="fa-solid fa-cart-shopping"></i><span>Ventas</span></a>
+                <?php if (!$esVendedor): ?>
+                    <a class="pos-sidebar-link <?php echo $esRutaActiva('ventas') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>ventas" data-tooltip="Ventas"><i class="fa-solid fa-cart-shopping"></i><span>Ventas</span></a>
+                <?php endif; ?>
+                <a class="pos-sidebar-link <?php echo $esRutaActiva('cotizaciones') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>cotizaciones" data-tooltip="Cotizaciones"><i class="fa-solid fa-file-lines"></i><span>Cotizaciones</span></a>
                 <a class="pos-sidebar-link <?php echo $esRutaActiva('movil') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>movil" data-tooltip="Terminal Móvil"><i class="fa-solid fa-mobile-screen"></i><span>Vista Móvil</span></a>
-                <a class="pos-sidebar-link <?php echo $esRutaActiva('clientes') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>clientes" data-tooltip="Clientes"><i class="fa-solid fa-users"></i><span>Clientes</span></a>
+                <?php if (!$esVendedor): ?>
+                    <a class="pos-sidebar-link <?php echo $esRutaActiva('clientes') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>clientes" data-tooltip="Clientes"><i class="fa-solid fa-users"></i><span>Clientes</span></a>
+                <?php endif; ?>
                 <?php if ($esAdministrador): ?>
                     <a class="pos-sidebar-link <?php echo $esRutaActiva('productos') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>productos" data-tooltip="Productos"><i class="fa-solid fa-box"></i><span>Productos</span></a>
                     <a class="pos-sidebar-link pos-sidebar-inventory-link <?php echo $esRutaActiva('inventario') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>inventario" data-tooltip="Inventario"><i class="fa-solid fa-boxes-stacked"></i><span>Inventario</span><?php if ($productosBajoStock > 0): ?><strong class="pos-stock-alert-badge" aria-label="<?php echo $productosBajoStock; ?> productos con stock bajo"><?php echo $productosBajoStock; ?></strong><?php endif; ?></a>
                 <?php endif; ?>
-                <a class="pos-sidebar-link <?php echo $esRutaActiva('caja') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>caja" data-tooltip="Corte de Caja"><i class="fa-solid fa-calculator"></i><span>Corte de Caja</span></a>
-                <a class="pos-sidebar-link <?php echo $esRutaActiva('comprobantes') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>comprobantes" data-tooltip="Comprobantes"><i class="fa-solid fa-receipt"></i><span>Reimpresión</span></a>
+                <?php if (!$esVendedor): ?>
+                    <a class="pos-sidebar-link <?php echo $esRutaActiva('caja') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>caja" data-tooltip="Corte de Caja"><i class="fa-solid fa-calculator"></i><span>Corte de Caja</span></a>
+                    <a class="pos-sidebar-link <?php echo $esRutaActiva('comprobantes') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>comprobantes" data-tooltip="Comprobantes"><i class="fa-solid fa-receipt"></i><span>Reimpresión</span></a>
+                <?php endif; ?>
                 <?php if ($esAdministrador): ?>
                     <?php $adminAbierto = $esRutaActiva('compras') || $esRutaActiva('proveedores') || $esRutaActiva('reportes') || $esRutaActiva('configuracion') || $esRutaActiva('usuarios') || $esRutaActiva('soporte'); ?>
                     <div class="pos-sidebar-divider" aria-hidden="true"></div>

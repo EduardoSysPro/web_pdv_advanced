@@ -43,24 +43,42 @@ class Controller
 
     $rol = $_SESSION['rol'] ?? 'cajero';
 
-    // Si es cajero móvil, limitar su acceso exclusivamente al módulo móvil y sus endpoints necesarios
-    if ($rol === 'cajero_movil') {
+    // Vendedor (y Cajero Móvil, que ahora Funciona como vendedor):
+    // acceso limitado al módulo de cotizaciones, la terminal móvil y endpoints necesarios
+    if (in_array($rol, ['vendedor', 'cajero_movil'], true)) {
         $url = trim($_GET['url'] ?? '', '/');
         $rutasPermitidasMovil = [
             'movil',
+            'login',
             'logout',
+            'cotizaciones',
+            'cotizaciones/crear',
+            'cotizaciones/ver',
+            'cotizaciones/imprimir',
+            'cotizaciones/editar',
+            'cotizaciones/cancelar',
+            'cotizaciones/guardar',
+            'cotizaciones/actualizar',
+            'cotizaciones/buscar-productos',
             'ventas/buscar-producto',
             'ventas/buscar-productos',
             'ventas/buscarClientePorRtn',
             'ventas/buscar-cliente-por-rtn',
             'clientes/buscar',
-            'clientes/guardar-ajax',
-            'ventas/guardar'
+            'clientes/guardar-ajax'
         ];
-        $esTicketVenta = strpos($url, 'ventas/ticket/') === 0;
-
-        if (!in_array($url, $rutasPermitidasMovil, true) && !$esTicketVenta) {
-            $this->redirigir('movil');
+        $permisoBase = function ($base, $ruta) {
+            return $ruta === $base || strpos($ruta, $base . '/') === 0;
+        };
+        $permitido = false;
+        foreach ($rutasPermitidasMovil as $base) {
+            if ($permisoBase($base, $url)) {
+                $permitido = true;
+                break;
+            }
+        }
+        if (!$permitido) {
+            $this->redirigir('cotizaciones');
             exit;
         }
         return;

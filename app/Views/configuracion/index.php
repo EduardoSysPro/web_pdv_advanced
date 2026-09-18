@@ -214,6 +214,17 @@
                     <button type="button" class="btn btn-ligero" id="btn-probar-impresora"><i class="fa-solid fa-plug"></i> Probar impresión de red</button>
                     <div id="resultado-impresora" style="margin-top: 10px;"></div>
                 </div>
+
+                <div class="campo campo-ancho">
+                    <button type="button" class="btn btn-ligero" id="btn-analizar-red">
+                        <i class="fa-solid fa-network-wired" id="btn-analizar-icono"></i>
+                        <span id="btn-analizar-texto">Analizar red e identificar impresoras</span>
+                    </button>
+                    <p style="margin: 8px 0 0; color: #64748b; font-size: 12px;">
+                        Busca en el segmento de red del servidor (puerto 9100) las impresoras térmicas conectadas por red e identifica la dirección IP de cada una.
+                    </p>
+                    <div id="resultado-analisis" style="margin-top: 10px;"></div>
+                </div>
             </div>
         </section>
 
@@ -482,6 +493,93 @@
         })
         .finally(function () { btn.disabled = false; });
     });
+})();
+</script>
+
+<script>
+(function () {
+    var RUTA_ESCANEO = '<?php echo URL_BASE; ?>impresora/escaneo-lan';
+    var btn = document.getElementById('btn-analizar-red');
+    var contenedor = document.getElementById('resultado-analisis');
+    if (!btn || !contenedor) return;
+
+    var icono = document.getElementById('btn-analizar-icono');
+    var texto = document.getElementById('btn-analizar-texto');
+    var TEXTO_BASE = 'Analizar red e identificar impresoras';
+
+    btn.addEventListener('click', function () {
+        btn.disabled = true;
+        if (icono) icono.className = 'fa-solid fa-spinner fa-spin';
+        texto.textContent = 'Buscando impresoras en la red, espera...';
+        contenedor.innerHTML = '<div class="alerta alerta-info"><i class="fa-solid fa-spinner fa-spin"></i> Analizando el segmento local, puede tardar unos segundos...</div>';
+
+        fetch(RUTA_ESCANEO, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                csrf_token: document.querySelector('meta[name="csrf-token"]').content
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (datos) { pintarResultado(datos); })
+        .catch(function () {
+            contenedor.innerHTML = '<div class="alerta alerta-error">No se pudo conectar con el servidor para analizar la red.</div>';
+        })
+        .finally(function () {
+            btn.disabled = false;
+            if (icono) icono.className = 'fa-solid fa-network-wired';
+            texto.textContent = TEXTO_BASE;
+        });
+    });
+
+    function pintarResultado(datos) {
+        if (!datos || datos.exito !== true) {
+            contenedor.innerHTML = '<div class="alerta alerta-error">' + escapar(datos && datos.mensaje ? datos.mensaje : 'No fue posible analizar la red.') + '</div>';
+            return;
+        }
+
+        var resumen = '<div class="alerta alerta-info">Se analizaron <strong>' + datos.escaneadas + '</strong> equipos del segmento <strong>' + escapar(datos.segmento) + '</strong> (IP local del servidor: <strong>' + escapar(datos.ip_local) + '</strong>) buscando el puerto <strong>' + datos.puerto + '</strong>.</div>';
+
+        if (!datos.impresoras || datos.impresoras.length === 0) {
+            contenedor.innerHTML = resumen + '<div class="alerta alerta-error">No se detectaron impresoras en este segmento. Verifica que la impresora esté encendida, con IP fija y en la misma red del servidor, y vuelve a intentarlo.</div>';
+            return;
+        }
+
+        var html = resumen + '<div class="lan-analizador-lista"><div class="lan-analizador-titulo">Impresoras detectadas (' + datos.impresoras.length + '):</div>';
+        html += datos.impresoras.map(function (p) {
+            return '<div class="lan-analizador-item">' +
+                '<span class="lan-analizador-icono"><i class="fa-solid fa-print"></i></span>' +
+                '<span class="lan-analizador-info">' +
+                    '<strong>' + escapar(p.nombre) + '</strong>' +
+                    '<small>' + escapar(p.ip) + '</small>' +
+                '</span>' +
+                '<button type="button" class="btn btn-pequeno btn-exito lan-analizador-usar" data-ip="' + escapar(p.ip) + '"><i class="fa-solid fa-arrow-pointer"></i> Usar IP</button>' +
+            '</div>';
+        }).join('');
+        html += '</div>';
+        contenedor.innerHTML = html;
+
+        Array.prototype.forEach.call(contenedor.querySelectorAll('.lan-analizador-usar'), function (b) {
+            b.addEventListener('click', function () {
+                var ip = b.getAttribute('data-ip');
+                var campoIp = document.querySelector('[name="impresora_lan_ip"]');
+                var campoActiva = document.querySelector('[name="impresora_lan_activa"]');
+                if (campoIp) campoIp.value = ip;
+                if (campoActiva) campoActiva.checked = true;
+                contenedor.innerHTML = '<div class="alerta alerta-exito">Impresora <strong>' + escapar(ip) + '</strong> seleccionada. Revisa el puerto y pulsa <strong>Probar impresión de red</strong> para confirmar.</div>';
+            });
+        });
+    }
+
+    function escapar(valor) {
+        var div = document.createElement('div');
+        div.textContent = String(valor == null ? '' : valor);
+        return div.innerHTML;
+    }
 })();
 </script>
 

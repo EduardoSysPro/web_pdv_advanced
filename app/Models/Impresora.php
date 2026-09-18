@@ -91,6 +91,182 @@ class Impresora
     }
 
     /**
+     * Analiza la red local del servidor y detecta impresoras de red.
+     * Busca el puerto RAW 9100 abierto en el segmento /24 de la IP local.
+     */
+    public function escanearLan(int $puerto = 9100)
+    {
+        $ipLocal = $this->obtenerIpLocal();
+        if ($ipLocal === '') {
+            return ['exito' => false, 'mensaje' => 'No se pudo determinar la IP del servidor en la red local.'];
+        }
+        if (!$this->esIpPrivada($ipLocal)) {
+            return ['exito' => false, 'mensaje' => 'La IP local del servidor (' . $ipLocal . ') no parece estar en una red privada (10.x, 172.16-31.x o 192.168.x). Verifica que el sistema se consulte por la IP de la red local.'];
+        }
+
+        $partes = explode('.', $ipLocal);
+        $red = $partes[0] . '.' . $partes[1] . '.' . $partes[2] . '.';
+        $miHost = (int)$partes[3];
+
+        // Hacemos un barrido ping para poblar la tabla ARP y luego solo
+        // probamos el puerto en los equipos realmente activos.
+        $activos = $this->hostsActivos($red);
+        $candidatos = [];
+        foreach ($activos as $ip) {
+            $octetos = explode('.', $ip);
+            if ((int)end($octetos) !== $miHost) {
+                $candidatos[] = $ip;
+            }
+        }
+
+        $abiertos = [];
+        foreach ($candidatos as $ip) {
+            if ($this->puertoAbierto($ip, $puerto)) {
+                $abiertos[] = $ip;
+            }
+        }
+
+        $impresoras = [];
+        foreach ($abiertos as $ip) {
+            $impresoras[] = [
+                'ip'     => $ip,
+                'puerto' => $puerto,
+                'nombre' => $this->nombreImpresora($ip),
+            ];
+        }
+        usort($impresoras, static function ($a, $b) {
+            return version_compare($a['ip'], $b['ip']);
+        });
+
+        return [
+            'exito'      => true,
+            'ip_local'   => $ipLocal,
+            'segmento'   => $red . '0/24',
+            'puerto'     => $puerto,
+            'escaneadas' => count($candidatos),
+            'impresoras' => $impresoras,
+        ];
+    }
+
+    /**
+     * Detecta equipos vivos en el segmento /24: barrido de ping en paralelo
+     * (puebla la tabla ARP de Windows) y lectura posterior de `arp -a`.
+     */
+    private function hostsActivos(string $red): array
+    {
+        if (function_exists('proc_open') && function_exists('shell_exec')) {
+            $archivoBat = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR)
+                . DIRECTORY_SEPARATOR . 'pdv_ping_' . uniqid('', true) . '.bat';
+            $lineas = ['@echo off'];
+            for ($i = 1; $i <= 254; $i++) {
+                $lineas[] = 'start /b ping -n 1 -w 200 ' . $red . $i . ' >nul';
+            }
+            $lineas[] = 'exit /b';
+            @file_put_contents($archivoBat, implode("\r\n", $lineas));
+
+            $descriptores = [
+                0 => ['pipe', 'r'],
+                1 => ['file', 'NUL', 'w'],
+                2 => ['file', 'NUL', 'w'],
+            ];
+            $proceso = @proc_open('cmd /c call "' . $archivoBat . '"', $descriptores, $tuberias);
+            if (is_resource($proceso)) {
+                usleep(3200000);
+                @proc_terminate($proceso);
+                @proc_close($proceso);
+            }
+            @unlink($archivoBat);
+        }
+
+        $hosts = [];
+        $arp = @shell_exec('arp -a 2>nul');
+        if (is_string($arp) && $arp !== '') {
+            foreach (preg_split('/[\r\n]+/', $arp) as $linea) {
+                if (preg_match('/([0-9]{1,3}(?:\.[0-9]{1,3}){3})\s+[0-9a-f]{2}(?:[-:][0-9a-f]{2}){5}\s+\S+/i', $linea, $m) && strpos($m[1], $red) === 0) {
+                    $hosts[] = $m[1];
+                }
+            }
+        }
+        return array_values(array_unique($hosts));
+    }
+
+    /**
+     * Verifica si un puerto TCP está abierto (conexión rápida).
+     */
+    private function puertoAbierto(string $ip, int $puerto): bool
+    {
+        $fp = @fsockopen($ip, $puerto, $errno, $errstr, 0.6);
+        if ($fp) {
+            @fclose($fp);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Obtiene el nombre amigable de la impresora (DNS inverso / NetBIOS).
+     */
+    private function nombreImpresora(string $ip): string
+    {
+        $nombre = @gethostbyaddr($ip);
+        if (is_string($nombre) && $nombre !== '' && $nombre !== $ip && filter_var($nombre, FILTER_VALIDATE_IP) === false) {
+            return $nombre;
+        }
+
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN' && function_exists('exec')) {
+            $lineas = [];
+            @exec('ping -a ' . escapeshellarg($ip) . ' -n 1 -w 400', $lineas);
+            foreach ($lineas as $linea) {
+                if (preg_match('/(?:ping a|pinging)\s+(.+?)\s*\[[0-9]{1,3}(?:\.[0-9]{1,3}){3}\]/iu', $linea, $m)) {
+                    $obtenido = trim((string)$m[1]);
+                    if ($obtenido !== '') {
+                        return $obtenido;
+                    }
+                }
+            }
+        }
+
+        return 'Impresora LAN';
+    }
+
+    /**
+     * Determina la IP local del servidor en la red.
+     */
+    private function obtenerIpLocal(): string
+    {
+        if (!empty($_SERVER['SERVER_ADDR'])) {
+            $ip = str_replace('::ffff:', '', trim((string)$_SERVER['SERVER_ADDR']));
+            if (filter_var($ip, FILTER_VALIDATE_IP) !== false && !in_array($ip, ['127.0.0.1', '::1'], true)) {
+                return $ip;
+            }
+        }
+
+        $resuelta = @gethostbyname(@gethostname());
+        if (is_string($resuelta) && $resuelta !== '' && filter_var($resuelta, FILTER_VALIDATE_IP) !== false && !in_array($resuelta, ['127.0.0.1', '::1'], true)) {
+            return str_replace('::ffff:', '', $resuelta);
+        }
+
+        if (function_exists('shell_exec')) {
+            $salida = @shell_exec('ipconfig');
+            if (is_string($salida) && $salida !== '') {
+                foreach (preg_split('/[\r\n]+/', $salida) as $linea) {
+                    if (preg_match('/IPv4[^0-9]*:\s*([0-9]{1,3}(?:\.[0-9]{1,3}){3})/', $linea, $m) && $this->esIpPrivada($m[1])) {
+                        return $m[1];
+                    }
+                }
+            }
+        }
+
+        return '';
+    }
+
+    private function esIpPrivada(string $ip): bool
+    {
+        return filter_var($ip, FILTER_VALIDATE_IP) !== false
+            && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+    }
+
+    /**
      * Abre un socket TCP hacia la impresora y envía los bytes ESC/POS.
      */
     private function enviar(array $configuracion, string $bytes)

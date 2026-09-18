@@ -27,6 +27,23 @@
         </div>
     </section>
 
+    <!-- Cotizaciones -->
+    <section class="tarjeta soporte-modulo">
+        <div class="soporte-modulo-top">
+            <div class="soporte-modulo-icon soporte-icon-verde"><i class="fa-solid fa-file-invoice"></i></div>
+            <div>
+                <div class="soporte-modulo-titulo">Cotizaciones</div>
+                <span class="soporte-modulo-ruta">/cotizaciones</span>
+            </div>
+        </div>
+        <p class="soporte-modulo-desc">Prepara una propuesta de venta sin afectar el inventario: busca productos, ajusta precio, descuento y cantidad, selecciona el cliente (o lo registras al momento) y define la fecha de validez. Al guardar se genera el folio, la cotización queda en estado pendiente y puedes imprimirla o revisarla desde el listado. Mientras esté pendiente se puede editar o cancelar; cuando el cliente la acepta, el cajero la carga en el POS y la convierte en venta.</p>
+        <div class="soporte-chips">
+            <span class="soporte-chip">No descuenta stock</span>
+            <span class="soporte-chip">Folio e impresión</span>
+            <span class="soporte-chip">Facturar desde caja</span>
+        </div>
+    </section>
+
     <!-- Vista Móvil -->
     <section class="tarjeta soporte-modulo">
         <div class="soporte-modulo-top">

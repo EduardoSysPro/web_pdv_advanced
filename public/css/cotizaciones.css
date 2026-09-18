@@ -1,0 +1,218 @@
+/* ============ Módulo Cotizaciones ============ */
+
+.cotizaciones-encabezado { flex-wrap: wrap; gap: 12px; }
+
+.cotizaciones-filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.cotizacion-filtro {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 999px;
+    background: var(--superficie-carta, #fff); border: 1px solid var(--borde, #e2e2e2);
+    color: var(--texto, #333); font-weight: 500; font-size: 13px;
+    text-decoration: none; transition: all .15s ease;
+}
+.cotizacion-filtro:hover { border-color: var(--primario, #2563eb); color: var(--primario, #2563eb); }
+.cotizacion-filtro.is-active { background: var(--primario, #2563eb); border-color: var(--primario, #2563eb); color: #fff; }
+.filtro-conteo { background: rgba(0,0,0,.12); border-radius: 999px; padding: 1px 7px; font-size: 11px; font-weight: 700; }
+.cotizacion-filtro.is-active .filtro-conteo { background: rgba(255,255,255,.25); }
+
+.cotizaciones-tabla { min-width: 720px; }
+.estado-cotizacion {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+}
+.estado-pendiente { background: #fef3c7; color: #92400e; }
+.estado-facturada { background: #d1fae5; color: #065f46; }
+.estado-cancelada { background: #fee2e2; color: #991b1b; }
+.cotizaciones-acciones { white-space: nowrap; }
+.cotizaciones-acciones form { display: inline; }
+
+.cotizaciones-vacio { text-align: center; padding: 54px 20px; background: var(--superficie-carta, #fff); border: 1px dashed var(--borde, #c9c9c9); border-radius: 14px; }
+.cotizaciones-vacio-icono { font-size: 40px; color: #b9b9c2; margin-bottom: 10px; }
+.cotizaciones-vacio h3 { margin: 0 0 6px; }
+.cotizaciones-vacio p { color: var(--texto-suave, #777); margin: 0 0 16px; }
+
+/* ---- Editor ---- */
+.cotizaciones-editor-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.cotizaciones-editor-titulo { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cotizaciones-editor-titulo h1 { margin: 0; font-size: 22px; }
+.cotizaciones-editor-titulo p { margin: 2px 0 0; color: var(--texto-suave, #666); font-size: 13px; }
+
+.cotizaciones-editor-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+@media (max-width: 1100px) { .cotizaciones-editor-grid { grid-template-columns: 1fr; } }
+
+.cot-seccion { background: var(--superficie-carta, #fff); border: 1px solid var(--borde, #e2e2e2); border-radius: 14px; padding: 18px; margin: 0 0 16px; }
+.cot-seccion legend { font-weight: 700; font-size: 13px; letter-spacing: .3px; padding: 0 8px; }
+.cot-seccion legend i { color: var(--primario, #2563eb); }
+
+.cot-grid-cliente { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 720px) { .cot-grid-cliente { grid-template-columns: 1fr; } }
+.cot-campo { display: flex; flex-direction: column; gap: 5px; }
+.cot-campo > span { font-size: 12px; font-weight: 600; color: var(--texto-suave, #555); }
+
+.cot-cliente-buscar { margin-bottom: 12px; }
+
+.cot-cliente-barra { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.cot-ayuda-rtn { margin: 0; font-size: 12px; color: var(--texto-suave, #666); }
+.form-nota { margin: 0 0 14px; font-size: 12px; color: var(--texto-suave, #666); }
+.tarjeta-titulo .modal-cerrar-x { float: right; margin: -4px -6px 0 0; }
+
+.cot-buscador { position: relative; margin-bottom: 10px; }
+.cot-busqueda-input { width: 100%; padding-right: 42px; }
+.cot-busqueda-icono { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--primario, #2563eb); }
+
+.cot-resultados { border: 1px solid var(--borde, #e6e6ef); border-radius: 10px; padding: 10px; margin-bottom: 14px; background: var(--fondo-suave, #f8f9fc); }
+.cot-resultados-titulo { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--texto-suave, #777); }
+.cot-resultados-tabla { min-width: 560px; }
+.cot-prod-miniatura { width: 34px; height: 34px; object-fit: cover; border-radius: 6px; display: block; }
+.cot-prod-nombre { max-width: 300px; }
+.cot-stock-cero { color: #dc2626; font-weight: 700; }
+
+.cot-carrito { min-width: 640px; }
+.cot-carrito input { text-align: right; }
+.cot-inp-monto { width: 96px; }
+.cot-inp-cant { width: 84px; }
+.cot-celda-nombre { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.cot-celda-importe { font-weight: 700; white-space: nowrap; }
+.cot-carrito-vacio { text-align: center; color: var(--texto-suave, #888); padding: 26px 10px; margin: 0; }
+
+/* ---- Resumen lateral ---- */
+.cotizaciones-editor-resumen { background: var(--superficie-carta, #fff); border: 1px solid var(--borde, #e2e2e2); border-radius: 14px; padding: 18px; position: sticky; top: 18px; }
+.cot-resumen-totales h3 { margin: 0 0 10px; font-size: 14px; }
+.cot-resumen-totales dl { margin: 0; }
+.cot-resumen-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 5px 0; font-size: 13px; }
+.cot-resumen-fila dd { margin: 0; font-weight: 600; white-space: nowrap; }
+.cot-resumen-divisor { border-top: 1px solid var(--borde, #eaeaea); margin-top: 4px; padding-top: 7px; }
+.cot-resumen-total { border-top: 2px solid var(--primario, #2563eb); margin-top: 6px; padding-top: 9px; font-weight: 800; }
+.cot-resumen-total dt, .cot-resumen-total dd { font-size: 16px; color: var(--primario, #2563eb); }
+
+.cot-resumen-extra { margin: 16px 0; }
+.cot-mensaje-config { font-size: 12px; color: var(--texto-suave, #666); background: var(--fondo-suave, #f5f7fb); border-left: 3px solid var(--primario, #2563eb); padding: 8px 10px; border-radius: 0 8px 8px 0; margin: 10px 0 0; }
+.cot-resumen-acciones { display: flex; flex-direction: column; gap: 8px; }
+.cot-resumen-acciones .btn { width: 100%; }
+
+.cot-alerta-flotante { position: sticky; top: 8px; z-index: 20; margin-bottom: 12px; }
+
+/* ---- Ver ---- */
+.cot-ver-cabecera { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+@media (max-width: 720px) { .cot-ver-cabecera { grid-template-columns: 1fr; } }
+.cot-ver-tarjeta { background: var(--superficie-carta, #fff); border: 1px solid var(--borde, #e2e2e2); border-radius: 12px; padding: 16px; }
+.cot-ver-tarjeta h3 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--texto-suave, #777); }
+.cot-ver-tarjeta p { margin: 3px 0; }
+.cot-ver-nombre { font-size: 16px; font-weight: 800; margin: 0 0 4px !important; }
+.cot-ver-totales { display: flex; justify-content: flex-end; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin-top: 20px; }
+.cot-ver-totales-block { background: var(--superficie-carta, #fff); border: 1px solid var(--borde, #e2e2e2); border-radius: 12px; padding: 12px 18px; min-width: 300px; }
+.cot-ver-nota { max-width: 320px; font-size: 12px; color: var(--texto-suave, #555); font-style: italic; }
+
+/* ---- Impresión usa estilos inline ---- */
+[data-tema="oscuro"] .cot-seccion, [data-tema="oscuro"] .cotizaciones-editor-resumen, [data-tema="oscuro"] .cot-ver-tarjeta, [data-tema="oscuro"] .cot-ver-totales-block { color: #e5e7eb; }
+[data-tema="oscuro"] .cotizaciones-vacio { border-color: var(--borde, #3f3f46); }
+[data-tema="oscuro"] .cot-resultados { background: #27272a; border-color: #3f3f46; }
+
+/* ---- Compartido con la vista móvil del vendedor ---- */
+.movil-cot-contenido { max-width: 1080px; margin: 0 auto; padding: 14px 12px 24px; width: 100%; box-sizing: border-box; }
+.movil-cot-intro { background: #eef7ff; border: 1px solid #bae3ff; color: #0369a1; border-radius: 10px; padding: 9px 12px; font-size: 12px; margin: 0 0 12px; }
+[data-tema="oscuro"] .movil-cot-intro { background: rgba(3, 105, 161, .18); border-color: #155e75; color: #7dd3fc; }
+.movil-cot-contenido .cotizaciones-editor-grid { grid-template-columns: 1fr; }
+.movil-cot-contenido .cotizaciones-editor-resumen { position: static; }
+.movil-cot-contenido .cotizaciones-editor-principal { min-width: 0; }
+
+/* ---- Impresión: lo que se ve en pantalla es lo que se imprime ---- */
+@media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    html:has(.pos-app-shell),
+    body,
+    body.pos-body.pos-modulo-body {
+        height: auto !important;
+        overflow: visible !important;
+        background: #fff !important;
+        color: #111 !important;
+    }
+
+    .pos-sidebar,
+    .pos-top-header,
+    .pos-boton-tema,
+    .pos-sidebar-toggle,
+    .pos-app-footer {
+        display: none !important;
+    }
+
+    .pos-app-shell {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: #fff !important;
+    }
+
+    .pos-workspace {
+        margin-left: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+        display: block !important;
+    }
+
+    .app-main,
+    .pos-modulo-main {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: 0 !important;
+        background: #fff !important;
+    }
+
+    .cotizaciones-editor-acciones,
+    .cotizaciones-editor-titulo .btn,
+    .alerta,
+    .cot-resumen-acciones {
+        display: none !important;
+    }
+
+    .cotizaciones-editor-cabecera { justify-content: flex-start; margin-bottom: 14px; }
+
+    .cot-ver-cabecera { margin-bottom: 14px; }
+
+    .cot-ver-tarjeta,
+    .cot-ver-totales-block,
+    .cot-seccion,
+    .cotizaciones-editor-resumen {
+        background: #fff !important;
+        color: #111 !important;
+        border: 1px solid #d6d9dd !important;
+        border-radius: 8px !important;
+    }
+
+    .cot-ver-tarjeta h3,
+    .cotizaciones-editor-titulo p,
+    .cot-campo > span {
+        color: #555 !important;
+    }
+
+    .cot-ver-totales { margin-top: 14px; gap: 12px; }
+
+    .tabla-responsive { overflow: visible !important; }
+
+    .tabla-catalogo { border-color: #d6d9dd !important; }
+    .tabla-catalogo th {
+        background: #f0f3f7 !important;
+        color: #333 !important;
+        border-bottom-color: #d6d9dd !important;
+    }
+    .tabla-catalogo td {
+        color: #111 !important;
+        border-bottom-color: #eceff2 !important;
+        background: #fff !important;
+    }
+    .tabla-catalogo tbody tr:hover td { background: #fff !important; }
+
+    .estado-pendiente { background: #fef3c7 !important; color: #92400e !important; }
+    .estado-facturada { background: #d1fae5 !important; color: #065f46 !important; }
+    .estado-cancelada { background: #fee2e2 !important; color: #991b1b !important; }
+
+    tr { page-break-inside: avoid; }
+    h1, h2, h3 { page-break-after: avoid; }
+    .cot-ver-totales { page-break-inside: avoid; }
+    .cot-ver-cabecera { page-break-inside: avoid; }
+}

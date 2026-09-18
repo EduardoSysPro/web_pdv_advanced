@@ -28,7 +28,7 @@ class UsuariosController extends Controller
     {
         $this->requerirAdministrador();
         $datos = $this->leerUsuario();
-        if ($datos['nombre'] === '' || $datos['usuario'] === '' || strlen($datos['password']) < 6 || !in_array($datos['rol'], ['admin', 'cajero', 'cajero_movil'], true)) {
+        if ($datos['nombre'] === '' || $datos['usuario'] === '' || strlen($datos['password']) < 6 || !in_array($datos['rol'], ['admin', 'cajero', 'cajero_movil', 'vendedor'], true)) {
             $_SESSION['error_usuarios'] = 'Completa los datos y usa una contraseña de al menos 6 caracteres.';
             $this->redirigir('usuarios');
         }
@@ -62,7 +62,7 @@ class UsuariosController extends Controller
         $usuarioId = (int)($parametros['id'] ?? 0);
         $datos = $this->leerUsuario();
 
-        if ($usuarioId <= 0 || $datos['nombre'] === '' || $datos['usuario'] === '' || !in_array($datos['rol'], ['admin', 'cajero', 'cajero_movil'], true)) {
+        if ($usuarioId <= 0 || $datos['nombre'] === '' || $datos['usuario'] === '' || !in_array($datos['rol'], ['admin', 'cajero', 'cajero_movil', 'vendedor'], true)) {
             $_SESSION['error_usuarios'] = 'No se pudo actualizar el usuario. Revisa los datos.';
             $this->redirigir('usuarios');
         }

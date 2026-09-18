@@ -47,4 +47,21 @@ class ImpresoraController extends Controller
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($resultado);
     }
+
+    /**
+     * Analiza la red local y devuelve las impresoras detectadas. Solo administradores.
+     */
+    public function escaneoLan()
+    {
+        $this->requerirAdministrador();
+        header('Content-Type: application/json; charset=utf-8');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['exito' => false, 'mensaje' => 'Método HTTP no permitido.']);
+            return;
+        }
+
+        $resultado = $this->modeloImpresora->escanearLan();
+
+        echo json_encode($resultado);
+    }
 }

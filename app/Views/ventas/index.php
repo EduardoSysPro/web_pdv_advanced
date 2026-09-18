@@ -1,4 +1,5 @@
 <?php $tituloPagina = 'Ventas'; $claseMain = 'pos-ventas-main'; require APP_PATH . 'Views/layouts/pos_header.php'; ?>
+<?php $posEsVendedor = in_array(strtolower((string)($_SESSION['rol'] ?? '')), ['vendedor', 'cajero_movil'], true); ?>
 
 <!-- ========== ZONA DE CODIGO DE BARRAS Y BOTONES PRINCIPALES ========== -->
     <section class="pos-codigo-barra">
@@ -25,6 +26,12 @@
                 <span>Buscar</span>
                 <kbd class="pos-tecla">F10</kbd>
             </button>
+            <?php if (!$posEsVendedor): ?>
+            <button class="cb-btn-secundario" id="btn-cargar-cotizacion" type="button" title="Cargar una cotización pendiente en el ticket actual">
+                <i class="fa-solid fa-file-lines pos-action-icon" aria-hidden="true"></i>
+                <span>Cargar cotización</span>
+            </button>
+            <?php endif; ?>
             <button class="cb-btn-secundario cb-btn-peligro" id="btn-borrar-art" type="button" title="Eliminar artículo seleccionado (F6 o Supr)">
                 <i class="fa-regular fa-trash-can pos-action-icon" aria-hidden="true"></i>
                 <span>Borrar artículo</span>
@@ -264,6 +271,22 @@
         </div>
     </div>
 
+    <?php if (!$posEsVendedor): ?>
+    <div id="modal-cotizaciones" class="modal-busqueda-productos" hidden>
+        <div class="modal-busqueda-fondo" data-cot-cerrar></div>
+        <section class="modal-busqueda-caja modal-cot-caja" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-cotizaciones">
+            <header class="modal-busqueda-cabecera"><h2 id="titulo-modal-cotizaciones">Cotizaciones pendientes</h2><button type="button" class="modal-busqueda-cerrar" data-cot-cerrar aria-label="Cerrar">&#10005;</button></header>
+            <div class="modal-busqueda-cuerpo">
+                <p class="busqueda-productos-estado" id="cot-pendientes-estado">Cargando cotizaciones...</p>
+                <div class="tabla-responsive"><table class="table-pos" id="tabla-cotizaciones-pendientes">
+                    <thead><tr><th>Folio</th><th>Fecha</th><th>Vendedor</th><th>Cliente</th><th>RTN</th><th class="text-right">Total</th><th>Acción</th></tr></thead>
+                    <tbody></tbody>
+                </table></div>
+            </div>
+        </section>
+    </div>
+    <?php endif; ?>
+
     <div id="modal-busqueda-productos" class="modal-busqueda-productos" hidden>
         <div class="modal-busqueda-fondo" data-busqueda-cerrar></div>
         <section class="modal-busqueda-caja" role="dialog" aria-modal="true" aria-labelledby="titulo-busqueda-productos">
@@ -279,6 +302,7 @@
         const MONEDA_ISO     = '<?php echo MONEDA_ISO; ?>';
         const ISV_PORCENTAJE = <?php echo ISV_PORCENTAJE; ?>;
         const COMPROBANTE_DEFAULT = '<?php echo htmlspecialchars($tipoComprobanteDefault ?? 'recibo'); ?>';
+        const COTIZACION_A_CARGAR = <?php echo $cotizacionACargar ? json_encode($cotizacionACargar, JSON_UNESCAPED_UNICODE) : 'null'; ?>;
         document.querySelectorAll('input[name="cobro-metodo"]').forEach(function (radio) { radio.addEventListener('change', function () { document.getElementById('cobro-cliente-contenedor').style.display = this.value === 'credito' ? 'flex' : 'none'; }); });
     </script>
     <?php $versionJs = file_exists(PUBLIC_PATH . 'js/pos.js') ? filemtime(PUBLIC_PATH . 'js/pos.js') : time(); ?>

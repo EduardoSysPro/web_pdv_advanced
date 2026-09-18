@@ -32,6 +32,18 @@ class VentasController extends Controller
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
         $impresoraLanActiva = (string)($configuracion['impresora_lan_activa'] ?? '0') === '1' && trim((string)($configuracion['impresora_lan_ip'] ?? '')) !== '';
 
+        // Carga automática de cotización pendiente (?cotizar=ID)
+        $cotizacionACargar = null;
+        $idCotizar = isset($_GET['cotizar']) ? (int)$_GET['cotizar'] : 0;
+        if ($idCotizar > 0) {
+            require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Cotizacion.php';
+            $modeloCotizacion = new Cotizacion();
+            $cot = $modeloCotizacion->obtenerPorId($idCotizar);
+            if ($cot && $cot['estado'] === 'pendiente') {
+                $cotizacionACargar = ['id' => (int)$cot['id'], 'folio' => $cot['folio']];
+            }
+        }
+
         require_once __DIR__ . '/../Views/ventas/index.php';
     }
 
@@ -46,6 +58,9 @@ class VentasController extends Controller
         $clientes = $this->modeloCliente->obtenerTodos();
         $urlBase = URL_BASE;
         $impresoraLanActiva = (string)($configuracion['impresora_lan_activa'] ?? '0') === '1' && trim((string)($configuracion['impresora_lan_ip'] ?? '')) !== '';
+        $esAdmin = ((int)($_SESSION['rol_id'] ?? 0) === 1 || in_array(($_SESSION['rol'] ?? ''), ['admin', 'administrador'], true));
+        $diasValidez = max(1, (int)($configuracion['cotizacion_dias_validez'] ?? 15));
+        $fechaValidez = date('Y-m-d', strtotime('+' . $diasValidez . ' days'));
 
         require_once APP_PATH . 'Views' . DIRECTORY_SEPARATOR . 'ventas' . DIRECTORY_SEPARATOR . 'movil.php';
     }
@@ -311,6 +326,7 @@ class VentasController extends Controller
         $clienteRtn       = isset($datos['cliente_rtn'])      ? trim($datos['cliente_rtn'])       : '';
         $clienteTelefono  = isset($datos['cliente_telefono']) ? trim($datos['cliente_telefono'])  : '';
         $clienteDireccion = isset($datos['cliente_direccion'])? trim($datos['cliente_direccion']) : '';
+        $cotizacionId     = isset($datos['cotizacion_id'])    ? (int)$datos['cotizacion_id']     : 0;
 
         $productos = isset($datos['productos']) && is_array($datos['productos'])
             ? $datos['productos'] : [];
@@ -648,6 +664,17 @@ class VentasController extends Controller
             $stmtMov->bindValue(':concepto',   $concepto, PDO::PARAM_STR);
             if ($metodoPago === 'efectivo') {
                 $stmtMov->execute();
+            }
+
+            // Vincular la venta con su cotización (si proviene de una) y marcarla como facturada.
+            if ($cotizacionId > 0) {
+                $stmtCot = $pdo->prepare('UPDATE cotizaciones SET estado = :estado, venta_id = :venta_id WHERE id = :id AND estado = :pendiente');
+                $stmtCot->execute([
+                    ':estado'   => 'facturada',
+                    ':venta_id' => $ventaId,
+                    ':id'       => $cotizacionId,
+                    ':pendiente'=> 'pendiente'
+                ]);
             }
 
             $pdo->commit();

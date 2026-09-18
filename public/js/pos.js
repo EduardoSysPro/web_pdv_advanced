@@ -739,24 +739,46 @@
         const msgVacio = document.getElementById('tabla-mensaje-vacio');
         if (!tbody) return;
 
-        tbody.innerHTML = '';
         const ticket = obtenerTicketActivo();
 
         if (!ticket || ticket.productos.length === 0) {
+            tbody.innerHTML = '';
             if (msgVacio) msgVacio.style.display = '';
             return;
         }
         if (msgVacio) msgVacio.style.display = 'none';
 
+        // Reconciliación: reutiliza los nodos <tr> existentes (clave = item_key) y solo
+        // crea/actualiza lo que cambió. Con muchos productos en un ticket se evita
+        // reconstruir todo el DOM (y recrear centenares de listeners) en cada cambio.
+        const filasActuales = new Map();
+        Array.prototype.forEach.call(tbody.children, function (tr) {
+            if (tr.dataset && tr.dataset.idProducto) filasActuales.set(tr.dataset.idProducto, tr);
+        });
+
+        const fragmento = document.createDocumentFragment();
+
         ticket.productos.forEach((p, idx) => {
-            const tr = document.createElement('tr');
             const claveFila = p.item_key || (p.id + '_' + (p.tipo_presentacion || 'unidad'));
-            tr.dataset.idProducto = claveFila;
+            let tr = filasActuales.get(claveFila);
+            if (tr) {
+                filasActuales.delete(claveFila);
+            } else {
+                tr = document.createElement('tr');
+                tr.dataset.idProducto = claveFila;
+                // Listeners una sola vez por fila (las filas reutilizadas los conservan)
+                tr.addEventListener('click', function () {
+                    seleccionarFila(claveFila);
+                });
+                tr.addEventListener('dblclick', function () {
+                    seleccionarFila(claveFila);
+                    modificarCantidadFilaSeleccionada();
+                });
+            }
 
             const stockBajo = Number(p.stock || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_minimo || 1);
-            if (stockBajo) tr.classList.add('fila-stock-bajo');
-
-            if (claveFila === filaSeleccionadaId || String(p.id) === filaSeleccionadaId) tr.classList.add('fila-seleccionada');
+            tr.classList.toggle('fila-stock-bajo', stockBajo);
+            tr.classList.toggle('fila-seleccionada', claveFila === filaSeleccionadaId || String(p.id) === filaSeleccionadaId);
 
             const etiquetaPresentacion = p.tipo_presentacion === 'empaque'
                 ? ` <span style="background:#e0f2fe; color:#0369a1; padding:1px 5px; border-radius:4px; font-size:10px; font-weight:600;">📦 ${escaparHTML(p.nombre_presentacion || 'Caja')}</span>`
@@ -772,18 +794,16 @@
                 <td class="numero">${formatearCantidad(p.stock, p.unidad_medida || 'unidad')}</td>
             `;
 
-            // Seleccionar fila al hacer clic
-            tr.addEventListener('click', function () {
-                seleccionarFila(claveFila);
-            });
-            // Doble clic: modificar cantidad
-            tr.addEventListener('dblclick', function () {
-                seleccionarFila(claveFila);
-                modificarCantidadFilaSeleccionada();
-            });
-
-            tbody.appendChild(tr);
+            fragmento.appendChild(tr);
         });
+
+        // Elimina filas que ya no pertenecen al ticket activo
+        filasActuales.forEach(function (tr) {
+            if (tr.parentNode === tbody) tbody.removeChild(tr);
+        });
+
+        // Reordena y agrega en un solo paso al DOM
+        tbody.appendChild(fragmento);
     }
 
     /**
@@ -861,6 +881,8 @@
     let resultadosBusqueda = [];
     let indiceBusqueda = -1;
     let temporizadorBusqueda = null;
+    // Cancela la petición AJAX anterior para que solo la última respuesta dibuje resultados
+    let abortadorBusquedaProductos = null;
 
     function abrirModalBusquedaProductos() {
         const modal = document.getElementById('modal-busqueda-productos');
@@ -886,21 +908,37 @@
         const input = document.getElementById('busqueda-productos-input');
         const estado = document.getElementById('busqueda-productos-estado');
         const termino = input ? input.value.trim() : '';
-        if (!termino) {
+
+        // Longitud mínima para no disparar consultas por cada tecla suelta
+        if (termino.length < 2) {
             resultadosBusqueda = [];
             indiceBusqueda = -1;
             renderizarResultadosBusqueda();
+            if (estado) estado.textContent = termino ? 'Escribe al menos 2 caracteres.' : 'Escribe para buscar productos.';
             return;
         }
-        if (estado) estado.textContent = 'Buscando productos...';
-        fetch(URL_BASE + 'ventas/buscar-productos?q=' + encodeURIComponent(termino), { credentials: 'same-origin' })
+
+        // Aborta la búsqueda anterior: evita que respuestas lentas/desordenadas
+        // pisen resultados más nuevos
+        if (abortadorBusquedaProductos) abortadorBusquedaProductos.abort();
+        const controlador = new AbortController();
+        abortadorBusquedaProductos = controlador;
+
+        if (estado) { estado.setAttribute('aria-busy', 'true'); estado.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Buscando productos...'; }
+        fetch(URL_BASE + 'ventas/buscar-productos?q=' + encodeURIComponent(termino), {
+            credentials: 'same-origin',
+            signal: controlador.signal
+        })
             .then(resp => resp.json())
             .then(productos => {
+                if (controlador.signal.aborted) return;
+                if (estado) estado.removeAttribute('aria-busy');
                 resultadosBusqueda = Array.isArray(productos) ? productos : [];
                 indiceBusqueda = resultadosBusqueda.length ? 0 : -1;
                 renderizarResultadosBusqueda();
             })
             .catch(() => {
+                if (controlador.signal.aborted) return;
                 resultadosBusqueda = [];
                 indiceBusqueda = -1;
                 if (estado) estado.textContent = 'No se pudo consultar el catálogo.';
@@ -914,10 +952,10 @@
         if (!cuerpo) return;
         cuerpo.innerHTML = '';
         if (!resultadosBusqueda.length) {
-            if (estado && document.getElementById('busqueda-productos-input').value.trim()) estado.textContent = 'No se encontraron coincidencias.';
+            if (estado && document.getElementById('busqueda-productos-input').value.trim()) { estado.removeAttribute('aria-busy'); estado.textContent = 'No se encontraron coincidencias.'; }
             return;
         }
-        if (estado) estado.textContent = 'Usa las flechas y Enter para seleccionar.';
+        if (estado) { estado.removeAttribute('aria-busy'); estado.textContent = 'Usa las flechas y Enter para seleccionar.'; }
         resultadosBusqueda.forEach((producto, indice) => {
             const fila = document.createElement('tr');
             if (indice === indiceBusqueda) fila.classList.add('fila-busqueda-activa');
@@ -1139,7 +1177,7 @@
                     btn.type = 'button';
                     btn.className = 'btn-pos-success btn-pequeno';
                     btn.innerHTML = '<i class="fa-solid fa-download" aria-hidden="true"></i> Cargar';
-                    btn.addEventListener('click', function () { cargarCotizacionEnTicket(c.id); });
+                    btn.addEventListener('click', function () { cargarCotizacionEnTicket(c.id, btn); });
                     tdA.appendChild(btn);
                     tr.appendChild(tdF); tr.appendChild(tdFe); tr.appendChild(tdV); tr.appendChild(tdC); tr.appendChild(tdR); tr.appendChild(tdT); tr.appendChild(tdA);
                     cuerpo.appendChild(tr);
@@ -1159,14 +1197,28 @@
      * Abre un ticket nuevo (o usa el activo si está vacío), inserta los artículos
      * con sus cantidades/precios/descuentos y recuerda la cotización para facturarla.
      */
-    function cargarCotizacionEnTicket(idCotizacion) {
+    function cargarCotizacionEnTicket(idCotizacion, botonCargar) {
         const idNum = Number(idCotizacion);
         if (!idNum) return;
+
+        let htmlOriginalBoton = null;
+        if (botonCargar) {
+            htmlOriginalBoton = botonCargar.innerHTML;
+            botonCargar.disabled = true;
+            botonCargar.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Cargando...';
+        }
+        const restaurarBoton = () => {
+            if (botonCargar && htmlOriginalBoton !== null) {
+                botonCargar.disabled = false;
+                botonCargar.innerHTML = htmlOriginalBoton;
+            }
+        };
 
         fetch(URL_BASE + 'cotizaciones/facturar/' + idNum, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(r => r.json())
             .then(resp => {
                 if (!resp || resp.exito !== true) {
+                    restaurarBoton();
                     alert((resp && resp.mensaje) || 'No se pudo cargar la cotización.');
                     return;
                 }
@@ -1208,7 +1260,7 @@
                 const totalCot = calcularTotales(ticket).total;
                 alert('Cotización ' + cot.folio + ' cargada en ' + (hayTicketsConItems ? 'un nuevo ticket' : 'el ticket actual') + '.\nTotal: ' + formatearMonto(totalCot) + '\nPuedes ajustar cantidades, precios o descuentos antes de cobrar.');
             })
-            .catch(() => alert('No se pudo conectar con el servidor para cargar la cotización.'));
+            .catch(() => { restaurarBoton(); alert('No se pudo conectar con el servidor para cargar la cotización.'); });
     }
 
     function obtenerTipoComprobanteSeleccionado() {
@@ -1233,11 +1285,30 @@
         if (confirmar) confirmar.disabled = !valido || (esCredito && !(document.getElementById('cobro-cliente')?.value));
     }
 
+    function setCobroProcesando(activo) {
+        const btn = document.getElementById('cobro-confirmar');
+        if (!btn) return;
+        if (activo) {
+            if (!btn.dataset.textoOriginal) btn.dataset.textoOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+            btn.setAttribute('aria-busy', 'true');
+        } else {
+            if (btn.dataset.textoOriginal) {
+                btn.innerHTML = btn.dataset.textoOriginal;
+                delete btn.dataset.textoOriginal;
+            }
+            btn.removeAttribute('aria-busy');
+            if (typeof actualizarCobroModal === 'function') actualizarCobroModal();
+        }
+    }
+
     function confirmarCobro() {
         if (procesandoVenta) return;
         procesandoVenta = true;
         const ticket = obtenerTicketActivo();
         if (!ticket) { procesandoVenta = false; return; }
+        setCobroProcesando(true);
         const total = Number(document.getElementById('modal-cobro')?.dataset.total || 0);
         const metodoPago = document.querySelector('input[name="cobro-metodo"]:checked')?.value || 'efectivo';
         const tipoComprobante = obtenerTipoComprobanteSeleccionado();
@@ -1253,7 +1324,11 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
         const clienteDireccion = document.getElementById('cliente_direccion')?.value.trim() || '';
         const cotizacionIdCobro = Number(ticket.cotizacion_id || 0);
 
-        const ventanaTicket = window.open('', 'TicketImpresion', 'width=400,height=600,top=100,left=300,toolbar=no,location=no,status=no,menubar=no');
+        const usarWebApp = typeof PDV_WEBAPP !== 'undefined' && PDV_WEBAPP.instalada;
+        const abrirTicket = (typeof PDV_WEBAPP !== 'undefined' && PDV_WEBAPP.abrirTicket)
+            ? function (u) { PDV_WEBAPP.abrirTicket(u); }
+            : function (u) { window.open(u, '_blank'); };
+        const ventanaTicket = usarWebApp ? null : window.open('', 'TicketImpresion', 'width=400,height=600,top=100,left=300,toolbar=no,location=no,status=no,menubar=no');
         
         fetch(URL_BASE + 'ventas/guardar', {
             method: 'POST',
@@ -1282,6 +1357,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
             if (!resp || resp.exito !== true) { 
                 if (ventanaTicket) ventanaTicket.close(); 
                 procesandoVenta = false;
+                setCobroProcesando(false);
                 alert(resp?.mensaje || 'No se pudo registrar la venta.'); 
                 return; 
             }
@@ -1298,15 +1374,18 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
                         alert('Ticket impreso en la impresora de red (LAN).\nFolio: ' + resp.folio);
                     } else {
                         alert('No se pudo imprimir por LAN: ' + (info.mensaje || 'error desconocido') + '\nSe abrirá el ticket para imprimirlo por el navegador.');
-                        window.open(URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id) + '?tipo=' + encodeURIComponent(tipoComprobante), '_blank');
+                        abrirTicket(URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id) + '?tipo=' + encodeURIComponent(tipoComprobante));
                     }
                 }).catch(() => {
                     alert('No se pudo imprimir por la impresora LAN. Se abrirá el ticket para imprimirlo por el navegador.');
-                    window.open(URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id) + '?tipo=' + encodeURIComponent(tipoComprobante), '_blank');
+                    abrirTicket(URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id) + '?tipo=' + encodeURIComponent(tipoComprobante));
                 });
+            } else if (usarWebApp) {
+                abrirTicket(URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id) + '?tipo=' + encodeURIComponent(tipoComprobante));
             } else if (ventanaTicket) {
                 ventanaTicket.location = URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id) + '?tipo=' + encodeURIComponent(tipoComprobante);
             }
+            setCobroProcesando(false);
             cerrarModalCobro();
             procesandoVenta = false;
             
@@ -1321,6 +1400,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
             guardarEstado(); renderizarTodo();
         }).catch(() => { 
             if (ventanaTicket) ventanaTicket.close(); 
+            setCobroProcesando(false);
             procesandoVenta = false;
             alert('No se pudo conectar con el servidor para registrar la venta.'); 
         });
@@ -1659,6 +1739,11 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
     }
 
     function buscarClientesAjax(termino) {
+        const contenedor = document.getElementById('cliente_buscar_resultados');
+        if (contenedor) {
+            contenedor.style.display = 'block';
+            contenedor.innerHTML = '<div class="cliente-buscar-cargando" style="padding: 8px 10px; color: #64748b; font-size: 12px;"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Buscando cliente...</div>';
+        }
         fetch(URL_BASE + 'clientes/buscar?busqueda=' + encodeURIComponent(termino), {
             credentials: 'same-origin'
         })
@@ -1770,6 +1855,14 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
                 return;
             }
 
+            const htmlOriginal = btnGuardar.innerHTML;
+            const restaurarBoton = () => {
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = htmlOriginal;
+            };
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Guardando...';
+
             fetch(URL_BASE + 'clientes/guardar-ajax', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
@@ -1786,6 +1879,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
             .then(resp => resp.json())
             .then(data => {
                 if (!data || !data.exito) {
+                    restaurarBoton();
                     mensaje.textContent = data?.mensaje || 'No se pudo guardar el cliente.';
                     mensaje.className = 'modal-mensaje msg-error';
                     return;
@@ -1803,6 +1897,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
                 actualizarCobroModal();
             })
             .catch(() => {
+                restaurarBoton();
                 mensaje.textContent = 'No se pudo conectar con el servidor.';
                 mensaje.className = 'modal-mensaje msg-error';
             });
@@ -1866,6 +1961,21 @@ if (inputRtn) {
 function consultarRtnCliente(rtn) {
     if (!rtn) return;
 
+    const inputsRtn = [document.getElementById('cliente_rtn'), document.getElementById('nuevo_cliente_rtn')].filter(Boolean);
+    const contenedor = document.getElementById('cliente_buscar_resultados');
+    inputsRtn.forEach(input => { input.setAttribute('aria-busy', 'true'); input.disabled = true; });
+    if (contenedor) {
+        contenedor.style.display = 'block';
+        contenedor.innerHTML = '<div class="cliente-buscar-cargando" style="padding: 8px 10px; color: #64748b; font-size: 12px;"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Consultando RTN...</div>';
+    }
+    const limpiarIndicador = () => {
+        inputsRtn.forEach(input => { input.removeAttribute('aria-busy'); input.disabled = false; });
+        if (contenedor && !contenedor.querySelector('.cliente-buscar-item')) {
+            contenedor.style.display = 'none';
+            contenedor.innerHTML = '';
+        }
+    };
+
     fetch(URL_BASE + 'ventas/buscar-cliente-por-rtn?rtn=' + encodeURIComponent(rtn), {
         credentials: 'same-origin'
     })
@@ -1884,7 +1994,8 @@ function consultarRtnCliente(rtn) {
             mostrarOpcionesRazonSocial(lista);
         }
     })
-    .catch(err => console.error('Error al consultar RTN:', err));
+    .catch(err => console.error('Error al consultar RTN:', err))
+    .finally(limpiarIndicador);
 }
 
 function aplicarDatosCliente(cliente) {

@@ -58,7 +58,7 @@
                         <fieldset class="cot-seccion cot-seccion-plegable" id="cot-seccion-cliente" data-abierto="false">
                             <legend class="cot-seccion-leyenda" id="cot-leyenda-cliente">
                                 <span class="cot-seccion-leyenda-texto"><i class="fa-solid fa-user"></i> Datos del cliente</span>
-                                <button type="button" class="cot-plegar-btn" id="cot-plegar-cliente" title="Mostrar u ocultar" aria-expanded="true" aria-controls="cot-cliente-contenido">
+                                <button type="button" class="cot-plegar-btn" id="cot-plegar-cliente" title="Mostrar u ocultar" aria-expanded="false" aria-controls="cot-cliente-contenido">
                                     <i class="fa-solid fa-chevron-down"></i>
                                 </button>
                             </legend>
@@ -200,36 +200,6 @@ $clientesJson = array_map(static function ($c) {
 </script>
 <script>
     (function () {
-        var seccion = document.getElementById('cot-seccion-cliente');
-        var leyenda = document.getElementById('cot-leyenda-cliente');
-        var boton = document.getElementById('cot-plegar-cliente');
-        var contenido = document.getElementById('cot-cliente-contenido');
-        if (!seccion || !contenido) return;
-
-        function aplicar() {
-            var abierto = seccion.getAttribute('data-abierto') === 'true';
-            seccion.setAttribute('data-abierto', abierto ? 'true' : 'false');
-            if (boton) {
-                boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
-            }
-        }
-
-        function alternar() {
-            var abierto = seccion.getAttribute('data-abierto') === 'true';
-            seccion.setAttribute('data-abierto', abierto ? 'false' : 'true');
-            aplicar();
-        }
-
-        if (leyenda) leyenda.addEventListener('click', function (e) {
-            if (e.target.closest('.cot-plegar-btn')) return;
-            alternar();
-        });
-        if (boton) boton.addEventListener('click', alternar);
-        aplicar();
-    }());
-</script>
-<script>
-    (function () {
         var botonTema = document.getElementById('pos-boton-tema');
         var temaKey = 'web_pdv_tema';
 
@@ -258,5 +228,6 @@ $clientesJson = array_map(static function ($c) {
         }
     }());
 </script>
+<script src="<?php echo URL_BASE; ?>js/webapp.js?v=<?php echo filemtime(PUBLIC_PATH . 'js/webapp.js'); ?>"></script>
 </body>
 </html>

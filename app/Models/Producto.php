@@ -270,24 +270,128 @@ class Producto extends Controller
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function buscarProductosAjax($termino, $limite = 15)
+    /**
+     * Indica si la tabla productos tiene el índice FULLTEXT sobre nombre.
+     * Se cachea por petición para no consultar el diccionario cada vez.
+     */
+    private function tieneFulltextNombre()
     {
-        $terminoLike = '%' . trim($termino) . '%';
+        static $disponible = null;
+        if ($disponible === null) {
+            $disponible = false;
+            try {
+                $filas = $this->pdo->query('SHOW INDEX FROM productos WHERE Key_name = \'ft_productos_nombre\'')->fetchAll(PDO::FETCH_ASSOC);
+                $disponible = count($filas) > 0;
+            } catch (Exception $e) {
+                $disponible = false;
+            }
+        }
+        return $disponible;
+    }
+
+    /**
+     * Búsqueda rápida e indexada para términos largos (>= 3 caracteres).
+     * Hace DOS consultas que usan índices y fusiona los resultados en PHP:
+     *  1. Prefijo por código de barras (índice BTREE).
+     *  2. Nombre por FULLTEXT (MATCH...AGAINST en modo booleano).
+     * Una sola consulta con OR + ORDER BY haría que MySQL ignore el índice
+     * FULLTEXT y escanee el catálogo completo.
+     * @return array|false false si conviene usar el plan LIKE (sin resultados)
+     */
+    private function buscarFilasFulltext($termino, $limite)
+    {
+        $palabras = preg_split('/\s+/u', trim($termino));
+        $terminosFt = [];
+        foreach ($palabras as $palabra) {
+            // Limpia caracteres especiales del modo booleano de MySQL/MariaDB
+            $limpia = preg_replace('/[+\-<>()~*"@]/u', '', $palabra);
+            $limpia = trim($limpia);
+            if ($limpia !== '') {
+                $terminosFt[] = $limpia . '*';
+            }
+        }
+        if (count($terminosFt) === 0) {
+            return false;
+        }
+        $expresionFt = implode(' ', $terminosFt);
+        $prefijo = $termino . '%';
+
+        // 1) Coincidencia por código (prefijo) — índice BTREE de codigo_barras
         $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta, stock, stock_minimo,
                                             unidad_medida, permite_decimales,
                                             tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque,
                                             tipo_impuesto, porcentaje_isv, imagen
                                      FROM productos
-                                     WHERE nombre LIKE :nombre
-                                        OR codigo_barras LIKE :codigo
+                                     WHERE codigo_barras LIKE :codigo
                                         OR codigo_barras_empaque LIKE :codigo_emp
-                                     ORDER BY nombre ASC LIMIT :limite');
-        $stmt->bindValue(':nombre', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindValue(':codigo', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindValue(':codigo_emp', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindValue(':limite', min(30, max(1, (int)$limite)), PDO::PARAM_INT);
+                                     LIMIT :limite');
+        $stmt->bindValue(':codigo', $prefijo, PDO::PARAM_STR);
+        $stmt->bindValue(':codigo_emp', $prefijo, PDO::PARAM_STR);
+        $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
         $stmt->execute();
-        $filas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $filasCodigo = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // 2) Coincidencia por nombre — índice FULLTEXT.
+        // Sin ORDER BY: el LIMIT corta el escaneo de coincidencias temprano;
+        // el orden alfabético final lo aplica PHP sobre los pocos resultados.
+        $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta, stock, stock_minimo,
+                                            unidad_medida, permite_decimales,
+                                            tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque,
+                                            tipo_impuesto, porcentaje_isv, imagen
+                                     FROM productos
+                                     WHERE MATCH(nombre) AGAINST(:ft IN BOOLEAN MODE)
+                                     LIMIT :limite');
+        $stmt->bindValue(':ft', $expresionFt, PDO::PARAM_STR);
+        $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+        $stmt->execute();
+        $filasNombre = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $porId = [];
+        foreach (array_merge($filasCodigo, $filasNombre) as $fila) {
+            if (!isset($porId[$fila['id']])) {
+                $porId[$fila['id']] = $fila;
+            }
+        }
+        if (count($porId) === 0) {
+            return false;
+        }
+        $todas = array_values($porId);
+        // Mantiene el mismo orden alfabético (por nombre) que la búsqueda LIKE original
+        usort($todas, function ($a, $b) {
+            return strcasecmp($a['nombre'], $b['nombre']);
+        });
+        return array_slice($todas, 0, $limite);
+    }
+
+    public function buscarProductosAjax($termino, $limite = 15)
+    {
+        $termino = trim((string)$termino);
+        $limite = min(30, max(1, (int)$limite));
+
+        // Plan rápido (usa índices): solo para términos medianos/largos y con FULLTEXT instalado.
+        // Si no da resultados, se cae al LIKE completo para no perder búsquedas por subcadena.
+        $filas = false;
+        if (strlen($termino) >= 3 && $this->tieneFulltextNombre()) {
+            $filas = $this->buscarFilasFulltext($termino, $limite);
+        }
+        if ($filas === false || count($filas) === 0) {
+            $terminoLike = '%' . $termino . '%';
+            $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta, stock, stock_minimo,
+                                                unidad_medida, permite_decimales,
+                                                tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque,
+                                                tipo_impuesto, porcentaje_isv, imagen
+                                         FROM productos
+                                         WHERE nombre LIKE :nombre
+                                            OR codigo_barras LIKE :codigo
+                                            OR codigo_barras_empaque LIKE :codigo_emp
+                                         ORDER BY nombre ASC LIMIT :limite');
+            $stmt->bindValue(':nombre', $terminoLike, PDO::PARAM_STR);
+            $stmt->bindValue(':codigo', $terminoLike, PDO::PARAM_STR);
+            $stmt->bindValue(':codigo_emp', $terminoLike, PDO::PARAM_STR);
+            $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+            $stmt->execute();
+            $filas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         $resultados = [];
         foreach ($filas as $p) {

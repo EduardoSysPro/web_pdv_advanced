@@ -963,6 +963,23 @@
     color: #60a5fa;
 }
 
+/* Escritorio (cotizaciones.css): mismo look plegable en tema oscuro */
+:root[data-tema="oscuro"] .cot-seccion-plegable .cot-seccion-leyenda-texto {
+    color: #e2e8f0;
+}
+
+:root[data-tema="oscuro"] .cot-seccion-plegable .cot-plegar-btn {
+    background: transparent;
+    color: #94a3b8;
+    border-color: #334155;
+}
+
+:root[data-tema="oscuro"] .cot-seccion-plegable .cot-plegar-btn:hover {
+    background: #131e33;
+    border-color: #60a5fa;
+    color: #60a5fa;
+}
+
 :root[data-tema="oscuro"] .movil-cot-contenido .form-control-pos,
 :root[data-tema="oscuro"] .movil-cot-contenido input.form-control-pos,
 :root[data-tema="oscuro"] .movil-cot-contenido select.form-control-pos,

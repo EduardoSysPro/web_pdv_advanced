@@ -53,6 +53,7 @@ $router->post('/cotizaciones/cancelar/{id}', 'CotizacionesController@cancelar');
 $router->get('/cotizaciones/facturar/{id}', 'CotizacionesController@facturar');
 $router->get('/cotizaciones/pendientes', 'CotizacionesController@pendientes');
 $router->get('/cotizaciones/buscar-productos', 'CotizacionesController@buscarProductosAjax');
+$router->get('/cotizaciones/buscar-por-codigo', 'CotizacionesController@buscarPorCodigo');
 
 $router->get('/ventas', 'VentasController@index');
 $router->post('/ventas/buscar-producto', 'VentasController@buscarProducto');

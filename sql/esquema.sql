@@ -104,6 +104,8 @@ CREATE TABLE productos (
     UNIQUE KEY idx_productos_codigo_barras_empaque (codigo_barras_empaque),
     -- Índice para búsquedas por nombre
     KEY idx_productos_nombre (nombre),
+    -- Índice FULLTEXT para búsqueda rápida por nombre en ventas/cotizaciones (MATCH...AGAINST)
+    FULLTEXT KEY ft_productos_nombre (nombre),
     -- Índice para filtrar por categoría
     KEY idx_productos_categoria_id (categoria_id),
     -- Índice para identificar productos con stock bajo

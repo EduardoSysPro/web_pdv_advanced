@@ -198,5 +198,12 @@ $nombreCliente = $cotizacion['cliente_nombre'] ?: 'CONSUMIDOR FINAL';
     <div class="no-print" style="margin-top:14px; text-align:center;">
         <button type="button" onclick="window.print();" style="font-size:14px; padding:8px 22px; cursor:pointer;">Imprimir</button>
     </div>
+    <script>
+        // Cuando esta vista se carga en el iframe oculto de la WebApp instalada
+        // (marcador en window.name), imprime automáticamente sin abrir pestañas.
+        if (window.name === '__pdv_autoprint__') {
+            window.addEventListener('load', function () { window.print(); });
+        }
+    </script>
 </body>
 </html>

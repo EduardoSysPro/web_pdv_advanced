@@ -249,8 +249,12 @@
             if (p.imagen) {
                 var img = document.createElement('img');
                 img.src = URL + 'uploads/productos/' + p.imagen;
-                img.alt = '';
-                img.className = 'cot-prod-miniatura';
+                img.alt = p.nombre;
+                img.className = 'cot-prod-miniatura cot-prod-miniatura-zoom';
+                img.title = 'Ver imagen grande';
+                img.addEventListener('click', function () {
+                    abrirVisorImagen(img.src, p.nombre);
+                });
                 tdImagen.appendChild(img);
             }
             var tdNombre = document.createElement('td');
@@ -276,6 +280,43 @@
             tr.appendChild(tdAccion);
             cuerpo.appendChild(tr);
         });
+    }
+
+    // ---------- Visor de imagen de producto (lightbox) ----------
+    var visorImagen = null;
+
+    function cerrarVisorImagen() {
+        if (!visorImagen) return;
+        visorImagen.hidden = true;
+        document.body.classList.remove('cot-visor-abierto');
+    }
+
+    function abrirVisorImagen(url, nombre) {
+        if (!visorImagen) {
+            visorImagen = document.createElement('div');
+            visorImagen.className = 'cot-visor';
+            visorImagen.setAttribute('role', 'dialog');
+            visorImagen.setAttribute('aria-modal', 'true');
+            visorImagen.innerHTML =
+                '<button type="button" class="cot-visor-cerrar" aria-label="Cerrar imagen">&#10005;</button>' +
+                '<figure class="cot-visor-figura">' +
+                    '<img class="cot-visor-img" alt="">' +
+                    '<figcaption class="cot-visor-caption"></figcaption>' +
+                '</figure>';
+            visorImagen.addEventListener('click', function (e) {
+                if (e.target === visorImagen || e.target.closest('.cot-visor-cerrar')) cerrarVisorImagen();
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && visorImagen && !visorImagen.hidden) cerrarVisorImagen();
+            });
+            document.body.appendChild(visorImagen);
+        }
+        var img = visorImagen.querySelector('.cot-visor-img');
+        img.src = url;
+        img.alt = nombre || 'Imagen del producto';
+        visorImagen.querySelector('.cot-visor-caption').textContent = nombre || '';
+        visorImagen.hidden = false;
+        document.body.classList.add('cot-visor-abierto');
     }
 
     function agregarProducto(p) {
@@ -307,8 +348,38 @@
             });
         }
         renderizarCarrito();
+        // Limpiar el buscador para poder agregar otro producto rápidamente
+        window.clearTimeout(temporizadorBusqueda);
+        if (inputBusqueda) {
+            inputBusqueda.value = '';
+            inputBusqueda.focus();
+        }
+        document.getElementById('cot-resultados').hidden = true;
         var tol = document.querySelector('.cot-carrito-wrap');
         if (tol) tol.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Texto sin espacios que puede ser un código de barras (escáner o tecleado)
+    function esCodigoBuscable(termino) {
+        return /^[A-Za-z0-9-]+$/.test(termino);
+    }
+
+    // Intenta agregar por código de barras exacto; si no coincide, muestra la búsqueda normal
+    function agregarPorCodigoBarras(codigo) {
+        window.clearTimeout(temporizadorBusqueda);
+        document.getElementById('cot-resultados').hidden = true;
+        fetch(URL + 'cotizaciones/buscar-por-codigo?codigo=' + encodeURIComponent(codigo), { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (resp) {
+                if (resp && resp.exito && resp.producto) {
+                    agregarProducto(resp.producto);
+                } else if (codigo.length >= 2) {
+                    buscarProductos(codigo);
+                }
+            })
+            .catch(function () {
+                if (codigo.length >= 2) buscarProductos(codigo);
+            });
     }
 
     // ---------- Carrito ----------
@@ -326,8 +397,12 @@
             if (it.imagen) {
                 var img = document.createElement('img');
                 img.src = URL + 'uploads/productos/' + it.imagen;
-                img.alt = '';
-                img.className = 'cot-prod-miniatura';
+                img.alt = it.nombre;
+                img.className = 'cot-prod-miniatura cot-prod-miniatura-zoom';
+                img.title = 'Ver imagen grande';
+                img.addEventListener('click', function () {
+                    abrirVisorImagen(img.src, it.nombre);
+                });
                 tdNombre.appendChild(img);
             }
             var spanNombre = document.createElement('span');
@@ -505,8 +580,19 @@
                     return;
                 }
                 if (imprimir) {
-                    var imp = window.open(resp.url_imprimir, '_blank');
-                    if (imp) imp.focus();
+                    if (typeof PDV_WEBAPP !== 'undefined') {
+                        if (PDV_WEBAPP.instalada) {
+                            // WebApp instalada: no abrir ventana; la impresión se hace
+                            // al llegar a la vista "ver" (la URL queda pendiente).
+                            PDV_WEBAPP.imprimirAlVolver(resp.url_imprimir);
+                        } else {
+                            // Navegador normal: reutiliza la ventana de ticket del POS.
+                            PDV_WEBAPP.abrirTicket(resp.url_imprimir);
+                        }
+                    } else {
+                        var imp = window.open(resp.url_imprimir, '_blank');
+                        if (imp) imp.focus();
+                    }
                 }
                 window.location.href = URL + 'cotizaciones/ver/' + resp.cotizacion_id;
             })
@@ -517,10 +603,46 @@
             });
     }
 
+    // ---------- Sección plegable de datos del cliente ----------
+    function vincularPlegadoCliente() {
+        var seccion = document.getElementById('cot-seccion-cliente');
+        var contenido = document.getElementById('cot-cliente-contenido');
+        if (!seccion || !contenido) return;
+
+        var leyenda = document.getElementById('cot-leyenda-cliente');
+        var boton = document.getElementById('cot-plegar-cliente');
+
+        function aplicar() {
+            var abierto = seccion.getAttribute('data-abierto') === 'true';
+            seccion.setAttribute('data-abierto', abierto ? 'true' : 'false');
+            if (boton) boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+        }
+
+        function alternar() {
+            var abierto = seccion.getAttribute('data-abierto') === 'true';
+            seccion.setAttribute('data-abierto', abierto ? 'false' : 'true');
+            aplicar();
+        }
+
+        if (leyenda && !leyenda.__conectado) {
+            leyenda.__conectado = true;
+            leyenda.addEventListener('click', function (e) {
+                if (e.target.closest('.cot-plegar-btn')) return;
+                alternar();
+            });
+        }
+        if (boton && !boton.__conectado) {
+            boton.__conectado = true;
+            boton.addEventListener('click', alternar);
+        }
+        aplicar();
+    }
+
     // ---------- Init ----------
     poblarClientes();
     vincularBuscadorCliente();
     vincularModalCliente();
+    vincularPlegadoCliente();
 
     if (items.length === 0 && ITEMS_INICIALES && ITEMS_INICIALES.length) {
         items = ITEMS_INICIALES.map(function (p) {
@@ -565,7 +687,13 @@
         if (e.key === 'Enter') {
             e.preventDefault();
             var t = this.value.trim();
-            if (t.length >= 2) buscarProductos(t);
+            if (t === '') return;
+            if (esCodigoBuscable(t)) {
+                // Parece código de barras: se agrega directo (+1 por escaneo)
+                agregarPorCodigoBarras(t);
+            } else if (t.length >= 2) {
+                buscarProductos(t);
+            }
         }
     });
 

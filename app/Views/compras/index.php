@@ -302,8 +302,13 @@
     });
 
     document.getElementById('btn-guardar-proveedor-ajax').addEventListener('click', function () {
+        var boton = this;
         var nombre = document.getElementById('nuevo-prov-nombre').value.trim();
         if (nombre === '') { alert('Escribe el nombre del proveedor.'); return; }
+        var htmlOriginal = boton.innerHTML;
+        boton.disabled = true;
+        boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Guardando...';
+        var restaurarBoton = function () { boton.disabled = false; boton.innerHTML = htmlOriginal; };
         fetch(urlBase + 'compras/guardar-proveedor-ajax', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -319,7 +324,7 @@
         })
         .then(function (r) { return r.json(); })
         .then(function (resp) {
-            if (!resp.exito) { alert(resp.mensaje); return; }
+            if (!resp.exito) { restaurarBoton(); alert(resp.mensaje); return; }
             var prov = resp.proveedor;
             var opt = document.createElement('option');
             opt.value = prov.id;
@@ -329,9 +334,10 @@
             selectProveedor.appendChild(opt);
             selectProveedor.value = prov.id;
             actualizarProveedorResumen();
+            restaurarBoton();
             document.getElementById('modal-proveedor').hidden = true;
         })
-        .catch(function () { alert('No se pudo conectar con el servidor.'); });
+        .catch(function () { restaurarBoton(); alert('No se pudo conectar con el servidor.'); });
     });
 
     // ---------- Documento ----------
@@ -383,6 +389,8 @@
             contenedorResultados.innerHTML = '';
             return;
         }
+        contenedorResultados.style.display = 'grid';
+        contenedorResultados.innerHTML = '<a href="javascript:void(0)"><span class="tabla-vacia" style="padding:.5rem 0;"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Buscando producto...</span></a>';
         fetch(urlBase + 'compras/buscar-producto?termino=' + encodeURIComponent(termino))
             .then(function (respuesta) { return respuesta.json(); })
             .then(function (productos) { mostrarResultados(Array.isArray(productos) ? productos : []); })

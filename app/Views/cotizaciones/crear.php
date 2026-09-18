@@ -1,4 +1,4 @@
-<?php $tituloPagina = $cotizacion ? 'Editar cotización' : 'Nueva cotización'; $claseMain = 'cotizaciones-editor-main'; require APP_PATH . 'Views/layouts/pos_header.php'; ?>
+<?php $tituloPagina = $cotizacion ? 'Editar cotización' : 'Nueva cotización'; $claseMain = 'cotizaciones-editor-main'; $seccionClienteAbierta = !empty($cotizacion) && ((int)($cotizacion['cliente_id'] ?? 0) !== 0 || trim((string)($cotizacion['cliente_nombre'] ?? '')) !== ''); require APP_PATH . 'Views/layouts/pos_header.php'; ?>
 <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/cotizaciones.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/cotizaciones.css'); ?>">
 <?php $esAdmin = (int)($_SESSION['rol_id'] ?? 0) === 1 || in_array(strtolower((string)($_SESSION['rol'] ?? '')), ['admin', 'administrador'], true); ?>
 
@@ -20,8 +20,14 @@
 <form id="cotizacion-form" autocomplete="off">
     <div class="cotizaciones-editor-grid">
         <div class="cotizaciones-editor-principal">
-            <fieldset class="cot-seccion">
-                <legend><i class="fa-solid fa-user"></i> Datos del cliente</legend>
+            <fieldset class="cot-seccion cot-seccion-plegable" id="cot-seccion-cliente" data-abierto="<?php echo $seccionClienteAbierta ? 'true' : 'false'; ?>">
+                <legend class="cot-seccion-leyenda" id="cot-leyenda-cliente">
+                    <span class="cot-seccion-leyenda-texto"><i class="fa-solid fa-user"></i> Datos del cliente</span>
+                    <button type="button" class="cot-plegar-btn" id="cot-plegar-cliente" title="Mostrar u ocultar" aria-expanded="<?php echo $seccionClienteAbierta ? 'true' : 'false'; ?>" aria-controls="cot-cliente-contenido">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                </legend>
+                <div id="cot-cliente-contenido">
                 <div class="cot-cliente-barra">
                     <p class="cot-ayuda-rtn">Escribe el <strong>RTN / Identidad</strong> y selecciona el cliente para autocompletar sus datos.</p>
                     <button type="button" class="btn btn-secondary btn-sm" id="cot-btn-registrar-cliente"><i class="fa-solid fa-user-plus"></i> Registrar cliente</button>
@@ -56,6 +62,7 @@
                         <span>Estado</span>
                         <input type="text" class="form-control-pos" value="Pendiente de facturar" readonly>
                     </label>
+                </div>
                 </div>
             </fieldset>
 

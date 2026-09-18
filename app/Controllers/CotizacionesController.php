@@ -355,6 +355,79 @@ class CotizacionesController extends Controller
     }
 
     /**
+     * Busca un producto por código de barras exacto (escáner o tecleado).
+     * Devuelve el mismo formato que buscarProductosAjax para poder agregarlo
+     * directo al carrito de la cotización (+1 por escaneo).
+     */
+    public function buscarPorCodigo()
+    {
+        $this->requerirAutenticacion();
+        header('Content-Type: application/json; charset=utf-8');
+        $codigo = trim($_GET['codigo'] ?? $_POST['codigo'] ?? '');
+        if ($codigo === '') {
+            echo json_encode(['exito' => false, 'mensaje' => 'Código de barras vacío.']);
+            return;
+        }
+        $producto = $this->modeloProducto->buscarPorCodigoBarras($codigo);
+        if (!$producto) {
+            echo json_encode(['exito' => false, 'mensaje' => 'No se encontró un producto con el código: ' . htmlspecialchars($codigo)]);
+            return;
+        }
+
+        $tipoCoincidencia = $producto['tipo_coincidencia'] ?? 'unidad';
+        $tipoVenta = $producto['tipo_venta'] ?? 'solo_unidad';
+        $nombreEmpaque = !empty($producto['nombre_empaque']) ? $producto['nombre_empaque'] : 'Caja';
+        $factor = max(1.0, (float)($producto['unidades_por_empaque'] ?? 1.0));
+        $factorTexto = rtrim(rtrim(number_format($factor, 2, '.', ''), '0'), '.');
+        $precioEmpaque = (float)($producto['precio_empaque'] ?? 0);
+        $stockBase = (float)($producto['stock'] ?? 0);
+        $esEmpaque = ($tipoCoincidencia === 'empaque') || ($tipoVenta === 'solo_empaque');
+
+        if ($esEmpaque && $precioEmpaque > 0) {
+            $stockEmpaques = $factor > 0 ? floor($stockBase / $factor) : 0;
+            $payload = [
+                'id'                  => (int)$producto['id'],
+                'item_key'            => $producto['id'] . '_empaque',
+                'codigo_barras'       => $producto['codigo_barras_empaque'] ?: $producto['codigo_barras'],
+                'nombre'              => '[' . $nombreEmpaque . ' x' . $factorTexto . '] ' . $producto['nombre'],
+                'nombre_original'     => $producto['nombre'],
+                'precio_venta'        => $precioEmpaque,
+                'stock'               => (float)$stockEmpaques,
+                'stock_minimo'        => 0,
+                'unidad_medida'       => strtolower($nombreEmpaque),
+                'permite_decimales'   => false,
+                'tipo_presentacion'   => 'empaque',
+                'nombre_presentacion' => $nombreEmpaque,
+                'factor_unidades'     => $factor,
+                'clave_isv'           => $producto['tipo_impuesto'] ?? 'gravado_15',
+                'porcentaje_isv'      => (float)($producto['porcentaje_isv'] ?? 15),
+                'imagen'              => (string)($producto['imagen'] ?? '')
+            ];
+        } else {
+            $payload = [
+                'id'                  => (int)$producto['id'],
+                'item_key'            => $producto['id'] . '_unidad',
+                'codigo_barras'       => $producto['codigo_barras'],
+                'nombre'              => ($tipoVenta === 'ambos' ? '[Unidad] ' : '') . $producto['nombre'],
+                'nombre_original'     => $producto['nombre'],
+                'precio_venta'        => (float)$producto['precio_venta'],
+                'stock'               => $stockBase,
+                'stock_minimo'        => (float)($producto['stock_minimo'] ?? 0),
+                'unidad_medida'       => $producto['unidad_medida'] ?? 'unidad',
+                'permite_decimales'   => !empty($producto['permite_decimales']),
+                'tipo_presentacion'   => 'unidad',
+                'nombre_presentacion' => 'Unidad',
+                'factor_unidades'     => 1.0,
+                'clave_isv'           => $producto['tipo_impuesto'] ?? 'gravado_15',
+                'porcentaje_isv'      => (float)($producto['porcentaje_isv'] ?? 15),
+                'imagen'              => (string)($producto['imagen'] ?? '')
+            ];
+        }
+
+        echo json_encode(['exito' => true, 'producto' => $payload]);
+    }
+
+    /**
      * Listado JSON de cotizaciones pendientes para el modal del POS.
      */
     public function pendientes()

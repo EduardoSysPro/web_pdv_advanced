@@ -496,7 +496,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
         } else {
-            window.open(URL_BASE + 'ventas/ticket/' + encodeURIComponent(id), '_blank');
+            if (typeof PDV_WEBAPP !== 'undefined' && PDV_WEBAPP.abrirTicket) {
+                PDV_WEBAPP.abrirTicket(URL_BASE + 'ventas/ticket/' + encodeURIComponent(id));
+            } else {
+                window.open(URL_BASE + 'ventas/ticket/' + encodeURIComponent(id), '_blank');
+            }
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-print"></i>';
@@ -1260,7 +1264,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         .catch(() => alert('No se pudo imprimir por la impresora LAN.'));
                 } else {
                     const ticketUrl = URL_BASE + 'ventas/ticket/' + encodeURIComponent(resp.venta_id);
-                    window.open(ticketUrl, '_blank');
+                    if (typeof PDV_WEBAPP !== 'undefined' && PDV_WEBAPP.abrirTicket) {
+                        PDV_WEBAPP.abrirTicket(ticketUrl);
+                    } else {
+                        window.open(ticketUrl, '_blank');
+                    }
                 }
             }
 

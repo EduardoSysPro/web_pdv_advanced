@@ -60,6 +60,7 @@ class Controller
             'cotizaciones/guardar',
             'cotizaciones/actualizar',
             'cotizaciones/buscar-productos',
+            'cotizaciones/buscar-por-codigo',
             'ventas/buscar-producto',
             'ventas/buscar-productos',
             'ventas/buscarClientePorRtn',

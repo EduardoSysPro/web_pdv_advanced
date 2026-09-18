@@ -85,5 +85,6 @@
             }
         }());
     </script>
+    <script src="<?php echo URL_BASE; ?>js/webapp.js?v=<?php echo filemtime(PUBLIC_PATH . 'js/webapp.js'); ?>"></script>
 </body>
 </html>

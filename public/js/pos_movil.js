@@ -271,11 +271,32 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    function guardarCarrito() {
+    let temporizadorGuardadoMovil = null;
+
+    function persistirCarrito() {
         try {
             sessionStorage.setItem('pos_movil_carrito', JSON.stringify(carrito));
         } catch (e) {}
     }
+
+    // "Debounce" del guardado: con muchos productos no se serializa el carrito
+    // entero en cada toque del escáner. Se aplaza ~300 ms y se fuerza al salir.
+    function guardarCarrito() {
+        if (temporizadorGuardadoMovil) window.clearTimeout(temporizadorGuardadoMovil);
+        temporizadorGuardadoMovil = window.setTimeout(function () {
+            temporizadorGuardadoMovil = null;
+            persistirCarrito();
+        }, 300);
+    }
+
+    function guardarCarritoInmediato() {
+        if (temporizadorGuardadoMovil) window.clearTimeout(temporizadorGuardadoMovil);
+        temporizadorGuardadoMovil = null;
+        persistirCarrito();
+    }
+
+    window.addEventListener('pagehide', guardarCarritoInmediato);
+    window.addEventListener('beforeunload', guardarCarritoInmediato);
 
     function round2(n) {
         return Math.round((Number(n) || 0) * 100) / 100;
@@ -583,6 +604,46 @@ document.addEventListener('DOMContentLoaded', function () {
         return carrito.reduce((acc, item) => acc + (Number(item.precio_venta) * Number(item.cantidad)), 0);
     }
 
+    function construirItemMovilHtml(item) {
+        const key = item.item_key || String(item.id);
+        const subtotal = Number(item.precio_venta) * Number(item.cantidad);
+        const descuentoUnit = Number(item.descuento_unitario || 0);
+        const badgeDesc = descuentoUnit > 0.004
+            ? `<span class="badge-descuento">-${MONEDA_SIMBOLO}${formatear(descuentoUnit)}</span>`
+            : '';
+
+        return `
+            <div class="movil-cart-item" data-key="${key}">
+                <div class="cart-item-row-top">
+                    <div class="cart-item-desc">
+                        <div class="cart-item-title">${escapar(item.nombre)}</div>
+                        <div class="cart-item-unit-price">
+                            ${MONEDA_SIMBOLO}${formatear(item.precio_venta)} c/u${badgeDesc}
+                        </div>
+                    </div>
+                    <div class="cart-item-subtotal">${MONEDA_SIMBOLO}${formatear(subtotal)}</div>
+                </div>
+                <div class="cart-item-row-bottom">
+                    <div class="cart-item-controls">
+                        <button type="button" class="btn-price-touch" data-action="precio" data-key="${key}" title="Editar precio o aplicar descuento">
+                            <i class="fa-solid fa-tags"></i>
+                        </button>
+                        <button type="button" class="btn-qty-touch" data-action="restar" data-key="${key}">-</button>
+                        <span class="cart-item-qty">${item.cantidad}</span>
+                        <button type="button" class="btn-qty-touch" data-action="sumar" data-key="${key}">+</button>
+                    </div>
+                    <button type="button" class="btn-remove-touch" data-action="borrar" data-key="${key}">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function firmaItemMovil(item) {
+        return [item.nombre, item.precio_venta, item.cantidad, item.descuento_unitario || 0].join('\u0001');
+    }
+
     function renderizarCarrito() {
         if (carrito.length === 0) {
             listaCarrito.innerHTML = '';
@@ -597,66 +658,50 @@ document.addEventListener('DOMContentLoaded', function () {
         btnVaciar.style.display = 'inline-flex';
         btnAbrirCobro.disabled = false;
 
-        const total = calcularTotal();
-        textoTotal.textContent = MONEDA_SIMBOLO + formatear(total);
+        textoTotal.textContent = MONEDA_SIMBOLO + formatear(calcularTotal());
 
-        listaCarrito.innerHTML = carrito.map(item => {
+        // Delegación de eventos una sola vez (los botones del carrito no se rebinden en cada render)
+        if (!listaCarrito.dataset.delegado) {
+            listaCarrito.dataset.delegado = '1';
+            listaCarrito.addEventListener('click', function (e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn || !btn.dataset.key) return;
+                const key = btn.dataset.key;
+                const action = btn.dataset.action;
+                if (action === 'sumar' || action === 'restar') cambiarCantidad(key, action === 'sumar' ? 1 : -1);
+                else if (action === 'precio') abrirModalPrecio(key);
+                else if (action === 'borrar') eliminarArticulo(key);
+            });
+        }
+
+        // Reconciliación: reutiliza los nodos existentes (clave = item_key) y solo
+        // regenera el HTML del artículo cuyo contenido cambió. Con muchos artículos
+        // agregar uno nuevo cuesta O(1) en vez de reconstruir todo el carrito.
+        const filasExistentes = new Map();
+        Array.prototype.forEach.call(listaCarrito.children, function (nodo) {
+            if (nodo && nodo.dataset && nodo.dataset.key) filasExistentes.set(nodo.dataset.key, nodo);
+        });
+
+        carrito.forEach(item => {
             const key = item.item_key || String(item.id);
-            const subtotal = Number(item.precio_venta) * Number(item.cantidad);
-            const descuentoUnit = Number(item.descuento_unitario || 0);
-            const badgeDesc = descuentoUnit > 0.004
-                ? `<span class="badge-descuento">-${MONEDA_SIMBOLO}${formatear(descuentoUnit)}</span>`
-                : '';
+            const firma = firmaItemMovil(item);
+            let nodo = filasExistentes.get(key);
+            if (nodo) filasExistentes.delete(key);
+            if (nodo && nodo.dataset.firma === firma) return;
 
-            return `
-                <div class="movil-cart-item" data-key="${key}">
-                    <div class="cart-item-row-top">
-                        <div class="cart-item-desc">
-                            <div class="cart-item-title">${escapar(item.nombre)}</div>
-                            <div class="cart-item-unit-price">
-                                ${MONEDA_SIMBOLO}${formatear(item.precio_venta)} c/u${badgeDesc}
-                            </div>
-                        </div>
-                        <div class="cart-item-subtotal">${MONEDA_SIMBOLO}${formatear(subtotal)}</div>
-                    </div>
-                    <div class="cart-item-row-bottom">
-                        <div class="cart-item-controls">
-                            <button type="button" class="btn-price-touch" data-action="precio" data-key="${key}" title="Editar precio o aplicar descuento">
-                                <i class="fa-solid fa-tags"></i>
-                            </button>
-                            <button type="button" class="btn-qty-touch" data-action="restar" data-key="${key}">-</button>
-                            <span class="cart-item-qty">${item.cantidad}</span>
-                            <button type="button" class="btn-qty-touch" data-action="sumar" data-key="${key}">+</button>
-                        </div>
-                        <button type="button" class="btn-remove-touch" data-action="borrar" data-key="${key}">
-                            <i class="fa-regular fa-trash-can"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        // Listeners para botones dentro del carrito
-        listaCarrito.querySelectorAll('.btn-qty-touch').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const key = this.dataset.key;
-                const action = this.dataset.action;
-                cambiarCantidad(key, action === 'sumar' ? 1 : -1);
-            });
+            const contenedor = document.createElement('div');
+            contenedor.innerHTML = construirItemMovilHtml(item);
+            const nuevoNodo = contenedor.firstElementChild;
+            nuevoNodo.dataset.firma = firma;
+            if (nodo) {
+                nodo.replaceWith(nuevoNodo);
+            } else {
+                listaCarrito.appendChild(nuevoNodo);
+            }
         });
 
-        listaCarrito.querySelectorAll('.btn-price-touch').forEach(btn => {
-            btn.addEventListener('click', function () {
-                abrirModalPrecio(this.dataset.key);
-            });
-        });
-
-        listaCarrito.querySelectorAll('.btn-remove-touch').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const key = this.dataset.key;
-                eliminarArticulo(key);
-            });
-        });
+        // Elimina nodos de artículos que ya no están en el carrito
+        filasExistentes.forEach(function (nodo) { nodo.remove(); });
     }
 
     // ==========================================

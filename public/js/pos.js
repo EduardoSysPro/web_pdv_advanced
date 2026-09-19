@@ -50,11 +50,13 @@
     // FUNCIONES DE PERSISTENCIA (sessionStorage)
     // ============================================================
 
-    /**
-     * Guarda el estado completo de los tickets en sessionStorage.
-     * Se invoca en cada operación que modifique los datos.
-     */
-    function guardarEstado() {
+    // Con muchos productos el estado puede pesar cientos de KB; serializarlo
+    // en CADA escaneo haría lento el agregado. Se usa "debounce": el guardado
+    // se aplaza ~300 ms y solo se ejecuta cuando dejan de llegar cambios.
+    // Al cerrar/recargar la pestaña se fuerza un guardado inmediato.
+    let temporizadorGuardado = null;
+
+    function persistirEstado() {
         try {
             sessionStorage.setItem(CLAVE_SESSION_STORAGE, JSON.stringify(estado.tickets));
             sessionStorage.setItem(CLAVE_TICKET_ACTIVO, String(estado.ticketActivo));
@@ -62,6 +64,27 @@
             console.error('No se pudo guardar el estado en sessionStorage:', e);
         }
     }
+
+    /**
+     * Programa el guardado diferido del estado completo en sessionStorage.
+     * Se invoca en cada operación que modifique los datos.
+     */
+    function guardarEstado() {
+        if (temporizadorGuardado) window.clearTimeout(temporizadorGuardado);
+        temporizadorGuardado = window.setTimeout(function () {
+            temporizadorGuardado = null;
+            persistirEstado();
+        }, 300);
+    }
+
+    function guardarEstadoInmediato() {
+        if (temporizadorGuardado) window.clearTimeout(temporizadorGuardado);
+        temporizadorGuardado = null;
+        persistirEstado();
+    }
+
+    window.addEventListener('pagehide', guardarEstadoInmediato);
+    window.addEventListener('beforeunload', guardarEstadoInmediato);
 
     /**
      * Carga el estado desde sessionStorage (tras un F5 o recarga).
@@ -693,42 +716,74 @@
     }
 
     /**
-     * Dibuja la barra de pestañas.
+     * Dibuja la barra de pestañas. Reutiliza los nodos existentes y solo
+     * actualiza la pestaña cuyo contenido cambió (evita reconstruir el DOM
+     * de todas las pestañas en cada agregado de producto).
      */
     function renderizarPestanas() {
         const barra = document.getElementById('pos-tabs-bar');
         if (!barra) return;
 
-        // Remueve todas las pestañas (pero deja el botón "Nuevo Ticket")
-        const tabsExistentes = barra.querySelectorAll('.tab-ticket');
-        tabsExistentes.forEach(t => t.remove());
+        const tabsExistentes = new Map();
+        Array.prototype.forEach.call(barra.querySelectorAll('.tab-ticket'), function (t) {
+            if (t.dataset && t.dataset.idTicket) tabsExistentes.set(t.dataset.idTicket, t);
+        });
+
+        const fragmento = document.createDocumentFragment();
 
         estado.tickets.forEach(ticket => {
             const totales = calcularTotales(ticket);
             const esActiva = ticket.id === estado.ticketActivo;
+            const idStr = String(ticket.id);
 
-            const div = document.createElement('div');
-            div.className = 'tab-ticket' + (esActiva ? ' tab-activa' : '');
-            div.dataset.idTicket = String(ticket.id);
+            let div = tabsExistentes.get(idStr);
+            if (div) {
+                tabsExistentes.delete(idStr);
+            } else {
+                div = document.createElement('div');
+                div.className = 'tab-ticket';
+                div.dataset.idTicket = idStr;
+                div.innerHTML = `
+                    <span class="tab-nombre"></span>
+                    <span class="tab-total"></span>
+                    <span class="tab-cerrar" title="Cerrar ticket">&#10005;</span>
+                `;
+                // Click en la pestaña para activar/cerrar
+                div.addEventListener('click', function (e) {
+                    if (e.target.classList.contains('tab-cerrar')) {
+                        e.stopPropagation();
+                        cerrarTicket(ticket.id);
+                    } else {
+                        activarTicket(ticket.id);
+                    }
+                });
+            }
 
-            div.innerHTML = `
-                <span class="tab-nombre">${ticket.nombre}</span>
-                <span class="tab-total">${ticket.productos.length} art. - ${formatearMonto(totales.total)}</span>
-                <span class="tab-cerrar" title="Cerrar ticket">&#10005;</span>
-            `;
+            const firma = ticket.nombre + '|' + ticket.productos.length + '|' + totales.total + '|' + esActiva;
+            if (div.dataset.firma !== firma) {
+                div.dataset.firma = firma;
+                div.className = 'tab-ticket' + (esActiva ? ' tab-activa' : '');
+                const spanNombre = div.querySelector('.tab-nombre');
+                const spanTotal = div.querySelector('.tab-total');
+                if (spanNombre) spanNombre.textContent = ticket.nombre;
+                if (spanTotal) spanTotal.textContent = ticket.productos.length + ' art. - ' + formatearMonto(totales.total);
+            }
 
-            // Click en la pestaña para activar
-            div.addEventListener('click', function (e) {
-                if (e.target.classList.contains('tab-cerrar')) {
-                    e.stopPropagation();
-                    cerrarTicket(ticket.id);
-                } else {
-                    activarTicket(ticket.id);
-                }
-            });
-
-            barra.appendChild(div);
+            fragmento.appendChild(div);
         });
+
+        // Elimina pestañas de tickets que ya no existen
+        tabsExistentes.forEach(function (t) {
+            t.remove();
+        });
+
+        // Inserta las pestañas antes del botón "Nuevo ticket"
+        const btnNuevo = document.getElementById('tab-nuevo');
+        if (btnNuevo) {
+            barra.insertBefore(fragmento, btnNuevo);
+        } else {
+            barra.appendChild(fragmento);
+        }
     }
 
     /**
@@ -744,18 +799,21 @@
         if (!ticket || ticket.productos.length === 0) {
             tbody.innerHTML = '';
             if (msgVacio) msgVacio.style.display = '';
+            filaSeleccionadaId = null;
             return;
         }
         if (msgVacio) msgVacio.style.display = 'none';
 
-        // Reconciliación: reutiliza los nodos <tr> existentes (clave = item_key) y solo
-        // crea/actualiza lo que cambió. Con muchos productos en un ticket se evita
-        // reconstruir todo el DOM (y recrear centenares de listeners) en cada cambio.
+        // Reconciliación: reutiliza los nodos <tr> existentes (clave = item_key)
+        // y solo vuelve a escribir (innerHTML) las filas cuyo contenido cambió.
+        // Con cientos de productos en un ticket, agregar uno nuevo cuesta O(1)
+        // (solo crea la fila nueva) en vez de recorrer y reconstruir todo el DOM.
         const filasActuales = new Map();
         Array.prototype.forEach.call(tbody.children, function (tr) {
             if (tr.dataset && tr.dataset.idProducto) filasActuales.set(tr.dataset.idProducto, tr);
         });
 
+        const seleccionActual = filaSeleccionadaId;
         const fragmento = document.createDocumentFragment();
 
         ticket.productos.forEach((p, idx) => {
@@ -777,22 +835,43 @@
             }
 
             const stockBajo = Number(p.stock || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_minimo || 1);
+            const filaSeleccionada = claveFila === seleccionActual || String(p.id) === seleccionActual;
             tr.classList.toggle('fila-stock-bajo', stockBajo);
-            tr.classList.toggle('fila-seleccionada', claveFila === filaSeleccionadaId || String(p.id) === filaSeleccionadaId);
+            tr.classList.toggle('fila-seleccionada', filaSeleccionada);
 
-            const etiquetaPresentacion = p.tipo_presentacion === 'empaque'
-                ? ` <span style="background:#e0f2fe; color:#0369a1; padding:1px 5px; border-radius:4px; font-size:10px; font-weight:600;">📦 ${escaparHTML(p.nombre_presentacion || 'Caja')}</span>`
-                : '';
+            const firma = [
+                idx + 1,
+                p.codigo_barras || '—',
+                p.nombre,
+                p.tipo_presentacion || 'unidad',
+                p.nombre_presentacion || 'Unidad',
+                p.precio_unitario,
+                p.cantidad,
+                p.importe,
+                p.stock,
+                p.unidad_medida || 'unidad',
+                stockBajo ? 1 : 0,
+                filaSeleccionada ? 1 : 0
+            ].join('\u0001');
 
-            tr.innerHTML = `
-                <td class="numero">${idx + 1}</td>
-                <td>${p.codigo_barras || '—'}</td>
-                <td>${escaparHTML(p.nombre)}${etiquetaPresentacion}</td>
-                <td class="numero">${formatearMonto(p.precio_unitario)}</td>
-                <td class="numero">${formatearCantidad(p.cantidad, p.unidad_medida || 'unidad')}</td>
-                <td class="col-importe">${formatearMonto(p.importe)}</td>
-                <td class="numero">${formatearCantidad(p.stock, p.unidad_medida || 'unidad')}</td>
-            `;
+            // Solo se reescribe la fila cuando cambió algo de su contenido
+            if (tr.dataset.firma !== firma) {
+                tr.dataset.firma = firma;
+
+                const etiquetaPresentacion = p.tipo_presentacion === 'empaque'
+                    ? ` <span style="background:#e0f2fe; color:#0369a1; padding:1px 5px; border-radius:4px; font-size:10px; font-weight:600;">📦 ${escaparHTML(p.nombre_presentacion || 'Caja')}</span>`
+                    : '';
+
+                tr.innerHTML = `
+                    <td class="numero">${idx + 1}</td>
+                    <td>${p.codigo_barras || '—'}</td>
+                    <td>${escaparHTML(p.nombre)}${etiquetaPresentacion}</td>
+                    <td class="numero">${formatearMonto(p.precio_unitario)}</td>
+                    <td class="numero">${formatearCantidad(p.cantidad, p.unidad_medida || 'unidad')}</td>
+                    <td class="col-importe">${formatearMonto(p.importe)}</td>
+                    <td class="numero">${formatearCantidad(p.stock, p.unidad_medida || 'unidad')}</td>
+                `;
+            }
 
             fragmento.appendChild(tr);
         });
@@ -1945,18 +2024,6 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
     window.POS_abrirModalCotizaciones = abrirModalCotizaciones;
 
 })();
-const inputRtn = document.getElementById('cliente_rtn');
-if (inputRtn) {
-    inputRtn.addEventListener('blur', function() {
-        consultarRtnCliente(this.value.trim());
-    });
-    inputRtn.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            consultarRtnCliente(this.value.trim());
-        }
-    });
-}
 
 function consultarRtnCliente(rtn) {
     if (!rtn) return;

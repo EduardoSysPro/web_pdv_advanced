@@ -383,121 +383,158 @@
     }
 
     // ---------- Carrito ----------
+    function construirFilaArticulo(it, indice) {
+        var itemKey = it.item_key || (String(it.id) + '_' + (it.tipo_presentacion || 'unidad'));
+        var tr = document.createElement('tr');
+        tr.dataset.indice = String(indice);
+        tr.dataset.itemKey = itemKey;
+
+        var tdNombre = document.createElement('td');
+        tdNombre.className = 'cot-celda-nombre';
+        if (it.imagen) {
+            var img = document.createElement('img');
+            img.src = URL + 'uploads/productos/' + it.imagen;
+            img.alt = it.nombre;
+            img.className = 'cot-prod-miniatura cot-prod-miniatura-zoom';
+            img.title = 'Ver imagen grande';
+            img.addEventListener('click', function () {
+                abrirVisorImagen(img.src, it.nombre);
+            });
+            tdNombre.appendChild(img);
+        }
+        var spanNombre = document.createElement('span');
+        spanNombre.textContent = it.nombre;
+        tdNombre.appendChild(spanNombre);
+
+        function crearInputNumerico(valor, clase, paso, onCambio) {
+            var inp = document.createElement('input');
+            inp.type = 'number';
+            inp.min = '0';
+            inp.step = String(paso || '0.01');
+            inp.value = String(valor);
+            inp.className = 'form-control-pos ' + clase;
+            inp.addEventListener('change', onCambio);
+            inp.addEventListener('input', function () { it.guardar = true; });
+            return inp;
+        }
+
+        var tdLista = document.createElement('td');
+        tdLista.className = 'cot-celda-input';
+        tdLista.dataset.label = 'P. Lista';
+        var inpLista = crearInputNumerico(it.precio_lista, 'cot-inp-monto', '0.01', function () {
+            var n = Math.max(0, parseFloat(this.value) || 0);
+            it.precio_lista = n;
+            var nuevofinal = Math.max(0, n - it.descuento);
+            it.precio_v = nuevofinal;
+            renderizarCarrito();
+        });
+        tdLista.appendChild(inpLista);
+
+        var tdDesc = document.createElement('td');
+        tdDesc.className = 'cot-celda-input';
+        tdDesc.dataset.label = 'Descuento';
+        var inpDesc = crearInputNumerico(it.descuento, 'cot-inp-monto', '0.01', function () {
+            var d = Math.min(it.precio_lista, Math.max(0, parseFloat(this.value) || 0));
+            it.descuento = d;
+            it.precio_v = Math.max(0, it.precio_lista - d);
+            renderizarCarrito();
+        });
+        tdDesc.appendChild(inpDesc);
+
+        var tdFinal = document.createElement('td');
+        tdFinal.className = 'cot-celda-input';
+        tdFinal.dataset.label = 'P. Final';
+        var inpFinal = crearInputNumerico(it.precio_v, 'cot-inp-monto', '0.01', function () {
+            var f = Math.max(0, parseFloat(this.value) || 0);
+            it.precio_v = f;
+            it.descuento = Math.min(it.precio_lista, Math.max(0, it.precio_lista - f));
+            renderizarCarrito();
+        });
+        tdFinal.appendChild(inpFinal);
+
+        var tdCant = document.createElement('td');
+        tdCant.className = 'cot-celda-input';
+        tdCant.dataset.label = 'Cant.';
+        var inpCant = crearInputNumerico(it.cantidad, 'cot-inp-cant', it.permite_decimales ? '0.001' : '1', function () {
+            var c = Math.max(0, parseFloat(this.value) || 0);
+            it.cantidad = c;
+            renderizarCarrito();
+        });
+        tdCant.appendChild(inpCant);
+
+        var tdImporte = document.createElement('td');
+        tdImporte.dataset.label = 'Importe';
+        tdImporte.className = 'text-right cot-celda-importe';
+        tdImporte.textContent = moneda(it.cantidad * it.precio_v);
+
+        var tdEliminar = document.createElement('td');
+        tdEliminar.dataset.label = '';
+        var btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.className = 'btn btn-danger btn-pequeno';
+        btnEliminar.title = 'Quitar artículo';
+        btnEliminar.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        btnEliminar.addEventListener('click', function () {
+            items = items.filter(function (x) {
+                return (x.item_key || (String(x.id) + '_' + (x.tipo_presentacion || 'unidad'))) !== itemKey;
+            });
+            renderizarCarrito();
+        });
+        tdEliminar.appendChild(btnEliminar);
+
+        tr.appendChild(tdNombre);
+        tr.appendChild(tdLista);
+        tr.appendChild(tdDesc);
+        tr.appendChild(tdFinal);
+        tr.appendChild(tdCant);
+        tr.appendChild(tdImporte);
+        tr.appendChild(tdEliminar);
+
+        // Firma del contenido para saber si esta fila cambió
+        tr.dataset.firma = [it.nombre, it.imagen || '', it.precio_lista, it.descuento, it.precio_v, it.cantidad, it.permite_decimales ? 1 : 0].join('\u0001');
+
+        return tr;
+    }
+
+    /**
+     * Dibuja el carrito reutilizando las filas existentes (clave = item_key).
+     * Solo se reconstruye la fila cuyo contenido cambió: al agregar productos
+     * en cadena el costo es O(1) por producto en vez de reconstruir todo el DOM
+     * (que es lo que congelaba el navegador con muchos artículos).
+     */
     function renderizarCarrito() {
         var cuerpo = document.getElementById('cot-carrito-body');
         var vacio = document.getElementById('cot-carrito-vacio');
-        cuerpo.innerHTML = '';
-        vacio.style.display = items.length === 0 ? '' : 'none';
-        items.forEach(function (it, indice) {
-            var tr = document.createElement('tr');
-            tr.dataset.indice = String(indice);
+        if (!cuerpo) return;
 
-            var tdNombre = document.createElement('td');
-            tdNombre.className = 'cot-celda-nombre';
-            if (it.imagen) {
-                var img = document.createElement('img');
-                img.src = URL + 'uploads/productos/' + it.imagen;
-                img.alt = it.nombre;
-                img.className = 'cot-prod-miniatura cot-prod-miniatura-zoom';
-                img.title = 'Ver imagen grande';
-                img.addEventListener('click', function () {
-                    abrirVisorImagen(img.src, it.nombre);
-                });
-                tdNombre.appendChild(img);
-            }
-            var spanNombre = document.createElement('span');
-            spanNombre.textContent = it.nombre;
-            tdNombre.appendChild(spanNombre);
-
-            function crearInputNumerico(valor, clase, paso, onCambio) {
-                var inp = document.createElement('input');
-                inp.type = 'number';
-                inp.min = '0';
-                inp.step = String(paso || '0.01');
-                inp.value = String(valor);
-                inp.className = 'form-control-pos ' + clase;
-                inp.addEventListener('change', onCambio);
-                inp.addEventListener('input', function () { linea(indice).guardar = true; });
-                return inp;
-            }
-            var userChanged = null;
-
-            var tdLista = document.createElement('td');
-            tdLista.className = 'cot-celda-input';
-            tdLista.dataset.label = 'P. Lista';
-            var inpLista = crearInputNumerico(it.precio_lista, 'cot-inp-monto', '0.01', function () {
-                var n = Math.max(0, parseFloat(this.value) || 0);
-                it.precio_lista = n;
-                var nuevofinal = Math.max(0, n - it.descuento);
-                it.precio_v = nuevofinal;
-                renderizarCarrito();
-            });
-            tdLista.appendChild(inpLista);
-
-            var tdDesc = document.createElement('td');
-            tdDesc.className = 'cot-celda-input';
-            tdDesc.dataset.label = 'Descuento';
-            var inpDesc = crearInputNumerico(it.descuento, 'cot-inp-monto', '0.01', function () {
-                var d = Math.min(it.precio_lista, Math.max(0, parseFloat(this.value) || 0));
-                it.descuento = d;
-                it.precio_v = Math.max(0, it.precio_lista - d);
-                renderizarCarrito();
-            });
-            tdDesc.appendChild(inpDesc);
-
-            var tdFinal = document.createElement('td');
-            tdFinal.className = 'cot-celda-input';
-            tdFinal.dataset.label = 'P. Final';
-            var inpFinal = crearInputNumerico(it.precio_v, 'cot-inp-monto', '0.01', function () {
-                var f = Math.max(0, parseFloat(this.value) || 0);
-                it.precio_v = f;
-                it.descuento = Math.min(it.precio_lista, Math.max(0, it.precio_lista - f));
-                renderizarCarrito();
-            });
-            tdFinal.appendChild(inpFinal);
-
-            var tdCant = document.createElement('td');
-            tdCant.className = 'cot-celda-input';
-            tdCant.dataset.label = 'Cant.';
-            var inpCant = crearInputNumerico(it.cantidad, 'cot-inp-cant', it.permite_decimales ? '0.001' : '1', function () {
-                var c = Math.max(0, parseFloat(this.value) || 0);
-                it.cantidad = c;
-                renderizarCarrito();
-            });
-            tdCant.appendChild(inpCant);
-
-            var tdImporte = document.createElement('td');
-            tdImporte.dataset.label = 'Importe';
-            tdImporte.className = 'text-right cot-celda-importe';
-            tdImporte.textContent = moneda(it.cantidad * it.precio_v);
-
-            var tdEliminar = document.createElement('td');
-            tdEliminar.dataset.label = '';
-            var btnEliminar = document.createElement('button');
-            btnEliminar.type = 'button';
-            btnEliminar.className = 'btn btn-danger btn-pequeno';
-            btnEliminar.title = 'Quitar artículo';
-            btnEliminar.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
-            btnEliminar.addEventListener('click', function () {
-                items.splice(indice, 1);
-                renderizarCarrito();
-            });
-            tdEliminar.appendChild(btnEliminar);
-
-            tr.appendChild(tdNombre);
-            tr.appendChild(tdLista);
-            tr.appendChild(tdDesc);
-            tr.appendChild(tdFinal);
-            tr.appendChild(tdCant);
-            tr.appendChild(tdImporte);
-            tr.appendChild(tdEliminar);
-            cuerpo.appendChild(tr);
+        var filasExistentes = new Map();
+        Array.prototype.forEach.call(cuerpo.children, function (tr) {
+            if (tr && tr.dataset && tr.dataset.itemKey) filasExistentes.set(tr.dataset.itemKey, tr);
         });
-        calcularTotales();
-    }
 
-    function linea(indice) {
-        return items[indice];
+        var fragmento = document.createDocumentFragment();
+
+        items.forEach(function (it, indice) {
+            var itemKey = it.item_key || (String(it.id) + '_' + (it.tipo_presentacion || 'unidad'));
+            var tr = filasExistentes.get(itemKey);
+            if (tr) filasExistentes.delete(itemKey);
+
+            var nuevaFila = construirFilaArticulo(it, indice);
+            if (tr && tr.dataset.firma === nuevaFila.dataset.firma) {
+                // Sin cambios: conserva la fila actual (mantiene inputs y foco intactos)
+                tr.dataset.indice = String(indice);
+                fragmento.appendChild(tr);
+            } else {
+                fragmento.appendChild(nuevaFila);
+            }
+        });
+
+        // Elimina filas de artículos que ya no están en el carrito
+        filasExistentes.forEach(function (tr) { tr.remove(); });
+
+        cuerpo.appendChild(fragmento);
+        vacio.style.display = items.length === 0 ? '' : 'none';
+        calcularTotales();
     }
 
     // ---------- Totales (mismo criterio que el backend) ----------
@@ -708,4 +745,201 @@
         document.getElementById('cot-resultados').hidden = true;
     }
     window.POS_COTIZACIONES_VACIAR = vaciarCarrito;
+
+    // ---------- Escáner en vivo por cámara (silencioso, sin vista previa) ----------
+    (function () {
+        var btnEscaneo = document.getElementById('cot-btn-escaneo');
+        if (!btnEscaneo) return;
+
+        var estado = document.getElementById('cot-escaneo-estado');
+        var activo = false;
+        var motor = null;          // 'nativo' | 'quagga'
+        var stream = null;
+        var video = null;
+        var lienzo = null;
+        var contexto = null;
+        var detector = null;
+        var rafId = null;
+        var quaggaTarget = null;
+        var ultimoCuadro = 0;
+        var ultimaCoincidencia = 0;
+        var COOLDOWN_MS = 2200;
+        var FORMATOS_NATIVO = ['ean_13', 'ean_8', 'code_128', 'code_39', 'code_93', 'upc_a', 'upc_e', 'itf', 'codabar'];
+
+        function mostrarEstado(texto, tipo) {
+            if (!estado) return;
+            if (texto) {
+                estado.textContent = texto;
+                estado.hidden = false;
+                estado.setAttribute('data-tipo', tipo || 'info');
+            } else {
+                estado.hidden = true;
+            }
+        }
+
+        function destello() {
+            btnEscaneo.classList.add('flash');
+            window.setTimeout(function () { btnEscaneo.classList.remove('flash'); }, 450);
+        }
+
+        function procesarCodigo(codigo) {
+            codigo = String(codigo || '').trim();
+            if (!codigo) return;
+            var ahora = Date.now();
+            if (ahora - ultimaCoincidencia < COOLDOWN_MS) return;
+            ultimaCoincidencia = ahora;
+            if (navigator.vibrate) { try { navigator.vibrate(80); } catch (e) {} }
+            destello();
+            agregarPorCodigoBarras(codigo);
+        }
+
+        function detenerTodo(mensaje) {
+            activo = false;
+            if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+            if (stream) {
+                stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });
+                stream = null;
+            }
+            if (window.Quagga) { try { window.Quagga.stop(); } catch (e) {} }
+            if (video && video.parentNode) video.parentNode.removeChild(video);
+            video = null;
+            if (quaggaTarget && quaggaTarget.parentNode) quaggaTarget.parentNode.removeChild(quaggaTarget);
+            quaggaTarget = null;
+            motor = null;
+            btnEscaneo.classList.remove('activo', 'iniciando');
+            btnEscaneo.innerHTML = '<i class="fa-solid fa-camera"></i>';
+            btnEscaneo.title = 'Activar escaneo por cámara (silencioso)';
+            mostrarEstado(mensaje || '', 'info');
+            if (!mensaje) estado.hidden = true;
+        }
+
+        function prepararVideo(s) {
+            video = document.createElement('video');
+            video.muted = true;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.setAttribute('muted', '');
+            video.setAttribute('playsinline', '');
+            video.setAttribute('autoplay', '');
+            video.className = 'cot-camara-oculta';
+            video.srcObject = s;
+            document.body.appendChild(video);
+            var promesa = video.play();
+            if (promesa && promesa.catch) promesa.catch(function () {});
+        }
+
+        function iniciarNativo() {
+            lienzo = document.createElement('canvas');
+            contexto = lienzo.getContext('2d', { willReadFrequently: true });
+            detector = new window.BarcodeDetector({ formats: FORMATOS_NATIVO });
+
+            function cuadro(tiempo) {
+                if (!activo || !video) return;
+                rafId = requestAnimationFrame(cuadro);
+                if (tiempo - ultimoCuadro < 150) return;
+                if (!video.videoWidth) return;
+                ultimoCuadro = tiempo;
+                try {
+                    var escala = Math.min(1, 480 / video.videoWidth);
+                    lienzo.width = Math.floor(video.videoWidth * escala);
+                    lienzo.height = Math.floor(video.videoHeight * escala);
+                    contexto.drawImage(video, 0, 0, lienzo.width, lienzo.height);
+                    detector.detect(lienzo).then(function (codigos) {
+                        if (!codigos || !codigos.length || !activo) return;
+                        for (var i = 0; i < codigos.length; i++) {
+                            if (codigos[i].rawValue) { procesarCodigo(codigos[i].rawValue); break; }
+                        }
+                    }).catch(function () {});
+                } catch (e) {}
+            }
+            rafId = requestAnimationFrame(cuadro);
+        }
+
+        function iniciarQuagga() {
+            if (!window.Quagga) { detenerTodo('Sin motor de detección disponible.'); return; }
+            quaggaTarget = document.createElement('div');
+            quaggaTarget.className = 'cot-camara-oculta';
+            document.body.appendChild(quaggaTarget);
+            window.Quagga.init({
+                inputStream: {
+                    name: 'Live',
+                    type: 'LiveStream',
+                    target: quaggaTarget,
+                    constraints: { facingMode: 'environment', width: { min: 640 }, height: { min: 480 } }
+                },
+                locator: { halfSample: true, patchSize: 'medium' },
+                numOfWorkers: (navigator.hardwareConcurrency && navigator.hardwareConcurrency > 1) ? Math.min(navigator.hardwareConcurrency, 4) : 1,
+                decoder: { readers: ['ean_reader', 'ean_8_reader', 'code_128_reader', 'code_39_reader', 'upc_reader', 'upc_e_reader'], multiple: false },
+                locate: true
+            }, function (err) {
+                if (err) {
+                    detenerTodo('El escáner por cámara no pudo iniciar.');
+                    return;
+                }
+                window.Quagga.onDetected(function (res) {
+                    if (res && res.codeResult && res.codeResult.code) procesarCodigo(res.codeResult.code);
+                });
+                try { window.Quagga.start(); } catch (e) {}
+                mostrarEstado('Escaneo activo: apunta el código a la cámara.', 'ok');
+            });
+        }
+
+        function iniciar() {
+            if (activo) return;
+            if (!window.isSecureContext) {
+                mostrarEstado('La cámara solo funciona con HTTPS. Accede con https para activar el escaneo.', 'error');
+                return;
+            }
+            if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+                mostrarEstado('Este navegador no permite el acceso a la cámara.', 'error');
+                return;
+            }
+            btnEscaneo.classList.add('iniciando');
+            mostrarEstado('Solicitando permiso de cámara...', 'info');
+            navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+                audio: false
+            }).then(function (s) {
+                stream = s;
+                activo = true;
+                prepararVideo(s);
+                btnEscaneo.classList.remove('iniciando');
+                btnEscaneo.classList.add('activo');
+                btnEscaneo.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                btnEscaneo.title = 'Detener escaneo por cámara';
+                if (window.BarcodeDetector) {
+                    motor = 'nativo';
+                    iniciarNativo();
+                    mostrarEstado('Escaneo activo: apunta el código a la cámara.', 'ok');
+                } else if (window.Quagga) {
+                    motor = 'quagga';
+                    iniciarQuagga();
+                } else {
+                    detenerTodo('Navegador sin soporte de detección de códigos.');
+                }
+            }).catch(function (err) {
+                btnEscaneo.classList.remove('iniciando');
+                var nombre = (err && err.name) || '';
+                if (nombre === 'NotAllowedError' || nombre === 'SecurityError') {
+                    mostrarEstado('Permiso de cámara denegado. Actívalo en el navegador.', 'error');
+                } else if (nombre === 'NotFoundError' || nombre === 'OverconstrainedError') {
+                    mostrarEstado('No se encontró una cámara en este dispositivo.', 'error');
+                } else {
+                    mostrarEstado('Error al acceder a la cámara (' + nombre + ').', 'error');
+                }
+            });
+        }
+
+        btnEscaneo.addEventListener('click', function () {
+            if (activo) detenerTodo('');
+            else iniciar();
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (!activo) return;
+            if (document.hidden) {
+                detenerTodo('Escaneo pausado: vuelve a tocar la cámara para reanudar.');
+            }
+        });
+    }());
 }());

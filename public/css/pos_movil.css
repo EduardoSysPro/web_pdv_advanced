@@ -1689,3 +1689,93 @@ body.pos-movil-body {
         font-size: 14px;
     }
 }
+
+/* ==========================================
+   ESCANEO POR CÁMARA EN VIVO (silencioso)
+   ========================================== */
+.cot-camara-oculta {
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 2px;
+    height: 2px;
+    opacity: 0.01;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: -1;
+}
+
+body.pos-movil-body #cot-btn-escaneo.cot-btn-camara {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--movil-border);
+    background: #ffffff;
+    color: var(--movil-primary);
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 4;
+    padding: 0;
+    transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+body.pos-movil-body #cot-btn-escaneo.cot-btn-camara:active {
+    transform: translateY(-50%) scale(0.92);
+}
+
+body.pos-movil-body #cot-btn-escaneo.cot-btn-camara.iniciando {
+    border-color: var(--movil-primary);
+    animation: cot-btn-camara-pulso 1s infinite;
+}
+
+body.pos-movil-body #cot-btn-escaneo.cot-btn-camara.activo {
+    background: var(--movil-success);
+    border-color: var(--movil-success);
+    color: #ffffff;
+    animation: none;
+}
+
+body.pos-movil-body #cot-btn-escaneo.cot-btn-camara.flash {
+    background: #d97706;
+    border-color: #d97706;
+    color: #ffffff;
+}
+
+@keyframes cot-btn-camara-pulso {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45); }
+    50% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+}
+
+body.pos-movil-body .cot-busqueda-input {
+    padding-right: 80px;
+}
+
+body.pos-movil-body .cot-escaneo-estado {
+    margin: -4px 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-left: 4px solid #2563eb;
+}
+
+body.pos-movil-body .cot-escaneo-estado[data-tipo="ok"] {
+    background: #d1fae5;
+    color: #047857;
+    border-left-color: #10b981;
+}
+
+body.pos-movil-body .cot-escaneo-estado[data-tipo="error"] {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-left-color: #ef4444;
+}

@@ -520,6 +520,24 @@ class CotizacionesController extends Controller
 
         $hasImpuesto = $this->columnaExiste('productos', 'tipo_impuesto');
 
+        // Carga la info de TODOS los productos del carrito en una sola consulta.
+        // Con carritos grandes esto evita ejecutar N consultas (una por artículo).
+        $infoProductos = [];
+        $idsProductos = [];
+        foreach ($productos as $item) {
+            $idProducto = isset($item['id']) ? (int)$item['id'] : 0;
+            if ($idProducto > 0) {
+                $idsProductos[$idProducto] = $idProducto;
+            }
+        }
+        if ($idsProductos) {
+            $idsTexto = implode(',', array_map('intval', $idsProductos));
+            $stmtInfo = $pdo->query('SELECT id, nombre, nombre_empaque, unidades_por_empaque' . ($hasImpuesto ? ', tipo_impuesto, porcentaje_isv' : '') . ' FROM productos WHERE id IN (' . $idsTexto . ')');
+            foreach ($stmtInfo->fetchAll(PDO::FETCH_ASSOC) as $fila) {
+                $infoProductos[(int)$fila['id']] = $fila;
+            }
+        }
+
         foreach ($productos as $item) {
             $productoId      = isset($item['id']) ? (int)$item['id'] : 0;
             $cantidad        = isset($item['cantidad']) ? (float)$item['cantidad'] : 0.0;
@@ -548,9 +566,7 @@ class CotizacionesController extends Controller
             $tipoImpuesto = 'gravado_15';
             $porcentajeIsv = 15.0;
             $nombreProducto = 'Producto ' . $productoId;
-            $stmtProd = $pdo->prepare('SELECT nombre, nombre_empaque, unidades_por_empaque' . ($hasImpuesto ? ', tipo_impuesto, porcentaje_isv' : '') . ' FROM productos WHERE id = :id LIMIT 1');
-            $stmtProd->execute([':id' => $productoId]);
-            $prodInfo = $stmtProd->fetch(PDO::FETCH_ASSOC);
+            $prodInfo = $infoProductos[$productoId] ?? null;
             if ($prodInfo) {
                 $nombreProducto = $prodInfo['nombre'];
                 if ($tipoPresentacion === 'empaque') {

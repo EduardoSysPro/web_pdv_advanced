@@ -449,6 +449,24 @@ class VentasController extends Controller
             $isv18Total = 0.0;
             $descuentoTotal = 0.0;
 
+            // Carga la info de TODOS los productos de la venta en una sola consulta.
+            // Con tickets grandes esto evita ejecutar N consultas (una por artículo).
+            $infoProductos = [];
+            $idsProductos = [];
+            foreach ($productos as $item) {
+                $idProducto = isset($item['id']) ? (int)$item['id'] : 0;
+                if ($idProducto > 0) {
+                    $idsProductos[$idProducto] = $idProducto;
+                }
+            }
+            if ($idsProductos) {
+                $idsTexto = implode(',', array_map('intval', $idsProductos));
+                $stmtInfo = $pdo->query('SELECT id, nombre_empaque, unidades_por_empaque' . ($hasProductoImpuesto ? ', tipo_impuesto, porcentaje_isv' : '') . ' FROM productos WHERE id IN (' . $idsTexto . ')');
+                foreach ($stmtInfo->fetchAll(PDO::FETCH_ASSOC) as $fila) {
+                    $infoProductos[(int)$fila['id']] = $fila;
+                }
+            }
+
             foreach ($productos as $item) {
                 $productoId       = isset($item['id'])                 ? (int)$item['id']                 : 0;
                 $cantidad         = isset($item['cantidad'])           ? (float)$item['cantidad']         : 0.0;
@@ -478,9 +496,7 @@ class VentasController extends Controller
 
                 $tipoImpuesto = 'gravado_15';
                 $porcentajeIsv = 15.0;
-                $stmtProd = $pdo->prepare('SELECT nombre_empaque, unidades_por_empaque' . ($hasProductoImpuesto ? ', tipo_impuesto, porcentaje_isv' : '') . ' FROM productos WHERE id = :id LIMIT 1');
-                $stmtProd->execute([':id' => $productoId]);
-                $prodInfo = $stmtProd->fetch(PDO::FETCH_ASSOC);
+                $prodInfo = $infoProductos[$productoId] ?? null;
                 if ($prodInfo) {
                     if ($tipoPresentacion === 'empaque') {
                         if ($factorUnidades <= 1.0 && (float)$prodInfo['unidades_por_empaque'] > 1.0) {

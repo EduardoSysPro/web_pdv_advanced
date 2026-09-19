@@ -100,8 +100,12 @@
                             <legend><i class="fa-solid fa-box"></i> Artículos de la cotización</legend>
                             <div class="cot-buscador">
                                 <input type="search" id="cot-busqueda-input" class="form-control-pos cot-busqueda-input" placeholder="Buscar producto o código...">
+                                <button type="button" id="cot-btn-escaneo" class="cot-btn-camara" title="Activar escaneo por cámara (silencioso)">
+                                    <i class="fa-solid fa-camera"></i>
+                                </button>
                                 <span class="cot-busqueda-icono"><i class="fa-solid fa-spinner fa-spin" style="display:none;"></i></span>
                             </div>
+                            <p class="cot-escaneo-estado" id="cot-escaneo-estado" hidden></p>
                             <div class="cot-resultados" id="cot-resultados" hidden>
                                 <p class="cot-resultados-titulo">Resultados</p>
                                 <div class="tabla-responsive"><table class="table-pos cot-resultados-tabla" id="cot-resultados-tabla">
@@ -189,6 +193,7 @@ $clientesJson = array_map(static function ($c) {
     const COTIZACION_FECHA_VALIDEZ = '<?php echo htmlspecialchars($fechaValidez ?? ''); ?>';
     const COTIZACION_OBSERVACIONES = '';
 </script>
+<script src="<?php echo URL_BASE; ?>js/quagga.min.js?v=<?php echo filemtime(PUBLIC_PATH . 'js/quagga.min.js'); ?>"></script>
 <script src="<?php echo URL_BASE; ?>js/cotizaciones.js?v=<?php echo filemtime(PUBLIC_PATH . 'js/cotizaciones.js'); ?>"></script>
 <script>
     (function () {

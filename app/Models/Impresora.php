@@ -353,6 +353,19 @@ class Impresora
         $simbolo = $configuracion['moneda_simbolo'] ?? 'L';
         $descuentoRebaja = (float)($venta['descuento_total'] ?? $venta['descuento'] ?? 0);
 
+        $pagosDesglose = [];
+        $pagosJson = $venta['pagos'] ?? '';
+        if (($venta['metodo_pago'] ?? 'efectivo') === 'mixto' && !empty($pagosJson)) {
+            $decodificado = json_decode($pagosJson, true);
+            if (is_array($decodificado)) {
+                foreach ($decodificado as $pago) {
+                    if (isset($pago['metodo']) && (float)($pago['monto'] ?? 0) > 0) {
+                        $pagosDesglose[] = ['metodo' => $pago['metodo'], 'monto' => (float)$pago['monto']];
+                    }
+                }
+            }
+        }
+
         $tieneDesglose = isset($venta['importe_gravado_15']) || isset($venta['importe_gravado_18']) || isset($venta['importe_exento']);
         if ($tieneDesglose) {
             $importeExento = (float)($venta['importe_exento'] ?? 0);
@@ -453,13 +466,25 @@ class Impresora
                 $lineas[] = ['txt' => $this->fila('ISV 18%:', $simbolo . ' ' . number_format($isv18, 2), $ancho), 'bold' => false];
                 $lineas[] = ['txt' => $this->fila('Descuentos y Rebajas Otorgadas:', $simbolo . ' ' . number_format($descuentoRebaja, 2), $ancho), 'bold' => false];
                 $lineas[] = ['txt' => $this->fila('Total a Pagar:', $simbolo . ' ' . number_format($totalVenta, 2), $ancho), 'bold' => true];
-                $lineas[] = ['txt' => $this->fila('Efectivo / Recibido:', $simbolo . ' ' . number_format($venta['pagado_con'] ?? $venta['efectivo'] ?? 0, 2), $ancho), 'bold' => false];
+                if (!empty($pagosDesglose)) {
+                    foreach ($pagosDesglose as $pg) {
+                        $lineas[] = ['txt' => $this->fila(ucfirst($pg['metodo']) . ':', $simbolo . ' ' . number_format($pg['monto'], 2), $ancho), 'bold' => false];
+                    }
+                } else {
+                    $lineas[] = ['txt' => $this->fila('Efectivo / Recibido:', $simbolo . ' ' . number_format($venta['pagado_con'] ?? $venta['efectivo'] ?? 0, 2), $ancho), 'bold' => false];
+                }
                 $lineas[] = ['txt' => $this->fila('Cambio:', $simbolo . ' ' . number_format($venta['cambio'] ?? 0, 2), $ancho), 'bold' => false];
             } else {
                 $lineas[] = ['txt' => $this->fila('Descuentos y Rebajas Otorgadas:', $simbolo . ' ' . number_format($descuentoRebaja, 2), $ancho), 'bold' => false];
                 $lineas[] = ['txt' => $this->fila('TOTAL:', $simbolo . ' ' . number_format($totalVenta, 2), $ancho), 'bold' => true];
                 $lineas[] = ['txt' => $this->fila('Forma de pago:', ucfirst($venta['metodo_pago'] ?? 'efectivo'), $ancho), 'bold' => false];
-                $lineas[] = ['txt' => $this->fila('Efectivo / Recibido:', $simbolo . ' ' . number_format($venta['pagado_con'] ?? $venta['efectivo'] ?? 0, 2), $ancho), 'bold' => false];
+                if (!empty($pagosDesglose)) {
+                    foreach ($pagosDesglose as $pg) {
+                        $lineas[] = ['txt' => $this->fila(ucfirst($pg['metodo']) . ':', $simbolo . ' ' . number_format($pg['monto'], 2), $ancho), 'bold' => false];
+                    }
+                } else {
+                    $lineas[] = ['txt' => $this->fila('Efectivo / Recibido:', $simbolo . ' ' . number_format($venta['pagado_con'] ?? $venta['efectivo'] ?? 0, 2), $ancho), 'bold' => false];
+                }
                 $lineas[] = ['txt' => $this->fila('Cambio:', $simbolo . ' ' . number_format($venta['cambio'] ?? 0, 2), $ancho), 'bold' => false];
             }
 

@@ -891,12 +891,7 @@
     function renderizarTotales() {
         const ticket = obtenerTicketActivo();
         const totales = ticket ? calcularTotales(ticket) : { total: 0, articulos: 0 };
-        const pagadoCon = ticket ? (ticket.pagadoCon || 0) : 0;
-        const cambio = redondear(pagadoCon - totales.total);
-
         document.getElementById('total-venta').textContent = formatearMonto(totales.total);
-        document.getElementById('total-pago').textContent = formatearMonto(pagadoCon);
-        document.getElementById('total-cambio').textContent = formatearMonto(Math.max(0, cambio));
         document.getElementById('total-articulos').textContent = String(totales.articulos);
         document.getElementById('total-gigante').textContent = formatearMonto(totales.total);
     }
@@ -1183,6 +1178,11 @@
         const efectivo = document.getElementById('cobro-efectivo');
         if (totalElemento) totalElemento.textContent = formatearMonto(totales.total);
         if (efectivo) { efectivo.value = ''; efectivo.focus(); }
+        document.querySelectorAll('.mixto-check').forEach(cb => { cb.checked = false; });
+        document.querySelectorAll('.cobro-mixto-monto').forEach(inp => { inp.value = ''; inp.disabled = false; });
+        if (efectivo) efectivo.disabled = false;
+        const pendienteInicial = document.getElementById('cobro-pendiente');
+        if (pendienteInicial) pendienteInicial.textContent = formatearMonto(totales.total);
         prellenarClienteDesdeTicket(ticket);
         actualizarCobroModal();
     }
@@ -1350,18 +1350,42 @@
 
     function actualizarCobroModal() {
         const total = Number(document.getElementById('modal-cobro')?.dataset.total || 0);
-        const efectivo = Number(document.getElementById('cobro-efectivo')?.value || 0);
-        const metodo = document.querySelector('input[name="cobro-metodo"]:checked')?.value || 'efectivo';
+        const creditoCheck = document.querySelector('.mixto-check[value="credito"]');
+        const esCredito = !!(creditoCheck && creditoCheck.checked);
+        const efectivoInput = document.getElementById('cobro-efectivo');
+        const cotizarMontos = document.querySelectorAll('.cobro-mixto-monto');
         const cambio = document.getElementById('cobro-cambio');
         const mensaje = document.getElementById('cobro-mensaje');
         const confirmar = document.getElementById('cobro-confirmar');
         const cliente = document.getElementById('cobro-cliente-contenedor');
-        const esCredito = metodo === 'credito';
-        const valido = esCredito || (efectivo >= total && efectivo > 0);
+
+        if (efectivoInput) efectivoInput.disabled = esCredito;
+        cotizarMontos.forEach(inp => { inp.disabled = esCredito; });
+
+        const efectivo = esCredito ? 0 : Number(efectivoInput?.value || 0);
+        let otros = 0;
+        cotizarMontos.forEach(inp => {
+            const fila = inp.closest('.cobro-mixto-fila');
+            const marcado = fila && fila.querySelector('.mixto-check')?.checked;
+            if (marcado) otros += Number(inp.value || 0);
+        });
+        const pagado = redondear(efectivo + otros);
+        const restante = redondear(total - pagado);
+        const soloCambioEfectivo = redondear(Math.max(0, efectivo - Math.max(0, total - otros)));
+
         if (cliente) cliente.style.display = esCredito ? 'flex' : 'none';
-        if (cambio) { cambio.textContent = esCredito ? 'Sin pago inmediato' : (valido ? formatearMonto(efectivo - total) : 'Faltan ' + formatearMonto(total - efectivo)); cambio.className = 'cobro-cambio-valor ' + (valido ? 'cambio-valido' : 'cambio-insuficiente'); }
+        const pendiente = document.getElementById('cobro-pendiente');
+        if (pendiente) pendiente.textContent = esCredito ? 'Crédito total' : formatearMonto(Math.max(0, restante));
+
+        const valido = esCredito
+            ? !!(document.getElementById('cobro-cliente')?.value)
+            : (pagado > 0 && pagado >= total);
+        if (cambio) {
+            cambio.textContent = esCredito ? 'Sin pago inmediato' : (valido ? formatearMonto(soloCambioEfectivo) : 'Faltan ' + formatearMonto(Math.max(0, restante)));
+            cambio.className = 'cobro-cambio-valor ' + (valido ? 'cambio-valido' : 'cambio-insuficiente');
+        }
         if (mensaje) mensaje.textContent = esCredito ? 'Selecciona un cliente con crédito disponible.' : (valido ? 'Pago suficiente.' : 'Ingresa un monto igual o mayor al total.');
-        if (confirmar) confirmar.disabled = !valido || (esCredito && !(document.getElementById('cobro-cliente')?.value));
+        if (confirmar) confirmar.disabled = !valido;
     }
 
     function setCobroProcesando(activo) {
@@ -1389,11 +1413,31 @@
         if (!ticket) { procesandoVenta = false; return; }
         setCobroProcesando(true);
         const total = Number(document.getElementById('modal-cobro')?.dataset.total || 0);
-        const metodoPago = document.querySelector('input[name="cobro-metodo"]:checked')?.value || 'efectivo';
         const tipoComprobante = obtenerTipoComprobanteSeleccionado();
-        const pagadoN = metodoPago === 'credito' ? 0 : Number(document.getElementById('cobro-efectivo')?.value || 0);
         const clienteId = Number(document.getElementById('cobro-cliente')?.value || 0);
-        const cambio = metodoPago === 'credito' ? 0 : redondear(pagadoN - total);
+
+        const pagos = [];
+        const efectivoCobroN = redondear(Number(document.getElementById('cobro-efectivo')?.value || 0));
+        const creditoSeleccionado = !!document.querySelector('.mixto-check[value="credito"]')?.checked;
+        document.querySelectorAll('.cobro-mixto-monto').forEach(inp => {
+            const fila = inp.closest('.cobro-mixto-fila');
+            const marcado = fila && fila.querySelector('.mixto-check')?.checked;
+            const monto = redondear(Number(inp.value || 0));
+            if (marcado && monto > 0) pagos.push({ metodo: inp.dataset.metodo, monto: monto });
+        });
+        if (creditoSeleccionado) {
+            pagos.length = 0;
+            pagos.push({ metodo: 'credito', monto: redondear(total) });
+        } else if (efectivoCobroN > 0) {
+            pagos.push({ metodo: 'efectivo', monto: efectivoCobroN });
+        }
+
+        const esCredito = creditoSeleccionado;
+        const metodoPago = esCredito ? 'credito' : (pagos.length === 1 ? pagos[0].metodo : 'mixto');
+        const efectivoMonto = esCredito ? 0 : (pagos.find(function (p) { return p.metodo === 'efectivo'; })?.monto || 0);
+        const otrosMonto = esCredito ? 0 : pagos.reduce(function (acc, p) { return p.metodo === 'efectivo' ? acc : acc + p.monto; }, 0);
+        const pagadoN = esCredito ? 0 : redondear(efectivoMonto + otrosMonto);
+        const cambio = esCredito ? 0 : redondear(Math.max(0, efectivoMonto - Math.max(0, total - otrosMonto)));
 
         // Captura de datos opcionales de facturación / cliente eventual
        const clienteNombreInput = document.getElementById('cliente_nombre')?.value.trim();
@@ -1419,6 +1463,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
                 efectivo: pagadoN,
                 cambio: cambio,
                 metodo_pago: metodoPago,
+                pagos: pagos,
                 tipo_comprobante: tipoComprobante,
                 cotizacion_id: cotizacionIdCobro,
                 cliente_id: clienteId,
@@ -1486,10 +1531,24 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
     }
 
     function seleccionarMetodoCobro(metodo) {
-        const radio = document.querySelector('input[name="cobro-metodo"][value="' + metodo + '"]');
-        if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change')); }
+        const credito = document.querySelector('.mixto-check[value="credito"]');
+        if (metodo === 'credito') {
+            if (credito) { credito.checked = true; credito.dispatchEvent(new Event('change')); }
+            actualizarCobroModal();
+            return;
+        }
+        if (credito && credito.checked) { credito.checked = false; }
+        if (metodo === 'efectivo') {
+            document.getElementById('cobro-efectivo')?.focus();
+            actualizarCobroModal();
+            return;
+        }
+        const fila = document.querySelector('.cobro-mixto-fila[data-mixto="' + metodo + '"]');
+        const check = fila ? fila.querySelector('.mixto-check') : null;
+        if (check) { check.checked = true; }
+        const monto = fila ? fila.querySelector('.cobro-mixto-monto') : null;
         actualizarCobroModal();
-        if (metodo !== 'credito') document.getElementById('cobro-efectivo')?.focus();
+        if (monto) monto.focus();
     }
 
     /**
@@ -1795,7 +1854,23 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
         document.querySelectorAll('[data-modal-cerrar]').forEach(elemento => elemento.addEventListener('click', cerrarModalCobro));
         const efectivoCobro = document.getElementById('cobro-efectivo');
         if (efectivoCobro) efectivoCobro.addEventListener('input', actualizarCobroModal);
-        document.querySelectorAll('input[name="cobro-metodo"]').forEach(radio => radio.addEventListener('change', actualizarCobroModal));
+        document.querySelectorAll('.cobro-mixto-monto').forEach(inp => inp.addEventListener('input', actualizarCobroModal));
+        document.querySelectorAll('.mixto-check').forEach(check => check.addEventListener('change', function () {
+            const fila = this.closest('.cobro-mixto-fila');
+            if (this.value === 'credito') {
+                if (this.checked) {
+                    document.querySelectorAll('.mixto-check').forEach(otro => { if (otro !== this) otro.checked = false; });
+                    if (efectivoCobro) efectivoCobro.value = '';
+                    document.querySelectorAll('.cobro-mixto-monto').forEach(inp => { inp.value = ''; });
+                }
+            } else if (this.checked) {
+                const credito = document.querySelector('.mixto-check[value="credito"]');
+                if (credito) credito.checked = false;
+                const monto = fila ? fila.querySelector('.cobro-mixto-monto') : null;
+                if (monto) monto.focus();
+            }
+            actualizarCobroModal();
+        }));
         const clienteCobro = document.getElementById('cobro-cliente');
         if (clienteCobro) clienteCobro.addEventListener('change', actualizarCobroModal);
         document.querySelectorAll('.btn-billete').forEach(boton => boton.addEventListener('click', function () { efectivoCobro.value = String((Number(efectivoCobro.value) || 0) + Number(this.dataset.monto)); actualizarCobroModal(); efectivoCobro.focus(); }));

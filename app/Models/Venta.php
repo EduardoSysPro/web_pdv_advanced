@@ -15,16 +15,29 @@ class Venta extends Controller
     public function sumarPorMetodoPago($usuarioId, $desde, $hasta)
     {
         $filtroCaja = $this->columnaExiste('ventas', 'caja_id') ? ' AND caja_id = :caja_id' : '';
-        $stmt = $this->pdo->prepare('SELECT metodo_pago, COALESCE(SUM(total), 0) AS total
-                                     FROM ventas
-                                     WHERE usuario_id = :usuario_id' . $filtroCaja . ' AND fecha_venta >= :desde AND fecha_venta <= :hasta
-                                     GROUP BY metodo_pago');
+        $tienePagos = $this->columnaExiste('ventas', 'pagos');
+        $sql = 'SELECT metodo_pago, COALESCE(SUM(total), 0) AS total';
+        if ($tienePagos) $sql .= ', pagos';
+        $sql .= ' FROM ventas
+                 WHERE usuario_id = :usuario_id' . $filtroCaja . ' AND fecha_venta >= :desde AND fecha_venta <= :hasta
+                 GROUP BY metodo_pago' . ($tienePagos ? ', pagos' : '');
         $parametros = [':usuario_id' => (int)$usuarioId, ':desde' => $desde, ':hasta' => $hasta];
         if ($filtroCaja) $parametros[':caja_id'] = (int)($_SESSION['caja_id'] ?? 0);
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute($parametros);
         $totales = ['efectivo' => 0.0, 'tarjeta' => 0.0, 'transferencia' => 0.0];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fila) {
-            if (isset($totales[$fila['metodo_pago']])) $totales[$fila['metodo_pago']] = (float)$fila['total'];
+            if ($fila['metodo_pago'] === 'mixto' && $tienePagos && !empty($fila['pagos'])) {
+                $detalle = json_decode($fila['pagos'], true);
+                if (is_array($detalle)) {
+                    foreach ($detalle as $pago) {
+                        $metodo = $pago['metodo'] ?? '';
+                        if (isset($totales[$metodo])) $totales[$metodo] += (float)($pago['monto'] ?? 0);
+                    }
+                    continue;
+                }
+            }
+            if (isset($totales[$fila['metodo_pago']])) $totales[$fila['metodo_pago']] += (float)$fila['total'];
         }
         return $totales;
     }

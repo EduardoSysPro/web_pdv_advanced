@@ -328,6 +328,18 @@ class VentasController extends Controller
         $clienteDireccion = isset($datos['cliente_direccion'])? trim($datos['cliente_direccion']) : '';
         $cotizacionId     = isset($datos['cotizacion_id'])    ? (int)$datos['cotizacion_id']     : 0;
 
+        $pagos = [];
+        if (isset($datos['pagos']) && is_array($datos['pagos'])) {
+            foreach ($datos['pagos'] as $pago) {
+                if (!is_array($pago)) continue;
+                $metodo = isset($pago['metodo']) ? trim((string)$pago['metodo']) : '';
+                $monto  = isset($pago['monto']) ? round((float)$pago['monto'], 2) : 0.0;
+                if ($metodo === '' || $monto <= 0) continue;
+                if (!in_array($metodo, ['efectivo', 'tarjeta', 'transferencia', 'credito'], true)) continue;
+                $pagos[] = ['metodo' => $metodo, 'monto' => $monto];
+            }
+        }
+
         $productos = isset($datos['productos']) && is_array($datos['productos'])
             ? $datos['productos'] : [];
 
@@ -339,7 +351,7 @@ class VentasController extends Controller
             return;
         }
 
-        $metodosValidos = ['efectivo', 'tarjeta', 'transferencia', 'credito'];
+        $metodosValidos = ['efectivo', 'tarjeta', 'transferencia', 'credito', 'mixto'];
         if (!in_array($metodoPago, $metodosValidos, true)) {
             $metodoPago = 'efectivo';
         }
@@ -356,6 +368,8 @@ class VentasController extends Controller
             ]);
             return;
         }
+
+        $this->asegurarSoportePagosMixtos($pdo);
 
         try {
             $pdo->beginTransaction();
@@ -388,6 +402,7 @@ class VentasController extends Controller
             $columnasExtra = '';
             $valoresExtra  = '';
             $ventaTieneTipo = $this->columnaExiste($pdo, 'ventas', 'tipo_comprobante');
+            $hasPagosVenta  = $this->columnaExiste($pdo, 'ventas', 'pagos');
 
             if ($columnaCajaVenta) {
                 $columnasExtra .= ', caja_id';
@@ -396,6 +411,10 @@ class VentasController extends Controller
             if ($ventaTieneTipo) {
                 $columnasExtra .= ', tipo_comprobante';
                 $valoresExtra  .= ', :tipo_comprobante';
+            }
+            if ($hasPagosVenta) {
+                $columnasExtra .= ', pagos';
+                $valoresExtra  .= ', :pagos';
             }
             if ($hasNombre) {
                 $columnasExtra .= ', cliente_nombre';
@@ -559,10 +578,42 @@ class VentasController extends Controller
             if ($total <= 0) {
                 throw new Exception('El total de la venta no es válido.');
             }
-            if ($metodoPago !== 'credito' && $efectivo < $total) {
-                throw new Exception('El efectivo recibido es menor al total.');
-            }
-            if ($metodoPago === 'credito') {
+            if (count($pagos) > 0) {
+                $hayCredito = false;
+                $sumaPagos = 0.0;
+                $otros = 0.0;
+                $efectivo = 0.0;
+                foreach ($pagos as $pago) {
+                    $sumaPagos = round($sumaPagos + $pago['monto'], 2);
+                    if ($pago['metodo'] === 'credito') {
+                        $hayCredito = true;
+                    } elseif ($pago['metodo'] === 'efectivo') {
+                        $efectivo = round($efectivo + $pago['monto'], 2);
+                    } else {
+                        $otros = round($otros + $pago['monto'], 2);
+                    }
+                }
+                if ($hayCredito) {
+                    if (count($pagos) > 1) {
+                        $pagos = [['metodo' => 'credito', 'monto' => $total]];
+                    }
+                    if ($clienteId <= 0) throw new Exception('Debes seleccionar un cliente para la venta a crédito.');
+                    $stmtCredito = $pdo->prepare('SELECT limite_credito, saldo_pendiente FROM clientes WHERE id = :id FOR UPDATE');
+                    $stmtCredito->execute([':id' => $clienteId]);
+                    $cliente = $stmtCredito->fetch(PDO::FETCH_ASSOC);
+                    if (!$cliente || (float)$cliente['saldo_pendiente'] + $total > (float)$cliente['limite_credito']) {
+                        throw new Exception('La venta supera el crédito disponible del cliente.');
+                    }
+                    $metodoPago = 'credito';
+                    $efectivo = 0.0;
+                } else {
+                    $metodoPago = count($pagos) > 1 ? 'mixto' : $pagos[0]['metodo'];
+                    if ($sumaPagos < $total) {
+                        throw new Exception('El total de los pagos recibidos es menor al total de la venta.');
+                    }
+                }
+                $cambio = $hayCredito ? 0.0 : round(max(0, $efectivo - max(0, $total - $otros)), 2);
+            } elseif ($metodoPago === 'credito') {
                 if ($clienteId <= 0) throw new Exception('Debes seleccionar un cliente para la venta a crédito.');
                 $stmtCredito = $pdo->prepare('SELECT limite_credito, saldo_pendiente FROM clientes WHERE id = :id FOR UPDATE');
                 $stmtCredito->execute([':id' => $clienteId]);
@@ -573,6 +624,9 @@ class VentasController extends Controller
                 $efectivo = 0;
                 $cambio = 0;
             } else {
+                if ($efectivo < $total) {
+                    throw new Exception('El efectivo recibido es menor al total.');
+                }
                 $cambio = round($efectivo - $total, 2);
             }
 
@@ -608,6 +662,9 @@ class VentasController extends Controller
             $stmtVenta->bindValue(':pagado_con',  $efectivo,  PDO::PARAM_STR);
             $stmtVenta->bindValue(':cambio',      $cambio,    PDO::PARAM_STR);
             $stmtVenta->bindValue(':metodo_pago', $metodoPago, PDO::PARAM_STR);
+            if ($hasPagosVenta) {
+                $stmtVenta->bindValue(':pagos', count($pagos) > 0 ? json_encode($pagos, JSON_UNESCAPED_UNICODE) : null, count($pagos) > 0 ? PDO::PARAM_STR : PDO::PARAM_NULL);
+            }
             $stmtVenta->bindValue(':cliente_id', $metodoPago === 'credito' || $clienteId > 0 ? $clienteId : null, ($metodoPago === 'credito' || $clienteId > 0) ? PDO::PARAM_INT : PDO::PARAM_NULL);
             $stmtVenta->execute();
             $ventaId = (int)$pdo->lastInsertId();
@@ -680,6 +737,10 @@ class VentasController extends Controller
             $stmtMov->bindValue(':concepto',   $concepto, PDO::PARAM_STR);
             if ($metodoPago === 'efectivo') {
                 $stmtMov->execute();
+            } elseif ($metodoPago === 'mixto') {
+                $stmtMov->bindValue(':monto', round($efectivo, 2), PDO::PARAM_STR);
+                $stmtMov->bindValue(':concepto', 'Venta mixta - Folio ' . $folio, PDO::PARAM_STR);
+                $stmtMov->execute();
             }
 
             // Vincular la venta con su cotización (si proviene de una) y marcarla como facturada.
@@ -713,6 +774,36 @@ class VentasController extends Controller
         }
     }
 
+    /**
+     * Garantiza la columna `pagos` y el valor 'mixto' en el ENUM de `metodo_pago`
+     * para soportar el cobro mixto. Se llama fuera de la transacción porque el
+     * DDL en MySQL provoca commit implícito.
+     */
+    private function asegurarSoportePagosMixtos($pdo)
+    {
+        if (!$this->columnaExiste($pdo, 'ventas', 'pagos')) {
+            try {
+                $pdo->exec('ALTER TABLE ventas ADD COLUMN pagos TEXT NULL COMMENT ' . "'" . 'Desglose de pagos en formato JSON: [{"metodo": "..", "monto": 0.00}]' . "'" . ' AFTER metodo_pago');
+            } catch (Throwable $e) {
+            }
+        }
+
+        $enumIncluyeMixto = false;
+        try {
+            $stmt = $pdo->query("SHOW COLUMNS FROM ventas LIKE 'metodo_pago'");
+            $columna = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : false;
+            $enumIncluyeMixto = $columna && (strpos((string)($columna['Type'] ?? ''), 'mixto') !== false);
+        } catch (Throwable $e) {
+            $enumIncluyeMixto = false;
+        }
+        if (!$enumIncluyeMixto) {
+            try {
+                $pdo->exec("ALTER TABLE ventas MODIFY metodo_pago ENUM('efectivo','tarjeta','transferencia','credito','mixto') NOT NULL DEFAULT 'efectivo'");
+            } catch (Throwable $e) {
+            }
+        }
+    }
+
     public function imprimirTicket($parametros)
     {
         $this->requerirAutenticacion();
@@ -727,6 +818,7 @@ class VentasController extends Controller
         $hasCaiVenta = $this->columnaExiste($pdo, 'ventas', 'cai');
         $hasDesgloseIsvVenta = $this->columnaExiste($pdo, 'ventas', 'importe_gravado_15');
         $hasDescuentoVenta = $this->columnaExiste($pdo, 'ventas', 'descuento_total');
+        $hasPagosVenta = $this->columnaExiste($pdo, 'ventas', 'pagos');
 
         $colsCliente = '';
         if ($hasTipoComprobante) $colsCliente .= ', v.tipo_comprobante';
@@ -737,6 +829,7 @@ class VentasController extends Controller
         if ($hasCaiVenta) $colsCliente .= ', v.cai, v.correlativo_sar, v.rango_autorizado, v.fecha_limite_emision';
         if ($hasDesgloseIsvVenta) $colsCliente .= ', v.importe_exento, v.importe_exonerado, v.importe_gravado_15, v.isv_15, v.importe_gravado_18, v.isv_18';
         if ($hasDescuentoVenta) $colsCliente .= ', v.descuento_total';
+        if ($hasPagosVenta) $colsCliente .= ', v.pagos';
 
         $stmt = $pdo->prepare('SELECT v.id, v.folio, v.total, v.pagado_con, v.cambio, v.metodo_pago, v.fecha_venta,
                                       u.nombre AS cajero, c.nombre AS cliente_registrado' . $colsCliente . '

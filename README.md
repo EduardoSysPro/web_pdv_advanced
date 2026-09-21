@@ -113,7 +113,7 @@ web_pdv/
 │   ├── js/
 │   └── index.php
 ├── sql/
-│   ├── esquema.sql
+│   ├── instalar_advanced.sql
 │   └── migraciones/
 ├── index.php
 └── respaldo_pdv.bat

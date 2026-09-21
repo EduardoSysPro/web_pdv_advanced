@@ -97,14 +97,6 @@
                 <span class="total-label">Total:</span>
                 <span class="total-valor" id="total-venta"><?php echo formatearMoneda(0); ?></span>
             </div>
-            <div class="total-fila">
-                <span class="total-label">Pagó Con:</span>
-                <span class="total-valor" id="total-pago"><?php echo formatearMoneda(0); ?></span>
-            </div>
-            <div class="total-fila total-cambio">
-                <span class="total-label">Cambio:</span>
-                <span class="total-valor" id="total-cambio"><?php echo formatearMoneda(0); ?></span>
-            </div>
             <div class="total-fila total-articulos">
                 <span class="total-label">Artículos:</span>
                 <span class="total-valor" id="total-articulos">0</span>
@@ -196,7 +188,7 @@
                     <input
                         type="number"
                         id="cobro-efectivo"
-                        class="cobro-input"
+                        class="cobro-input cobro-efectivo"
                         step="0.01"
                         min="0"
                         placeholder="0.00"
@@ -210,25 +202,30 @@
                     </div>
                 </div>
 
-                <!-- Método de pago -->
+                <!-- Otros métodos de pago (cobro mixto) -->
                 <div class="campo cobro-campo">
-                    <label>Método de Pago:</label>
-                    <div class="cobro-metodos">
-                        <label class="metodo-opcion">
-                            <input type="radio" name="cobro-metodo" value="efectivo" checked>
-                            <i class="fa-solid fa-money-bill-wave" aria-hidden="true"></i><span>Efectivo</span>
+                    <label>Otros métodos de pago (cobro mixto):</label>
+                    <div class="cobro-mixto-fila" data-mixto="tarjeta">
+                        <label class="cobro-mixto-opcion">
+                            <input type="checkbox" class="mixto-check" value="tarjeta">
+                            <i class="fa-regular fa-credit-card" aria-hidden="true"></i>
+                            <span>Tarjeta</span>
                         </label>
-                        <label class="metodo-opcion">
-                            <input type="radio" name="cobro-metodo" value="tarjeta">
-                            <i class="fa-regular fa-credit-card" aria-hidden="true"></i><span>Tarjeta</span>
+                        <input type="number" id="cobro-monto-tarjeta" class="cobro-input cobro-mixto-monto" data-metodo="tarjeta" step="0.01" min="0" placeholder="0.00" autocomplete="off" disabled>
+                    </div>
+                    <div class="cobro-mixto-fila" data-mixto="transferencia">
+                        <label class="cobro-mixto-opcion">
+                            <input type="checkbox" class="mixto-check" value="transferencia">
+                            <i class="fa-solid fa-building-columns" aria-hidden="true"></i>
+                            <span>Transferencia</span>
                         </label>
-                        <label class="metodo-opcion">
-                            <input type="radio" name="cobro-metodo" value="transferencia">
-                            <i class="fa-solid fa-building-columns" aria-hidden="true"></i><span>Transferencia</span>
-                        </label>
-                        <label class="metodo-opcion">
-                            <input type="radio" name="cobro-metodo" value="credito">
-                            <i class="fa-solid fa-hand-holding-dollar" aria-hidden="true"></i><span>Crédito</span>
+                        <input type="number" id="cobro-monto-transferencia" class="cobro-input cobro-mixto-monto" data-metodo="transferencia" step="0.01" min="0" placeholder="0.00" autocomplete="off" disabled>
+                    </div>
+                    <div class="cobro-mixto-fila cobro-mixto-credito" data-mixto="credito">
+                        <label class="cobro-mixto-opcion" title="Crédito (100% de la venta)">
+                            <input type="checkbox" class="mixto-check" value="credito">
+                            <i class="fa-solid fa-hand-holding-dollar" aria-hidden="true"></i>
+                            <span>Crédito</span>
                         </label>
                     </div>
                 </div>
@@ -240,6 +237,12 @@
                             <option value="<?php echo (int)$cliente['id']; ?>"><?php echo htmlspecialchars($cliente['nombre']); ?> - Saldo <?php echo formatearMoneda($cliente['saldo_pendiente']); ?></option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+
+                <!-- Pendiente por cubrir -->
+                <div class="cobro-pendiente-fila" id="cobro-pendiente-fila">
+                    <span class="cobro-pendiente-label">Pendiente por cubrir:</span>
+                    <span class="cobro-pendiente-valor" id="cobro-pendiente">L 0.00</span>
                 </div>
 
                 <!-- Cambio -->
@@ -303,7 +306,6 @@
         const ISV_PORCENTAJE = <?php echo ISV_PORCENTAJE; ?>;
         const COMPROBANTE_DEFAULT = '<?php echo htmlspecialchars($tipoComprobanteDefault ?? 'recibo'); ?>';
         const COTIZACION_A_CARGAR = <?php echo $cotizacionACargar ? json_encode($cotizacionACargar, JSON_UNESCAPED_UNICODE) : 'null'; ?>;
-        document.querySelectorAll('input[name="cobro-metodo"]').forEach(function (radio) { radio.addEventListener('change', function () { document.getElementById('cobro-cliente-contenedor').style.display = this.value === 'credito' ? 'flex' : 'none'; }); });
     </script>
     <?php $versionJs = file_exists(PUBLIC_PATH . 'js/pos.js') ? filemtime(PUBLIC_PATH . 'js/pos.js') : time(); ?>
     <script src="<?php echo URL_BASE; ?>js/pos.js?v=<?php echo $versionJs; ?>"></script>

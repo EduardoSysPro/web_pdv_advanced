@@ -36,10 +36,24 @@ class Reporte extends Controller
 
     public function obtenerVentasPorMetodoPago($fechaInicio, $fechaFin)
     {
-        $stmt = $this->pdo->prepare('SELECT metodo_pago, COALESCE(SUM(total),0) AS total FROM ventas WHERE fecha_venta BETWEEN :inicio AND :fin GROUP BY metodo_pago');
+        $tienePagos = $this->columnaExiste('ventas', 'pagos');
+        $sql = 'SELECT metodo_pago, COALESCE(SUM(total),0) AS total' . ($tienePagos ? ', pagos' : '') . ' FROM ventas WHERE fecha_venta BETWEEN :inicio AND :fin GROUP BY metodo_pago' . ($tienePagos ? ', pagos' : '');
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':inicio'=>$fechaInicio, ':fin'=>$fechaFin]);
         $totales = ['efectivo'=>0,'tarjeta'=>0,'transferencia'=>0,'credito'=>0];
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fila) $totales[$fila['metodo_pago']] = (float)$fila['total'];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fila) {
+            if ($fila['metodo_pago'] === 'mixto' && $tienePagos && !empty($fila['pagos'])) {
+                $detalle = json_decode($fila['pagos'], true);
+                if (is_array($detalle)) {
+                    foreach ($detalle as $pago) {
+                        $metodo = $pago['metodo'] ?? '';
+                        if (isset($totales[$metodo])) $totales[$metodo] += (float)($pago['monto'] ?? 0);
+                    }
+                    continue;
+                }
+            }
+            if (isset($totales[$fila['metodo_pago']])) $totales[$fila['metodo_pago']] += (float)$fila['total'];
+        }
         return $totales;
     }
 

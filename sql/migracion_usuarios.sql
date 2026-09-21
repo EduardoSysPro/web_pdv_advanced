@@ -1,6 +1,0 @@
-USE web_pdv_db;
-
-ALTER TABLE usuarios
-    ADD COLUMN IF NOT EXISTS sucursal VARCHAR(120) NULL AFTER estado,
-    ADD COLUMN IF NOT EXISTS caja VARCHAR(80) NULL AFTER sucursal,
-    ADD COLUMN IF NOT EXISTS caja_id INT NULL AFTER estado;

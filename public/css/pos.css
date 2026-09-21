@@ -1256,6 +1256,114 @@ textarea.form-control-pos:focus,
 .metodo-opcion:has(input:checked) > i { color: var(--pos-azul-brand); }
 .metodo-opcion:has(input:focus-visible) { outline: 3px solid rgba(16, 185, 129, 0.22); outline-offset: 2px; }
 
+.cobro-mixto-fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.modal-cuerpo .cobro-mixto-opcion,
+.cobro-mixto-opcion {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-height: 38px;
+    height: auto;
+    margin: 0 !important;
+    padding: 6px 12px;
+    border: 1px solid var(--pos-borde);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--pos-texto-soft) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: normal;
+    text-transform: none;
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+}
+
+.cobro-mixto-opcion > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.cobro-mixto-opcion input {
+    width: 14px !important;
+    height: 14px;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    accent-color: var(--pos-azul-brand);
+}
+
+.cobro-mixto-opcion > i { color: #64748b; font-size: 0.8rem; }
+
+.cobro-mixto-opcion:has(input:checked) {
+    border-color: rgba(37,99,235,0.36);
+    background: rgba(239,246,255,0.7);
+    color: var(--pos-azul-medio) !important;
+}
+
+.cobro-mixto-opcion:has(input:checked) > i { color: var(--pos-azul-brand); }
+
+.modal-cuerpo .cobro-mixto-monto,
+.cobro-mixto-monto {
+    flex: 1 1 140px;
+    min-width: 100px;
+    width: auto !important;
+    min-height: 38px;
+    height: 38px;
+    padding: 4px 10px;
+    font-size: 0.95rem;
+}
+
+.cobro-mixto-monto:disabled,
+.cobro-efectivo:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.cobro-efectivo:disabled ~ .cobro-billetes {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.cobro-pendiente-fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 9px 12px;
+    margin-top: 8px;
+    border-radius: 12px;
+    border: 1px dashed rgba(234,179,8,0.45);
+    background: rgba(254,249,195,0.55);
+}
+
+.cobro-pendiente-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--pos-texto-soft);
+}
+
+.cobro-pendiente-valor {
+    font-size: 1.18rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: #b45309;
+    font-variant-numeric: tabular-nums;
+}
+
 .cobro-cambio-fila {
     background: var(--pos-verde-fondo);
     border-color: rgba(16,185,129,0.2);

@@ -79,6 +79,19 @@ if ($tieneDesgloseGuardado) {
     $isv18 = 0;
 }
 $montoEnLetras = numeroALetras($totalVenta);
+
+$pagosDesglose = [];
+$pagosJson = $venta['pagos'] ?? '';
+if (($venta['metodo_pago'] ?? 'efectivo') === 'mixto' && !empty($pagosJson)) {
+    $decodificado = json_decode($pagosJson, true);
+    if (is_array($decodificado)) {
+        foreach ($decodificado as $pago) {
+            if (isset($pago['metodo']) && (float)($pago['monto'] ?? 0) > 0) {
+                $pagosDesglose[] = ['metodo' => $pago['metodo'], 'monto' => (float)$pago['monto']];
+            }
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -254,10 +267,19 @@ foreach ($copiasImprimir as $etiquetaCopia):
                 <td><strong>Total a Pagar:</strong></td>
                 <td class="text-right"><strong>L <?= number_format($totalVenta, 2) ?></strong></td>
             </tr>
+            <?php if (($venta['metodo_pago'] ?? 'efectivo') === 'mixto' && !empty($pagosDesglose)): ?>
+                <?php foreach ($pagosDesglose as $pg): ?>
+                <tr>
+                    <td>&nbsp;&nbsp;<?= htmlspecialchars(ucfirst($pg['metodo'])) ?>:</td>
+                    <td class="text-right">L <?= number_format($pg['monto'], 2) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
             <tr>
                 <td>Efectivo / Recibido:</td>
                 <td class="text-right">L <?= number_format($venta['pagado_con'] ?? $venta['efectivo'] ?? 0, 2) ?></td>
             </tr>
+            <?php endif; ?>
             <tr>
                 <td>Cambio:</td>
                 <td class="text-right">L <?= number_format($venta['cambio'] ?? 0, 2) ?></td>
@@ -277,10 +299,19 @@ foreach ($copiasImprimir as $etiquetaCopia):
                 <td>Forma de pago:</td>
                 <td class="text-right"><?= htmlspecialchars(ucfirst($venta['metodo_pago'] ?? 'efectivo')) ?></td>
             </tr>
+            <?php if (($venta['metodo_pago'] ?? 'efectivo') === 'mixto' && !empty($pagosDesglose)): ?>
+                <?php foreach ($pagosDesglose as $pg): ?>
+                <tr>
+                    <td>&nbsp;&nbsp;<?= htmlspecialchars(ucfirst($pg['metodo'])) ?>:</td>
+                    <td class="text-right">L <?= number_format($pg['monto'], 2) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
             <tr>
                 <td>Efectivo / Recibido:</td>
                 <td class="text-right">L <?= number_format($venta['pagado_con'] ?? $venta['efectivo'] ?? 0, 2) ?></td>
             </tr>
+            <?php endif; ?>
             <tr>
                 <td>Cambio:</td>
                 <td class="text-right">L <?= number_format($venta['cambio'] ?? 0, 2) ?></td>

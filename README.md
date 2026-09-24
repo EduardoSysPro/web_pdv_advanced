@@ -15,7 +15,7 @@ El sistema permite controlar las operaciones principales de un negocio minorista
 
 - Registro y procesamiento de ventas.
 - Búsqueda de productos mediante código de barras.
-- Venta por unidad o por empaque.
+- Venta por unidad, peso o empaque.
 - Control de inventario y ajustes de existencias.
 - Gestión de categorías y productos.
 - Administración de clientes y cuentas por cobrar.
@@ -96,7 +96,7 @@ El sistema contempla los siguientes perfiles:
 ## Estructura del proyecto
 
 ```text
-web_pdv/
+web_pdv_advanced/
 ├── app/
 │   ├── Controllers/
 │   ├── Models/
@@ -111,9 +111,12 @@ web_pdv/
 │   ├── css/
 │   ├── img/
 │   ├── js/
+│   ├── uploads/
 │   └── index.php
 ├── sql/
+│   ├── esquema_instalacion_limpia.sql
 │   ├── instalar_advanced.sql
-│   └── migraciones/
+│   └── productos_ejemplo_750.sql
+├── vendor/
 ├── index.php
 └── respaldo_pdv.bat

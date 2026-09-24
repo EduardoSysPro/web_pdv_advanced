@@ -76,7 +76,31 @@
             </tbody>
         </table>
     </div>
-    <?php $paginas = max(1, (int)ceil($resultado['total'] / $resultado['porPagina'])); ?>
-    <?php if ($paginas > 1): ?><nav class="paginacion"><?php for ($i = 1; $i <= $paginas; $i++): ?><a class="<?php echo $i === $resultado['pagina'] ? 'activa' : ''; ?>" href="?busqueda=<?php echo urlencode($busqueda); ?>&categoria_id=<?php echo urlencode((string)$categoriaId); ?>&pagina=<?php echo $i; ?>"><?php echo $i; ?></a><?php endfor; ?></nav><?php endif; ?>
+    <?php
+        $paginas = max(1, (int)ceil($resultado['total'] / $resultado['porPagina']));
+        $paginaActual = (int)$resultado['pagina'];
+        $rango = 2;
+        $inicio = max(1, $paginaActual - $rango);
+        $fin = min($paginas, $paginaActual + $rango);
+        $urlBase = '?busqueda=' . urlencode($busqueda) . '&categoria_id=' . urlencode((string)$categoriaId) . '&pagina=';
+    ?>
+    <?php if ($paginas > 1): ?>
+    <div class="paginacion-info">Página <?php echo $paginaActual; ?> de <?php echo $paginas; ?> (<?php echo number_format((int)$resultado['total']); ?> productos)</div>
+    <nav class="paginacion">
+        <?php if ($paginaActual > 1): ?><a class="pag-flecha" href="<?php echo $urlBase . ($paginaActual - 1); ?>" aria-label="Anterior">‹</a><?php endif; ?>
+        <?php if ($inicio > 1): ?>
+            <a href="<?php echo $urlBase . '1'; ?>">1</a>
+            <?php if ($inicio > 2): ?><span class="pag-puntos">…</span><?php endif; ?>
+        <?php endif; ?>
+        <?php for ($i = $inicio; $i <= $fin; $i++): ?>
+            <a class="<?php echo $i === $paginaActual ? 'activa' : ''; ?>" href="<?php echo $urlBase . $i; ?>"><?php echo $i; ?></a>
+        <?php endfor; ?>
+        <?php if ($fin < $paginas): ?>
+            <?php if ($fin < $paginas - 1): ?><span class="pag-puntos">…</span><?php endif; ?>
+            <a href="<?php echo $urlBase . $paginas; ?>"><?php echo $paginas; ?></a>
+        <?php endif; ?>
+        <?php if ($paginaActual < $paginas): ?><a class="pag-flecha" href="<?php echo $urlBase . ($paginaActual + 1); ?>" aria-label="Siguiente">›</a><?php endif; ?>
+    </nav>
+    <?php endif; ?>
 </section>
 <?php require APP_PATH . 'Views/layouts/footer.php'; ?>

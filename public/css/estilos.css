@@ -584,9 +584,14 @@ body.modal-open {
 .btn-ligero { background: var(--color-fondo-oscuro); color: var(--color-texto); }
 .stock { display: inline-block; min-width: 2rem; padding: .15rem .45rem; border-radius: 999px; background: #e6f4ea; color: var(--color-exito); font-weight: 700; text-align: center; }
 .stock-bajo { background: #fff2cc; color: #8a6200; font-weight: 700; }
-.paginacion { display: flex; gap: .35rem; justify-content: flex-end; padding-top: 1rem; }
-.paginacion a { padding: .35rem .65rem; border: 1px solid var(--color-borde); border-radius: 4px; color: var(--color-primario); text-decoration: none; }
-.paginacion a.activa { background: var(--color-primario); color: var(--color-blanco); }
+.paginacion { display: flex; flex-wrap: wrap; gap: .35rem; justify-content: flex-end; align-items: center; padding-top: 1rem; }
+.paginacion a { padding: .35rem .65rem; border: 1px solid var(--color-borde); border-radius: 4px; color: var(--color-primario); text-decoration: none; min-width: 2rem; text-align: center; }
+.paginacion a:hover { background: var(--color-fondo-oscuro); border-color: var(--color-primario); }
+.paginacion a.activa { background: var(--color-primario); color: var(--color-blanco); border-color: var(--color-primario); }
+.paginacion a.activa:hover { background: var(--color-primario); }
+.paginacion a.pag-flecha { font-weight: 700; font-size: 1rem; line-height: 1; padding-top: .45rem; padding-bottom: .45rem; }
+.paginacion .pag-puntos { padding: .35rem .25rem; color: var(--color-texto-claro); }
+.paginacion-info { text-align: right; font-size: .8rem; color: var(--color-texto-claro); padding-top: 1rem; }
 .alerta-exito { background: #c6f6d5; color: var(--color-exito); border: 1px solid #9ae6b4; }
 .alerta-info { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; flex-wrap: wrap; }
 .lan-analizador-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }

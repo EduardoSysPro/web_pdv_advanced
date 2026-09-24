@@ -116,6 +116,7 @@ web_pdv_advanced/
 ├── sql/
 │   ├── esquema_instalacion_limpia.sql
 │   ├── instalar_advanced.sql
+│   ├── optimizacion_indices.sql
 │   └── productos_ejemplo_750.sql
 ├── vendor/
 ├── index.php

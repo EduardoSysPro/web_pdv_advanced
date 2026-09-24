@@ -18,7 +18,7 @@ class InventarioController extends Controller
         $this->requerirAdministrador();
         $busqueda = trim($_GET['busqueda'] ?? '');
         $productos = $busqueda === '' ? [] : $this->modeloProducto->buscarPorNombreOCodigo($busqueda, 50);
-        $bajoStock = $this->modeloProducto->obtenerProductosBajoStock();
+        $bajoStock = $this->modeloProducto->obtenerProductosBajoStock(max(1, (int)($_GET['pagina_stock'] ?? 1)), 30);
         $productoSeleccionado = (int)($_GET['producto_id'] ?? 0);
         $productoElegido = $productoSeleccionado > 0 ? $this->modeloProducto->obtenerPorId($productoSeleccionado) : null;
         $mensaje = $_SESSION['mensaje_inventario'] ?? null;

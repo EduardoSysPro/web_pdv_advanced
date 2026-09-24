@@ -113,6 +113,8 @@ CREATE TABLE productos (
     FULLTEXT KEY ft_productos_nombre (nombre),
     -- Índice para filtrar por categoría
     KEY idx_productos_categoria_id (categoria_id),
+    -- Índice compuesto para listados filtrados por categoría ordenados por nombre
+    KEY idx_productos_categoria_nombre (categoria_id, nombre),
     -- Índice para identificar productos con stock bajo
     KEY idx_productos_stock (stock),
     -- Llave foránea hacia categorías

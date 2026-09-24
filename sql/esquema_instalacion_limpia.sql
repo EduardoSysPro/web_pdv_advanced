@@ -106,6 +106,7 @@ CREATE TABLE productos (
     KEY idx_productos_nombre (nombre),
     FULLTEXT KEY ft_productos_nombre (nombre),
     KEY idx_productos_categoria_id (categoria_id),
+    KEY idx_productos_categoria_nombre (categoria_id, nombre),
     KEY idx_productos_stock (stock),
     CONSTRAINT fk_productos_categoria
         FOREIGN KEY (categoria_id)

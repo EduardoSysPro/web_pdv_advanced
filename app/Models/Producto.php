@@ -371,7 +371,7 @@ class Producto extends Controller
         // Plan rápido (usa índices): solo para términos medianos/largos y con FULLTEXT instalado.
         // Si no da resultados, se cae al LIKE completo para no perder búsquedas por subcadena.
         $filas = false;
-        if (strlen($termino) >= 3 && $this->tieneFulltextNombre()) {
+        if (strlen($termino) >= 2 && $this->tieneFulltextNombre()) {
             $filas = $this->buscarFilasFulltext($termino, $limite);
         }
         if ($filas === false || count($filas) === 0) {
@@ -452,20 +452,39 @@ class Producto extends Controller
         return $resultados;
     }
 
-    public function obtenerProductosBajoStock()
+    public function obtenerProductosBajoStock($pagina = 1, $porPagina = 30)
     {
-        $stmt = $this->pdo->query('SELECT p.id, p.codigo_barras, p.nombre, p.stock, p.stock_minimo,
-                                          (p.stock_minimo - p.stock) AS diferencia
-                                   FROM productos p
-                                   WHERE p.stock <= p.stock_minimo
-                                   ORDER BY diferencia DESC, p.nombre ASC');
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $pagina = max(1, (int)$pagina);
+        $porPagina = max(1, min(100, (int)$porPagina));
+        $offset = ($pagina - 1) * $porPagina;
+
+        $stmt = $this->pdo->query('SELECT COUNT(*) FROM productos WHERE stock <= stock_minimo');
+        $total = (int)$stmt->fetchColumn();
+
+        $stmt = $this->pdo->prepare('SELECT p.id, p.codigo_barras, p.nombre, p.stock, p.stock_minimo,
+                                            (p.stock_minimo - p.stock) AS diferencia
+                                     FROM productos p
+                                     WHERE p.stock <= p.stock_minimo
+                                     ORDER BY diferencia DESC, p.nombre ASC
+                                     LIMIT :limite OFFSET :offset');
+        $stmt->bindValue(':limite', $porPagina, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return ['productos' => $stmt->fetchAll(), 'total' => $total, 'pagina' => $pagina, 'porPagina' => $porPagina];
     }
 
     public function contarProductosBajoStock()
     {
+        $ahora = time();
+        if (isset($_SESSION['cache_stock_bajo']['generado'], $_SESSION['cache_stock_bajo']['cantidad'])
+            && ($ahora - (int)$_SESSION['cache_stock_bajo']['generado'] < 30)) {
+            return (int)$_SESSION['cache_stock_bajo']['cantidad'];
+        }
         $stmt = $this->pdo->query('SELECT COUNT(*) FROM productos WHERE stock <= stock_minimo');
-        return (int)$stmt->fetchColumn();
+        $cantidad = (int)$stmt->fetchColumn();
+        $_SESSION['cache_stock_bajo'] = ['generado' => $ahora, 'cantidad' => $cantidad];
+        return $cantidad;
     }
 
     public function actualizarStockManual($productoId, $cantidad, $operacion)

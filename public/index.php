@@ -38,7 +38,7 @@ $router = new Router();
 $router->get('/',      'HomeController@index');
 $router->get('/login', 'AuthController@login');
 $router->post('/autenticar', 'AuthController@autenticar');
-$router->get('/logout', 'AuthController@logout');
+$router->post('/logout', 'AuthController@logout');
 
 $router->get('/movil', 'VentasController@movil');
 
@@ -144,7 +144,6 @@ $router->get('/soporte', 'SoporteController@index');
 $router->get('/comprobantes', 'ComprobantesController@index');
 $router->get('/comprobantes/imprimir/{id}', 'ComprobantesController@imprimir');
 
-$router->get('/impresora/imprimir-venta/{id}', 'ImpresoraController@imprimirVenta');
 $router->post('/impresora/imprimir-venta/{id}', 'ImpresoraController@imprimirVenta');
 $router->post('/impresora/probar', 'ImpresoraController@probar');
 $router->post('/impresora/escaneo-lan', 'ImpresoraController@escaneoLan');

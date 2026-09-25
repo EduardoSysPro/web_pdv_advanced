@@ -237,6 +237,7 @@
                             <option value="<?php echo (int)$cliente['id']; ?>"><?php echo htmlspecialchars($cliente['nombre']); ?> - Saldo <?php echo formatearMoneda($cliente['saldo_pendiente']); ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <?php if (count($clientes) >= 100): ?><small style="color:#64748b;">Mostrando los primeros 100. Busca por RTN para encontrar otros clientes.</small><?php endif; ?>
                 </div>
 
                 <!-- Pendiente por cubrir -->

@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (IMPRESORA_LAN_ACTIVA) {
-            fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(id), { method: 'GET', credentials: 'same-origin' })
+            fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(id), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ csrf_token: obtenerCsrfToken() }) })
                 .then(r => r.json())
                 .then(info => {
                     alert(info && info.exito === true ? 'Ticket enviado a la impresora LAN.' : 'No se pudo imprimir por LAN: ' + (info && info.mensaje || 'error desconocido'));
@@ -1303,7 +1303,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (imprimirRecibo) {
                 if (IMPRESORA_LAN_ACTIVA) {
-                    fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(resp.venta_id), { method: 'GET', credentials: 'same-origin' })
+                    fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(resp.venta_id), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ csrf_token: obtenerCsrfToken() }) })
                         .then(r => r.json())
                         .then(info => alert(info && info.exito === true ? 'Ticket impreso en la impresora LAN.' : 'No se pudo imprimir por LAN: ' + (info && info.mensaje || 'error desconocido')))
                         .catch(() => alert('No se pudo imprimir por la impresora LAN.'));

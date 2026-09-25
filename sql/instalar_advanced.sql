@@ -206,6 +206,7 @@ CREATE TABLE compras (
     KEY idx_compras_usuario (usuario_id),
     KEY idx_compras_fecha (fecha_emision),
     KEY idx_compras_estado (estado),
+    KEY idx_compras_cxp (estado, condicion_pago, saldo_pendiente, fecha_vencimiento),
     CONSTRAINT fk_compras_proveedor FOREIGN KEY (proveedor_id) REFERENCES proveedores (id) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT fk_compras_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_compras_referencia FOREIGN KEY (documento_referencia_id) REFERENCES compras (id) ON DELETE SET NULL ON UPDATE CASCADE
@@ -253,6 +254,7 @@ CREATE TABLE pagos_proveedores (
     KEY idx_pagos_proveedores_compra (compra_id),
     KEY idx_pagos_proveedores_proveedor (proveedor_id),
     KEY idx_pagos_proveedores_usuario (usuario_id),
+    KEY idx_pagos_prov_compra_fecha (compra_id, fecha),
     CONSTRAINT fk_pagos_prov_compra FOREIGN KEY (compra_id) REFERENCES compras (id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_pagos_prov_proveedor FOREIGN KEY (proveedor_id) REFERENCES proveedores (id) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT fk_pagos_prov_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE RESTRICT ON UPDATE CASCADE
@@ -298,6 +300,9 @@ CREATE TABLE ventas (
     KEY idx_ventas_usuario_id (usuario_id),
     KEY idx_ventas_caja_id (caja_id),
     KEY idx_ventas_cliente_id (cliente_id),
+    KEY idx_ventas_fecha_usuario_caja (fecha_venta, usuario_id, caja_id),
+    KEY idx_ventas_cliente_metodo_fecha (cliente_id, metodo_pago, fecha_venta),
+    KEY idx_ventas_metodo_fecha (metodo_pago, fecha_venta),
     -- Llaves foráneas
     CONSTRAINT fk_ventas_usuario
         FOREIGN KEY (usuario_id)
@@ -329,6 +334,7 @@ CREATE TABLE pagos_clientes (
     observacion VARCHAR(255) NULL,
     fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_pagos_cliente (cliente_id),
+    KEY idx_pagos_cli_fecha (cliente_id, fecha),
     KEY idx_pagos_usuario (usuario_id),
     CONSTRAINT fk_pagos_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_pagos_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT ON UPDATE CASCADE
@@ -408,6 +414,7 @@ CREATE TABLE cotizaciones (
     KEY idx_cotizaciones_cliente (cliente_id),
     KEY idx_cotizaciones_venta (venta_id),
     KEY idx_cotizaciones_creada (creada_en),
+    KEY idx_cot_vend_estado_creada (vendedor_id, estado, creada_en),
     CONSTRAINT fk_cot_vendedor FOREIGN KEY (vendedor_id) REFERENCES usuarios (id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_cot_cliente  FOREIGN KEY (cliente_id)  REFERENCES clientes (id) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT fk_cot_venta    FOREIGN KEY (venta_id)    REFERENCES ventas (id)   ON DELETE SET NULL ON UPDATE CASCADE
@@ -459,6 +466,7 @@ CREATE TABLE caja_movimientos (
     -- Índice para filtrar por usuario
     KEY idx_caja_movimientos_usuario_id (usuario_id),
     KEY idx_caja_movimientos_caja_id (caja_id),
+    KEY idx_caja_mov_usu_caja_fecha (usuario_id, caja_id, fecha, tipo),
     -- Llave foránea hacia usuarios
     CONSTRAINT fk_caja_movimientos_usuario
         FOREIGN KEY (usuario_id)
@@ -498,6 +506,11 @@ CREATE TABLE inventario_movimientos (
     CONSTRAINT fk_inventario_producto FOREIGN KEY (producto_id) REFERENCES productos (id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_inventario_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bitácora de ajustes de inventario';
+
+CREATE TABLE secuencias (
+    nombre VARCHAR(50) NOT NULL PRIMARY KEY,
+    valor  INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================================
 -- DATOS DE PRUEBA

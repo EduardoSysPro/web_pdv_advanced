@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/pos_movil.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/pos_movil.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/pos_movil.css'); ?>">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/cotizaciones.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/cotizaciones.css'); ?>">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/dark.css">
     <meta name="csrf-token" content="<?php echo htmlspecialchars(csrf_token()); ?>">
@@ -40,10 +40,13 @@
                     <span>Escritorio</span>
                 </a>
             <?php endif; ?>
-                <a href="<?php echo URL_BASE; ?>logout" class="btn-movil-logout" title="Cerrar Sesión">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                    <span>Salir</span>
-                </a>
+                <form action="<?php echo URL_BASE; ?>logout" method="POST" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                    <button type="submit" class="btn-movil-logout" title="Cerrar Sesión">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span>Salir</span>
+                    </button>
+                </form>
             </div>
         </header>
 

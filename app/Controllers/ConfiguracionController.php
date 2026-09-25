@@ -66,6 +66,10 @@ class ConfiguracionController extends Controller
                 $_SESSION['error_configuracion'] = 'El logotipo debe ser PNG, JPG o WEBP.';
                 $this->redirigir('configuracion');
             }
+            if ((int)$_FILES['logotipo']['size'] > 2 * 1024 * 1024) {
+                $_SESSION['error_configuracion'] = 'El logotipo no puede superar los 2 MB.';
+                $this->redirigir('configuracion');
+            }
             $directorio = PUBLIC_PATH . 'uploads' . DIRECTORY_SEPARATOR;
             if (!is_dir($directorio)) mkdir($directorio, 0755, true);
             $archivo = $directorio . 'logo.png';

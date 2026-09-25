@@ -12,9 +12,10 @@ class Cliente extends Controller
         $this->pdo = Database::getInstancia()->getConexion();
     }
 
-    public function obtenerTodos($busqueda = '')
+    public function obtenerTodos($busqueda = '', $limite = 200)
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM clientes WHERE nombre LIKE :busqueda_nombre OR rtn_identidad LIKE :busqueda_rtn ORDER BY nombre');
+        $limite = max(1, min(1000, (int)$limite));
+        $stmt = $this->pdo->prepare('SELECT * FROM clientes WHERE nombre LIKE :busqueda_nombre OR rtn_identidad LIKE :busqueda_rtn ORDER BY nombre LIMIT ' . $limite);
         $termino = '%' . $busqueda . '%';
         $stmt->execute([':busqueda_nombre' => $termino, ':busqueda_rtn' => $termino]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

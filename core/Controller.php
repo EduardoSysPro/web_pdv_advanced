@@ -41,7 +41,13 @@ class Controller
         exit;
     }
 
-    $rol = $_SESSION['rol'] ?? 'cajero';
+    $rol = $_SESSION['rol'] ?? '';
+
+    // Fail-closed: sesión sin rol válido no puede operar.
+    if (!in_array($rol, ['admin', 'administrador', 'cajero', 'vendedor', 'cajero_movil'], true)) {
+        $this->redirigir('login');
+        exit;
+    }
 
     // Vendedor (y Cajero Móvil, que ahora Funciona como vendedor):
     // acceso limitado al módulo de cotizaciones, la terminal móvil y endpoints necesarios
@@ -127,12 +133,17 @@ class Controller
         exit;
     }
 
+    protected function esAdmin()
+    {
+        $rol = strtolower((string)($_SESSION['rol'] ?? ''));
+        // Fuente de verdad: nombre del rol. rol_id se conserva por compatibilidad.
+        return in_array($rol, ['admin', 'administrador'], true) || (int)($_SESSION['rol_id'] ?? 0) === 1;
+    }
+
     protected function requerirAdministrador()
     {
         $this->requerirAutenticacion();
-        $rol = strtolower((string)($_SESSION['rol'] ?? ''));
-        $rolId = (int)($_SESSION['rol_id'] ?? 0);
-        if ($rolId !== 1 && !in_array($rol, ['admin', 'administrador'], true)) {
+        if (!$this->esAdmin()) {
             $_SESSION['error_usuarios'] = 'No tienes permisos para acceder a esta sección.';
             $this->redirigir('ventas');
             exit;

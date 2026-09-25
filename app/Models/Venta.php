@@ -47,7 +47,10 @@ class Venta extends Controller
         $tabla = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$tabla);
         $columna = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$columna);
         if ($tabla === '' || $columna === '') return false;
+        static $cache = [];
+        $clave = $tabla . '.' . $columna;
+        if (array_key_exists($clave, $cache)) return $cache[$clave];
         $stmt = $this->pdo->query("SHOW COLUMNS FROM `{$tabla}` LIKE '{$columna}'");
-        return $stmt !== false && $stmt->rowCount() > 0;
+        return $cache[$clave] = ($stmt !== false && $stmt->rowCount() > 0);
     }
 }

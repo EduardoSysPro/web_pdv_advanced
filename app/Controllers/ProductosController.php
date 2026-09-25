@@ -237,7 +237,8 @@ class ProductosController extends Controller
 
     private function eliminarArchivoImagen($nombre)
     {
-        if ($nombre === '') {
+        $nombre = basename((string)$nombre);
+        if ($nombre === '' || $nombre === '.' || $nombre === '..') {
             return;
         }
         $ruta = PUBLIC_PATH . 'uploads' . DIRECTORY_SEPARATOR . 'productos' . DIRECTORY_SEPARATOR . $nombre;

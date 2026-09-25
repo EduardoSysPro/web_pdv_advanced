@@ -29,13 +29,9 @@ class CotizacionesController extends Controller
         $this->requerirAutenticacion();
         $rol = strtolower((string)($_SESSION['rol'] ?? ''));
         $filtro = trim($_GET['estado'] ?? 'pendiente');
-        $todas = $this->modeloCotizacion->obtenerTodas();
-        $conteos = ['pendiente' => 0, 'facturada' => 0, 'cancelada' => 0];
-        foreach ($todas as $fila) {
-            $conteos[$fila['estado']] = ($conteos[$fila['estado']] ?? 0) + 1;
-        }
         $seleccion = in_array($filtro, ['pendiente', 'facturada', 'cancelada', 'todas'], true) ? $filtro : 'pendiente';
         $vendedorId = $this->esVendedor() ? (int)$_SESSION['id'] : null;
+        $conteos = $this->modeloCotizacion->obtenerConteos($vendedorId);
         $cotizaciones = $seleccion === 'todas'
             ? $this->modeloCotizacion->obtenerTodas(null, $vendedorId)
             : $this->modeloCotizacion->obtenerTodas($seleccion, $vendedorId);
@@ -468,7 +464,7 @@ class CotizacionesController extends Controller
     private function todosLosClientes()
     {
         $pdo = Database::getInstancia()->getConexion();
-        $stmt = $pdo->query('SELECT id, nombre, rtn_identidad, telefono, direccion FROM clientes ORDER BY nombre ASC');
+        $stmt = $pdo->query('SELECT id, nombre, rtn_identidad, telefono, direccion FROM clientes ORDER BY nombre ASC LIMIT 200');
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -532,7 +528,7 @@ class CotizacionesController extends Controller
         }
         if ($idsProductos) {
             $idsTexto = implode(',', array_map('intval', $idsProductos));
-            $stmtInfo = $pdo->query('SELECT id, nombre, nombre_empaque, unidades_por_empaque' . ($hasImpuesto ? ', tipo_impuesto, porcentaje_isv' : '') . ' FROM productos WHERE id IN (' . $idsTexto . ')');
+            $stmtInfo = $pdo->query('SELECT id, nombre, nombre_empaque, unidades_por_empaque, precio_venta, precio_empaque' . ($hasImpuesto ? ', tipo_impuesto, porcentaje_isv' : '') . ' FROM productos WHERE id IN (' . $idsTexto . ')');
             foreach ($stmtInfo->fetchAll(PDO::FETCH_ASSOC) as $fila) {
                 $infoProductos[(int)$fila['id']] = $fila;
             }
@@ -567,7 +563,10 @@ class CotizacionesController extends Controller
             $porcentajeIsv = 15.0;
             $nombreProducto = 'Producto ' . $productoId;
             $prodInfo = $infoProductos[$productoId] ?? null;
-            if ($prodInfo) {
+            if (!$prodInfo) {
+                throw new RuntimeException('El producto #' . $productoId . ' no existe.');
+            }
+            {
                 $nombreProducto = $prodInfo['nombre'];
                 if ($tipoPresentacion === 'empaque') {
                     if ($factorUnidades <= 1.0 && (float)$prodInfo['unidades_por_empaque'] > 1.0) {
@@ -580,6 +579,16 @@ class CotizacionesController extends Controller
                 if ($hasImpuesto && !empty($prodInfo['tipo_impuesto'])) {
                     $tipoImpuesto = $prodInfo['tipo_impuesto'];
                     $porcentajeIsv = (float)$prodInfo['porcentaje_isv'];
+                }
+                // Recotejo: el precio de lista debe coincidir con el registrado en BD.
+                $precioBase = $tipoPresentacion === 'empaque'
+                    ? (float)($prodInfo['precio_empaque'] ?? 0)
+                    : (float)($prodInfo['precio_venta'] ?? 0);
+                if ($precioBase <= 0) {
+                    throw new RuntimeException('El producto "' . $nombreProducto . '" no tiene precio de ' . $tipoPresentacion . ' registrado.');
+                }
+                if (abs(round($precioLista, 2) - round($precioBase, 2)) > 0.01) {
+                    throw new RuntimeException('El precio del producto "' . $nombreProducto . '" no coincide con el registrado en el sistema.');
                 }
             }
 
@@ -681,7 +690,10 @@ class CotizacionesController extends Controller
         $tabla = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$tabla);
         $columna = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$columna);
         if ($tabla === '' || $columna === '') return false;
+        static $cache = [];
+        $clave = $tabla . '.' . $columna;
+        if (array_key_exists($clave, $cache)) return $cache[$clave];
         $stmt = Database::getInstancia()->getConexion()->query("SHOW COLUMNS FROM `{$tabla}` LIKE '{$columna}'");
-        return $stmt !== false && $stmt->rowCount() > 0;
+        return $cache[$clave] = ($stmt !== false && $stmt->rowCount() > 0);
     }
 }

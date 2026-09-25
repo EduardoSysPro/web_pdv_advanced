@@ -189,7 +189,9 @@ class Producto extends Controller
         $stmt = $this->pdo->prepare('INSERT INTO productos (codigo_barras, nombre, precio_costo, precio_venta, stock, stock_minimo, unidad_medida, permite_decimales, categoria_id, tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque, tipo_impuesto, porcentaje_isv, imagen)
                 VALUES (:codigo_barras, :nombre, :precio_costo, :precio_venta, :stock, :stock_minimo, :unidad_medida, :permite_decimales, :categoria_id, :tipo_venta, :nombre_empaque, :unidades_por_empaque, :precio_empaque, :codigo_barras_empaque, :tipo_impuesto, :porcentaje_isv, :imagen)');
         $this->vincularDatos($stmt, $datos);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        if ($ok) self::invalidarCacheStockBajo();
+        return $ok;
     }
 
     public function actualizar($id, $datos)
@@ -202,14 +204,18 @@ class Producto extends Controller
                 tipo_impuesto = :tipo_impuesto, porcentaje_isv = :porcentaje_isv, imagen = :imagen WHERE id = :id');
         $this->vincularDatos($stmt, $datos);
         $stmt->bindValue(':id', (int)$id, PDO::PARAM_INT);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        if ($ok) self::invalidarCacheStockBajo();
+        return $ok;
     }
 
     public function eliminar($id)
     {
         $stmt = $this->pdo->prepare('DELETE FROM productos WHERE id = :id');
         $stmt->bindValue(':id', (int)$id, PDO::PARAM_INT);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        if ($ok) self::invalidarCacheStockBajo();
+        return $ok;
     }
 
     private function vincularDatos($stmt, $datos)
@@ -487,6 +493,11 @@ class Producto extends Controller
         return $cantidad;
     }
 
+    public static function invalidarCacheStockBajo()
+    {
+        unset($_SESSION['cache_stock_bajo']);
+    }
+
     public function actualizarStockManual($productoId, $cantidad, $operacion)
     {
         $cantidad = (int)$cantidad;
@@ -504,6 +515,8 @@ class Producto extends Controller
             $stmt->bindValue(':cantidad_condicion', $cantidad, PDO::PARAM_INT);
         }
         $stmt->execute();
-        return $stmt->rowCount() === 1;
+        $ok = $stmt->rowCount() === 1;
+        if ($ok) self::invalidarCacheStockBajo();
+        return $ok;
     }
 }

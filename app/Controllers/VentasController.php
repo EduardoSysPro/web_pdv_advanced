@@ -28,7 +28,7 @@ class VentasController extends Controller
         $rolClase = $rolUsuario === 'admin' ? 'badge-admin' : 'badge-cajero';
         $fechaActual = date('d/m/Y H:i');
         $urlBase = URL_BASE;
-        $clientes = $this->modeloCliente->obtenerTodos();
+        $clientes = $this->modeloCliente->obtenerTodos('', 100);
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
         $impresoraLanActiva = (string)($configuracion['impresora_lan_activa'] ?? '0') === '1' && trim((string)($configuracion['impresora_lan_ip'] ?? '')) !== '';
 
@@ -55,7 +55,7 @@ class VentasController extends Controller
         $cajaNombre = htmlspecialchars($_SESSION['caja_nombre'] ?? 'Caja Móvil');
         $sucursalNombre = htmlspecialchars($_SESSION['sucursal_nombre'] ?? 'Mi Negocio');
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
-        $clientes = $this->modeloCliente->obtenerTodos();
+        $clientes = $this->modeloCliente->obtenerTodos('', 100);
         $urlBase = URL_BASE;
         $impresoraLanActiva = (string)($configuracion['impresora_lan_activa'] ?? '0') === '1' && trim((string)($configuracion['impresora_lan_ip'] ?? '')) !== '';
         $esAdmin = ((int)($_SESSION['rol_id'] ?? 0) === 1 || in_array(($_SESSION['rol'] ?? ''), ['admin', 'administrador'], true));
@@ -755,6 +755,7 @@ class VentasController extends Controller
             }
 
             $pdo->commit();
+            Producto::invalidarCacheStockBajo();
 
             echo json_encode([
                 'exito'   => true,
@@ -911,11 +912,8 @@ class VentasController extends Controller
 
     private function generarFolioRecibo($pdo)
     {
-        $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM ventas WHERE folio LIKE 'REC-%'");
-        $stmt->execute();
-        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
-        $consecutivo = (int)($fila['total'] ?? 0) + 1;
-        return 'REC-' . str_pad((string)$consecutivo, 8, '0', STR_PAD_LEFT);
+        require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Secuencia.php';
+        return (new Secuencia())->siguiente('ventas_recibo', 'REC-', 8);
     }
 
     /**
@@ -963,7 +961,10 @@ class VentasController extends Controller
         $tabla = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$tabla);
         $columna = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$columna);
         if ($tabla === '' || $columna === '') return false;
+        static $cache = [];
+        $clave = $tabla . '.' . $columna;
+        if (array_key_exists($clave, $cache)) return $cache[$clave];
         $stmt = $pdo->query("SHOW COLUMNS FROM `{$tabla}` LIKE '{$columna}'");
-        return $stmt !== false && $stmt->rowCount() > 0;
+        return $cache[$clave] = ($stmt !== false && $stmt->rowCount() > 0);
     }
 }

@@ -760,6 +760,10 @@ body.modal-open {
 .kpis-reportes strong, .metodos-reporte strong { display: block; color: var(--color-primario); font-size: 1.3rem; margin-top: .25rem; }
 .kpis-reportes small { display: block; color: var(--color-texto-claro); margin-top: .25rem; }
 .kpis-reportes .kpi-ganancia { border-color: var(--color-exito); background: #f0fff4; }
+.kpi-delta { display: inline-block; font-size: .75rem; font-weight: 700; margin-top: .3rem; padding: .1rem .45rem; border-radius: 999px; }
+.kpi-delta-sub { background: #dcfce7; color: #166534; }
+.kpi-delta-baj { background: #fee2e2; color: #991b1b; }
+.kpi-delta-igu { background: #e2e8f0; color: #475569; }
 .metodos-reporte { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; }
 .reporte-acciones { display: flex; gap: .6rem; }
 .tabla-reportes-caja td { vertical-align: middle; }

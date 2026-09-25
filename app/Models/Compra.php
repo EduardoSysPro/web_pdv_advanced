@@ -2,6 +2,7 @@
 
 require_once CORE_PATH . 'Controller.php';
 require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Proveedor.php';
+require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Producto.php';
 
 class Compra extends Controller
 {
@@ -15,9 +16,8 @@ class Compra extends Controller
 
     public function obtenerSiguienteFolio()
     {
-        $stmt = $this->pdo->query('SELECT COUNT(*) FROM compras');
-        $consecutivo = (int)$stmt->fetchColumn() + 1;
-        return 'COMP-' . str_pad((string)$consecutivo, 6, '0', STR_PAD_LEFT);
+        require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Secuencia.php';
+        return (new Secuencia())->siguiente('compras', 'COMP-', 6);
     }
 
     public function obtenerHistorial($busqueda = '', $proveedorId = null, $fechaDesde = '', $fechaHasta = '', $estado = '', $limite = 100)
@@ -103,8 +103,9 @@ class Compra extends Controller
             $parametros[':busqueda_folio'] = $termino;
         }
         $where = ' WHERE ' . implode(' AND ', $condiciones);
-        $sql = 'SELECT c.*, COALESCE((SELECT SUM(monto) FROM pagos_proveedores pp WHERE pp.compra_id = c.id), 0) AS abonado
-                FROM compras c' . $where . '
+        $sql = 'SELECT c.*, COALESCE(SUM(pp.monto), 0) AS abonado
+                FROM compras c LEFT JOIN pagos_proveedores pp ON pp.compra_id = c.id' . $where . '
+                GROUP BY c.id
                 ORDER BY COALESCE(c.fecha_vencimiento, c.fecha_emision) ASC, c.id ASC';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($parametros);
@@ -456,6 +457,7 @@ class Compra extends Controller
             }
 
             $this->pdo->commit();
+            Producto::invalidarCacheStockBajo();
 
             return [
                 'compra_id' => $compraId,
@@ -541,6 +543,7 @@ class Compra extends Controller
             $stmt->execute([':id' => $compraId]);
 
             $this->pdo->commit();
+            Producto::invalidarCacheStockBajo();
             return true;
         } catch (Throwable $e) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();

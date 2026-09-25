@@ -75,7 +75,10 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
             </nav>
 
             <div class="pos-sidebar-bottom">
-                <a class="pos-sidebar-link pos-sidebar-logout" href="<?php echo URL_BASE; ?>logout" data-tooltip="Salir"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Salir</span></a>
+                <form action="<?php echo URL_BASE; ?>logout" method="POST" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                    <button type="submit" class="pos-sidebar-link pos-sidebar-logout" data-tooltip="Salir" style="width:100%;cursor:pointer;background:none;border:none;"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Salir</span></button>
+                </form>
             </div>
         </aside>
 

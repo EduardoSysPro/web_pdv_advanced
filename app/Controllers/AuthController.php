@@ -79,7 +79,7 @@ class AuthController extends Controller
         $_SESSION['nombre'] = $usuarioValidado['nombre'];
         $_SESSION['usuario'] = $usuarioValidado['usuario'];
         $_SESSION['rol'] = $usuarioValidado['rol'];
-        $_SESSION['rol_id'] = $usuarioValidado['rol'] === 'admin' ? 1 : 2;
+        $_SESSION['rol_id'] = in_array($usuarioValidado['rol'], ['admin', 'administrador'], true) ? 1 : 2;
         $_SESSION['caja_id'] = !empty($usuarioValidado['caja_id']) ? (int)$usuarioValidado['caja_id'] : 0;
         $_SESSION['sucursal_nombre'] = $usuarioValidado['sucursal'] ?? 'Mi Negocio';
         $_SESSION['caja_nombre'] = $_SESSION['caja_id'] > 0
@@ -116,6 +116,9 @@ class AuthController extends Controller
 
     public function logout()
     {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirigir('login');
+        }
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }

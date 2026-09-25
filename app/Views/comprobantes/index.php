@@ -15,27 +15,41 @@
 <section class="tarjeta formulario-producto">
     <h2 class="tarjeta-titulo">Buscar comprobante</h2>
     <form method="GET" action="<?php echo URL_BASE; ?>comprobantes" class="form-grid">
+        <div class="campo campo-ancho">
+            <label for="q">Folio, cliente, RTN o #ID</label>
+            <input id="q" name="q" value="<?php echo htmlspecialchars($filtrosVista['q'] ?? ''); ?>" placeholder="Ej. REC-00000012, Juan, 0801... o 15" autofocus>
+        </div>
+
         <div class="campo">
-            <label for="tipo">Buscar por</label>
-            <select id="tipo" name="tipo" required>
-                <option value="folio" <?php echo ($_GET['tipo'] ?? 'folio') === 'folio' ? 'selected' : ''; ?>>Folio/Número</option>
-                <option value="cliente" <?php echo ($_GET['tipo'] ?? 'folio') === 'cliente' ? 'selected' : ''; ?>>Nombre del cliente</option>
-                <option value="fecha" <?php echo ($_GET['tipo'] ?? 'folio') === 'fecha' ? 'selected' : ''; ?>>Fecha (dd/mm/yyyy o yyyy-mm-dd)</option>
-            </select>
+            <label for="desde">Desde</label>
+            <input id="desde" type="date" name="desde" value="<?php echo htmlspecialchars($filtrosVista['desde'] ?? ''); ?>">
+        </div>
+
+        <div class="campo">
+            <label for="hasta">Hasta</label>
+            <input id="hasta" type="date" name="hasta" value="<?php echo htmlspecialchars($filtrosVista['hasta'] ?? ''); ?>">
         </div>
 
         <div class="campo">
             <label for="tipo_comprobante">Tipo de comprobante</label>
             <select id="tipo_comprobante" name="tipo_comprobante">
-                <option value="all" <?php echo ($_GET['tipo_comprobante'] ?? 'all') === 'all' ? 'selected' : ''; ?>>Todos</option>
-                <option value="factura" <?php echo ($_GET['tipo_comprobante'] ?? '') === 'factura' ? 'selected' : ''; ?>>Solo facturas</option>
-                <option value="recibo" <?php echo ($_GET['tipo_comprobante'] ?? '') === 'recibo' ? 'selected' : ''; ?>>Solo recibos</option>
+                <option value="all" <?php echo ($filtrosVista['tipo_comprobante'] ?? 'all') === 'all' ? 'selected' : ''; ?>>Todos</option>
+                <option value="factura" <?php echo ($filtrosVista['tipo_comprobante'] ?? '') === 'factura' ? 'selected' : ''; ?>>Solo facturas</option>
+                <option value="recibo" <?php echo ($filtrosVista['tipo_comprobante'] ?? '') === 'recibo' ? 'selected' : ''; ?>>Solo recibos</option>
             </select>
         </div>
 
-        <div class="campo campo-ancho">
-            <label for="busqueda">Término de búsqueda</label>
-            <input id="busqueda" name="busqueda" value="<?php echo htmlspecialchars($_GET['busqueda'] ?? ''); ?>" placeholder="Ingresa el folio, cliente o fecha..." required>
+        <div class="campo">
+            <label for="metodo_pago">Método de pago</label>
+            <select id="metodo_pago" name="metodo_pago">
+                <?php $mp = $filtrosVista['metodo_pago'] ?? 'all'; ?>
+                <option value="all" <?php echo $mp === 'all' ? 'selected' : ''; ?>>Todos</option>
+                <option value="efectivo" <?php echo $mp === 'efectivo' ? 'selected' : ''; ?>>Efectivo</option>
+                <option value="tarjeta" <?php echo $mp === 'tarjeta' ? 'selected' : ''; ?>>Tarjeta</option>
+                <option value="transferencia" <?php echo $mp === 'transferencia' ? 'selected' : ''; ?>>Transferencia</option>
+                <option value="credito" <?php echo $mp === 'credito' ? 'selected' : ''; ?>>Crédito</option>
+                <option value="mixto" <?php echo $mp === 'mixto' ? 'selected' : ''; ?>>Mixto</option>
+            </select>
         </div>
 
         <div style="grid-column: 1 / -1; display: flex; gap: 8px;">
@@ -47,7 +61,7 @@
 
 <?php if (!empty($comprobantes)): ?>
     <section class="tarjeta usuarios-lista">
-        <h2 class="tarjeta-titulo">Resultados (<?php echo count($comprobantes); ?> comprobantes)</h2>
+        <h2 class="tarjeta-titulo">Resultados (<?php echo (int)$total; ?> comprobante<?php echo (int)$total === 1 ? '' : 's'; ?><?php if (($paginas ?? 1) > 1): ?> · página <?php echo (int)($filtrosVista['pagina'] ?? 1); ?> de <?php echo (int)$paginas; ?><?php endif; ?>)</h2>
         <div class="tabla-responsive">
             <table class="tabla-catalogo">
                 <thead>
@@ -69,7 +83,7 @@
                             <td>
                                 <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; 
                                     <?php echo $comprobante['tipo_comprobante'] === 'factura' ? 'background-color: #dbeafe; color: #0c4a6e;' : 'background-color: #f0fdf4; color: #166534;'; ?>">
-                                    <?php echo ucfirst($comprobante['tipo_comprobante']); ?>
+                                    <?php echo htmlspecialchars(ucfirst((string)$comprobante['tipo_comprobante'])); ?>
                                 </span>
                             </td>
                             <td><?php echo formatearMoneda($comprobante['total']); ?></td>
@@ -82,6 +96,19 @@
                 </tbody>
             </table>
         </div>
+        <?php if (($paginas ?? 1) > 1): ?>
+        <?php
+            $basePag = $filtrosVista;
+            unset($basePag['pagina']);
+            $qs = http_build_query($basePag);
+            $pagActual = (int)($filtrosVista['pagina'] ?? 1);
+        ?>
+        <nav class="paginacion" style="margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:center;">
+            <?php if ($pagActual > 1): ?><a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>comprobantes?<?php echo htmlspecialchars($qs . '&pagina=' . ($pagActual - 1)); ?>">← Anterior</a><?php endif; ?>
+            <span>Página <?php echo $pagActual; ?> de <?php echo (int)$paginas; ?></span>
+            <?php if ($pagActual < (int)$paginas): ?><a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>comprobantes?<?php echo htmlspecialchars($qs . '&pagina=' . ($pagActual + 1)); ?>">Siguiente →</a><?php endif; ?>
+        </nav>
+        <?php endif; ?>
     </section>
 <?php endif; ?>
 
@@ -90,6 +117,8 @@
 <script>
 (function () {
     var URL_BASE = '<?php echo URL_BASE; ?>';
+    var metaCsrf = document.querySelector('meta[name="csrf-token"]');
+    var CSRF = metaCsrf ? metaCsrf.getAttribute('content') : '';
     var alerta = document.createElement('div');
     alerta.id = 'alerta-impresion-lan';
     alerta.style.margin = '12px 0';
@@ -101,7 +130,7 @@
             btn.disabled = true;
             alerta.className = 'alerta alerta-info';
             alerta.textContent = 'Enviando a la impresora LAN...';
-            fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(id) + '?copias=1', { method: 'GET', credentials: 'same-origin' })
+            fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(id) + '?copias=1', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ csrf_token: CSRF }) })
                 .then(function (r) { return r.json(); })
                 .then(function (datos) {
                     alerta.textContent = datos.mensaje || 'Sin respuesta del servidor.';

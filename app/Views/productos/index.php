@@ -48,7 +48,7 @@
                         <?php if ($tieneEmpaque): ?>
                             <div style="margin-top: 3px;">
                                 <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 11px; padding: 2px 6px; border-radius: 4px;">
-                                    📦 <?php echo htmlspecialchars($nomEmp); ?> x<?php echo $cantEmp; ?>: <?php echo formatearMoneda($producto['precio_empaque']); ?>
+                                    📦 <?php echo htmlspecialchars($nomEmp); ?> x<?php echo htmlspecialchars((string)$cantEmp); ?>: <?php echo formatearMoneda($producto['precio_empaque']); ?>
                                 </span>
                             </div>
                         <?php endif; ?>

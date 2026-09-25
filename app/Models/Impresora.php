@@ -331,12 +331,15 @@ class Impresora
         $stmt->execute([':venta_id' => (int)$ventaId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
     private function columnaExiste($tabla, $columna)
     {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :tabla AND COLUMN_NAME = :columna");
+        static $cache = [];
+        $clave = $tabla . '.' . $columna;
+        if (array_key_exists($clave, $cache)) return $cache[$clave];
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() 
+AND TABLE_NAME = :tabla AND COLUMN_NAME = :columna");
         $stmt->execute([':tabla' => $tabla, ':columna' => $columna]);
-        return (int)$stmt->fetchColumn() > 0;
+        return $cache[$clave] = ((int)$stmt->fetchColumn() > 0);
     }
 
     /**

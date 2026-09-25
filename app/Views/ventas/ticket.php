@@ -92,6 +92,10 @@ if (($venta['metodo_pago'] ?? 'efectivo') === 'mixto' && !empty($pagosJson)) {
         }
     }
 }
+$metodoTicket = $venta['metodo_pago'] ?? 'efectivo';
+$etiquetasMetodo = ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia', 'credito' => 'Crédito', 'mixto' => 'Mixto'];
+$etiquetaMetodo = $etiquetasMetodo[$metodoTicket] ?? ucfirst((string)$metodoTicket);
+$esEfectivoTicket = in_array($metodoTicket, ['efectivo', 'mixto'], true);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -267,23 +271,36 @@ foreach ($copiasImprimir as $etiquetaCopia):
                 <td><strong>Total a Pagar:</strong></td>
                 <td class="text-right"><strong>L <?= number_format($totalVenta, 2) ?></strong></td>
             </tr>
-            <?php if (($venta['metodo_pago'] ?? 'efectivo') === 'mixto' && !empty($pagosDesglose)): ?>
+            <tr>
+                <td>Forma de pago:</td>
+                <td class="text-right"><?= htmlspecialchars($etiquetaMetodo) ?></td>
+            </tr>
+            <?php if ($metodoTicket === 'mixto' && !empty($pagosDesglose)): ?>
                 <?php foreach ($pagosDesglose as $pg): ?>
                 <tr>
                     <td>&nbsp;&nbsp;<?= htmlspecialchars(ucfirst($pg['metodo'])) ?>:</td>
                     <td class="text-right">L <?= number_format($pg['monto'], 2) ?></td>
                 </tr>
                 <?php endforeach; ?>
-            <?php else: ?>
-            <tr>
-                <td>Efectivo / Recibido:</td>
-                <td class="text-right">L <?= number_format($venta['pagado_con'] ?? $venta['efectivo'] ?? 0, 2) ?></td>
-            </tr>
-            <?php endif; ?>
             <tr>
                 <td>Cambio:</td>
                 <td class="text-right">L <?= number_format($venta['cambio'] ?? 0, 2) ?></td>
             </tr>
+            <?php elseif ($esEfectivoTicket): ?>
+            <tr>
+                <td>Efectivo / Recibido:</td>
+                <td class="text-right">L <?= number_format($venta['pagado_con'] ?? $venta['efectivo'] ?? 0, 2) ?></td>
+            </tr>
+            <tr>
+                <td>Cambio:</td>
+                <td class="text-right">L <?= number_format($venta['cambio'] ?? 0, 2) ?></td>
+            </tr>
+            <?php else: ?>
+            <tr>
+                <td>Total pagado (<?= htmlspecialchars($etiquetaMetodo) ?>):</td>
+                <td class="text-right">L <?= number_format($totalVenta, 2) ?></td>
+            </tr>
+            <?php endif; ?>
         </table>
     <?php else: ?>
         <table>
@@ -297,25 +314,34 @@ foreach ($copiasImprimir as $etiquetaCopia):
             </tr>
             <tr>
                 <td>Forma de pago:</td>
-                <td class="text-right"><?= htmlspecialchars(ucfirst($venta['metodo_pago'] ?? 'efectivo')) ?></td>
+                <td class="text-right"><?= htmlspecialchars($etiquetaMetodo) ?></td>
             </tr>
-            <?php if (($venta['metodo_pago'] ?? 'efectivo') === 'mixto' && !empty($pagosDesglose)): ?>
+            <?php if ($metodoTicket === 'mixto' && !empty($pagosDesglose)): ?>
                 <?php foreach ($pagosDesglose as $pg): ?>
                 <tr>
                     <td>&nbsp;&nbsp;<?= htmlspecialchars(ucfirst($pg['metodo'])) ?>:</td>
                     <td class="text-right">L <?= number_format($pg['monto'], 2) ?></td>
                 </tr>
                 <?php endforeach; ?>
-            <?php else: ?>
-            <tr>
-                <td>Efectivo / Recibido:</td>
-                <td class="text-right">L <?= number_format($venta['pagado_con'] ?? $venta['efectivo'] ?? 0, 2) ?></td>
-            </tr>
-            <?php endif; ?>
             <tr>
                 <td>Cambio:</td>
                 <td class="text-right">L <?= number_format($venta['cambio'] ?? 0, 2) ?></td>
             </tr>
+            <?php elseif ($esEfectivoTicket): ?>
+            <tr>
+                <td>Efectivo / Recibido:</td>
+                <td class="text-right">L <?= number_format($venta['pagado_con'] ?? $venta['efectivo'] ?? 0, 2) ?></td>
+            </tr>
+            <tr>
+                <td>Cambio:</td>
+                <td class="text-right">L <?= number_format($venta['cambio'] ?? 0, 2) ?></td>
+            </tr>
+            <?php else: ?>
+            <tr>
+                <td>Total pagado (<?= htmlspecialchars($etiquetaMetodo) ?>):</td>
+                <td class="text-right">L <?= number_format($totalVenta, 2) ?></td>
+            </tr>
+            <?php endif; ?>
         </table>
     <?php endif; ?>
 

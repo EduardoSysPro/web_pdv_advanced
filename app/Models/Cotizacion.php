@@ -14,10 +14,8 @@ class Cotizacion extends Controller
 
     public function generarFolio()
     {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cotizaciones WHERE folio LIKE 'COT-%'");
-        $stmt->execute();
-        $consecutivo = (int)$stmt->fetchColumn() + 1;
-        return 'COT-' . str_pad((string)$consecutivo, 8, '0', STR_PAD_LEFT);
+        require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Secuencia.php';
+        return (new Secuencia())->siguiente('cotizaciones', 'COT-', 8);
     }
 
     public function insertarEncabezado($datos)
@@ -127,7 +125,24 @@ class Cotizacion extends Controller
         }
     }
 
-    public function obtenerTodas($estado = null, $vendedorId = null)
+    public function obtenerConteos($vendedorId = null)
+    {
+        $condicion = '';
+        $params = [];
+        if ($vendedorId !== null && (int)$vendedorId > 0) {
+            $condicion = ' WHERE vendedor_id = :vendedor_id';
+            $params[':vendedor_id'] = (int)$vendedorId;
+        }
+        $stmt = $this->pdo->prepare('SELECT estado, COUNT(*) AS total FROM cotizaciones' . $condicion . ' GROUP BY estado');
+        $stmt->execute($params);
+        $conteos = ['pendiente' => 0, 'facturada' => 0, 'cancelada' => 0];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fila) {
+            $conteos[$fila['estado']] = (int)$fila['total'];
+        }
+        return $conteos;
+    }
+
+    public function obtenerTodas($estado = null, $vendedorId = null, $limite = 200)
     {
         $condiciones = [];
         $params = [];
@@ -140,12 +155,13 @@ class Cotizacion extends Controller
             $params[':vendedor_id'] = (int)$vendedorId;
         }
         $where = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
+        $limite = max(1, min(1000, (int)$limite));
         $sql = 'SELECT c.id, c.folio, c.estado, c.total, c.cliente_nombre, c.cliente_rtn,
                        c.observaciones, c.fecha_validez, c.venta_id, c.creada_en,
                        u.nombre AS vendedor
                 FROM cotizaciones c
                 INNER JOIN usuarios u ON u.id = c.vendedor_id' . $where . '
-                ORDER BY c.creada_en DESC';
+                ORDER BY c.creada_en DESC LIMIT ' . $limite;
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

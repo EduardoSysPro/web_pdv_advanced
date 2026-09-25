@@ -95,7 +95,7 @@ $nombreCliente = $cotizacion['cliente_nombre'] ?: 'CONSUMIDOR FINAL';
 <body>
     <div class="encabezado">
         <div class="empresa">
-            <?php if ($rutaLogo): ?><img src="<?php echo $rutaLogo; ?>" alt="Logo"><?php endif; ?>
+            <?php if ($rutaLogo): ?><img src="<?php echo htmlspecialchars($rutaLogo); ?>" alt="Logo"><?php endif; ?>
             <div>
                 <div class="empresa-nombre"><?php echo htmlspecialchars($empresaNombre); ?></div>
                 <div class="empresa-datos">

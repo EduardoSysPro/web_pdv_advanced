@@ -12,8 +12,13 @@ class Configuracion extends Controller
         $this->pdo = Database::getInstancia()->getConexion();
     }
 
+    private static $cacheMapa = null;
+
     public function obtenerMapa(): array
     {
+        if (self::$cacheMapa !== null) {
+            return self::$cacheMapa;
+        }
         $predeterminados = $this->predeterminados();
         try {
             $stmt = $this->pdo->query('SELECT clave, valor FROM configuracion');
@@ -23,6 +28,7 @@ class Configuracion extends Controller
         } catch (PDOException $e) {
             return $predeterminados;
         }
+        self::$cacheMapa = $predeterminados;
         return $predeterminados;
     }
 
@@ -34,9 +40,26 @@ class Configuracion extends Controller
     public function guardar($datos)
     {
         $stmt = $this->pdo->prepare('INSERT INTO configuracion (clave, valor) VALUES (:clave, :valor) ON DUPLICATE KEY UPDATE valor=VALUES(valor)');
-        foreach ($datos as $clave => $valor) {
-            $stmt->execute([':clave' => $clave, ':valor' => $valor]);
+        // Puede llamarse dentro de una transacción ajena (ej. venta con factura
+        // fiscal): solo abre transacción propia si no hay una activa.
+        $externa = $this->pdo->inTransaction();
+        if (!$externa) {
+            $this->pdo->beginTransaction();
         }
+        try {
+            foreach ($datos as $clave => $valor) {
+                $stmt->execute([':clave' => $clave, ':valor' => $valor]);
+            }
+            if (!$externa) {
+                $this->pdo->commit();
+            }
+        } catch (Throwable $e) {
+            if (!$externa && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+        self::$cacheMapa = null;
     }
 
     private function predeterminados()

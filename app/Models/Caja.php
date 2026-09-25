@@ -242,8 +242,10 @@ class Caja extends Controller
 
     private function existeTabla($tabla)
     {
+        static $cache = [];
+        if (array_key_exists($tabla, $cache)) return $cache[$tabla];
         $stmt = $this->pdo->query("SHOW TABLES LIKE '{$tabla}'");
-        return $stmt !== false && $stmt->rowCount() > 0;
+        return $cache[$tabla] = ($stmt !== false && $stmt->rowCount() > 0);
     }
 
     public function obtenerUltimosCortesCerrados($usuarioId, $limite = 5)
@@ -270,8 +272,11 @@ class Caja extends Controller
         }
 
         $sql = "SHOW COLUMNS FROM `{$tablaLimpia}` LIKE '{$columnaLimpia}'";
+        static $cache = [];
+        $clave = $tablaLimpia . '.' . $columnaLimpia;
+        if (array_key_exists($clave, $cache)) return $cache[$clave];
         $stmt = $this->pdo->query($sql);
 
-        return $stmt !== false && $stmt->rowCount() > 0;
+        return $cache[$clave] = ($stmt !== false && $stmt->rowCount() > 0);
     }
 }

@@ -17,11 +17,17 @@ class ImpresoraController extends Controller
     }
 
     /**
-     * Imprime una venta en la impresora LAN. GET/POST, devuelve JSON.
+     * Imprime una venta en la impresora LAN. Solo POST (CSRF), devuelve JSON.
      */
     public function imprimirVenta($parametros)
     {
         $this->requerirAutenticacion();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['exito' => false, 'mensaje' => 'Método HTTP no permitido. Usa POST.']);
+            return;
+        }
         $id = (int)($parametros['id'] ?? 0);
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
         $copias = (int)($_GET['copias'] ?? 2);

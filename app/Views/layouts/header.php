@@ -33,9 +33,12 @@ $fechaActual = date('d/m/Y H:i');
                     <span class="fecha-icono">&#128197;</span>
                     <span><?php echo $fechaActual; ?></span>
                 </div>
-                <a href="<?php echo URL_BASE; ?>logout" class="btn-logout">
-                    <span>&#128274;</span> Cerrar Sesi&oacute;n
-                </a>
+                <form action="<?php echo URL_BASE; ?>logout" method="POST" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                    <button type="submit" class="btn-logout">
+                        <span>&#128274;</span> Cerrar Sesi&oacute;n
+                    </button>
+                </form>
                 <a href="<?php echo URL_BASE; ?>productos" class="btn-logout">F3 Productos</a>
                 <a href="<?php echo URL_BASE; ?>reportes" class="btn-logout">Reportes</a>
                 <?php if ($esAdministrador): ?><a href="<?php echo URL_BASE; ?>configuracion" class="btn-logout">Configuración</a><a href="<?php echo URL_BASE; ?>usuarios" class="btn-logout">Usuarios</a><?php endif; ?>

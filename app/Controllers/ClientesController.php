@@ -98,14 +98,31 @@ class ClientesController extends Controller
     public function abonar()
     {
         $this->requerirAutenticacion();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirigir('clientes');
+        }
         $clienteId = (int)($_POST['cliente_id'] ?? 0);
+        $monto = (float)($_POST['monto'] ?? 0);
+        $formaPago = trim((string)($_POST['forma_pago'] ?? ''));
+        if ($clienteId <= 0) {
+            $_SESSION['mensaje_clientes'] = 'Cliente inválido.';
+            $this->redirigir('clientes');
+        }
+        if ($monto <= 0) {
+            $_SESSION['mensaje_clientes'] = 'El monto del abono debe ser mayor a cero.';
+            $this->redirigir('clientes/estado-cuenta/' . $clienteId);
+        }
+        if (!in_array($formaPago, ['efectivo', 'tarjeta', 'transferencia'], true)) {
+            $_SESSION['mensaje_clientes'] = 'Forma de pago inválida.';
+            $this->redirigir('clientes/estado-cuenta/' . $clienteId);
+        }
         try {
-            $pagoId = $this->modelo->registrarAbono($clienteId, (float)($_POST['monto'] ?? 0), $_POST['forma_pago'] ?? '', trim($_POST['observacion'] ?? ''), (int)$_SESSION['id']);
+            $pagoId = $this->modelo->registrarAbono($clienteId, $monto, $formaPago, trim($_POST['observacion'] ?? ''), (int)$_SESSION['id']);
             $pdo = Database::getInstancia()->getConexion();
             $cajaId = (int)($_SESSION['caja_id'] ?? 0);
             $tieneCaja = $pdo->query("SHOW COLUMNS FROM caja_movimientos LIKE 'caja_id'")->rowCount() > 0;
             $stmt = $pdo->prepare("INSERT INTO caja_movimientos (usuario_id" . ($tieneCaja ? ',caja_id' : '') . ",tipo,monto,concepto) VALUES (:usuario" . ($tieneCaja ? ',:caja_id' : '') . ",'ingreso_abono',:monto,:concepto)");
-            $parametros = [':usuario'=>(int)$_SESSION['id'], ':monto'=>(float)$_POST['monto'], ':concepto'=>'Abono cliente ID ' . $clienteId];
+            $parametros = [':usuario'=>(int)$_SESSION['id'], ':monto'=>$monto, ':concepto'=>'Abono cliente ID ' . $clienteId];
             if ($tieneCaja) $parametros[':caja_id'] = $cajaId > 0 ? $cajaId : null;
             $stmt->execute($parametros);
             $_SESSION['mensaje_clientes'] = 'Abono registrado correctamente.';

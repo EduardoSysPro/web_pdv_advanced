@@ -26,8 +26,10 @@
 
     function imprimirVentaPorLan(ventaId, tipo) {
         return fetch(URL_BASE + 'impresora/imprimir-venta/' + encodeURIComponent(ventaId) + (tipo ? '?tipo=' + encodeURIComponent(tipo) : ''), {
-            method: 'GET',
-            credentials: 'same-origin'
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ csrf_token: obtenerCsrfToken() })
         }).then(r => r.json());
     }
 

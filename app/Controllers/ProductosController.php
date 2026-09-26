@@ -14,6 +14,7 @@ class ProductosController extends Controller
         parent::__construct();
         $this->modeloProducto = new Producto();
         $this->modeloCategoria = new Categoria();
+        Producto::asegurarPrecioMayorista();
     }
 
     public function index()
@@ -251,7 +252,7 @@ class ProductosController extends Controller
     {
         return $_SESSION['datos_producto'] ?? [
             'codigo_barras' => '', 'nombre' => '', 'precio_costo' => '0.00',
-            'precio_venta' => '0.00', 'stock' => 0, 'stock_minimo' => 1,
+            'precio_venta' => '0.00', 'precio_mayorista' => '0.00', 'stock' => 0, 'stock_minimo' => 1,
             'unidad_medida' => 'unidad', 'permite_decimales' => 0, 'categoria_id' => null,
             'tipo_venta' => 'solo_unidad', 'nombre_empaque' => 'Caja',
             'unidades_por_empaque' => 2, 'precio_empaque' => '0.00', 'codigo_barras_empaque' => '',
@@ -307,6 +308,7 @@ class ProductosController extends Controller
             'nombre' => trim($_POST['nombre'] ?? ''),
             'precio_costo' => (float)($_POST['precio_costo'] ?? 0),
             'precio_venta' => (float)($_POST['precio_venta'] ?? 0),
+            'precio_mayorista' => max(0.0, (float)($_POST['precio_mayorista'] ?? 0)),
             'stock' => max(0, (float)($_POST['stock'] ?? 0)),
             'stock_minimo' => max(0, (float)($_POST['stock_minimo'] ?? 0)),
             'unidad_medida' => $unidad === '' ? 'unidad' : $unidad,
@@ -330,6 +332,7 @@ class ProductosController extends Controller
         }
         if ($datos['nombre'] === '') $errores[] = 'El nombre del producto es obligatorio.';
         if ($datos['precio_costo'] < 0 || $datos['precio_venta'] < 0) $errores[] = 'Los precios no pueden ser negativos.';
+        if ($datos['precio_mayorista'] > 0 && $datos['precio_mayorista'] > $datos['precio_venta']) $errores[] = 'El precio mayorista (Precio 2) no puede ser mayor que el precio de venta normal.';
         if ((float)$datos['stock'] < 0 || (float)$datos['stock_minimo'] < 0) $errores[] = 'El stock no puede ser negativo.';
 
         if ($datos['tipo_venta'] !== 'solo_unidad') {

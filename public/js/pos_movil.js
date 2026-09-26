@@ -1275,6 +1275,7 @@ document.addEventListener('DOMContentLoaded', function () {
             cliente_rtn: clienteSeleccionado ? (clienteSeleccionado.rtn || '') : '',
             cliente_telefono: clienteSeleccionado ? (clienteSeleccionado.telefono || '') : '',
             cliente_direccion: clienteSeleccionado ? (clienteSeleccionado.direccion || '') : '',
+            ...(window.PDV_SUPERVISOR_AUTH ? { supervisor_usuario: window.PDV_SUPERVISOR_AUTH.u, supervisor_password: window.PDV_SUPERVISOR_AUTH.p } : {}),
             productos: carrito.map(item => ({
                 ...item,
                 precio_lista: Number(item.precio_lista ?? item.precio_venta),
@@ -1295,7 +1296,27 @@ document.addEventListener('DOMContentLoaded', function () {
             btnFinalizarVenta.disabled = false;
             btnFinalizarVenta.innerHTML = '<i class="fa-solid fa-check"></i> Confirmar Cobro';
 
+            window.PDV_SUPERVISOR_AUTH = null;
             if (!resp || !resp.exito) {
+                // P4: límite excedido -> pedir supervisor y reintentar con autorización.
+                if (resp && esCredito && (resp.requiere_autorizacion || resp.codigo === 'SUPERVISOR_INVALIDO')) {
+                    cerrarConfirmacionImpresion();
+                    const supUser = prompt('La venta excede el crédito disponible.\n' + (resp.mensaje || '') + '\n\nUsuario del supervisor (admin):');
+                    if (!supUser) {
+                        btnFinalizarVenta.disabled = false;
+                        btnFinalizarVenta.innerHTML = '<i class="fa-solid fa-check"></i> Confirmar Cobro';
+                        return;
+                    }
+                    const supPass = prompt('Contraseña del supervisor ' + supUser + ':');
+                    if (!supPass) {
+                        btnFinalizarVenta.disabled = false;
+                        btnFinalizarVenta.innerHTML = '<i class="fa-solid fa-check"></i> Confirmar Cobro';
+                        return;
+                    }
+                    window.PDV_SUPERVISOR_AUTH = { u: supUser, p: supPass };
+                    procesarVenta(imprimirRecibo);
+                    return;
+                }
                 alert((resp && resp.mensaje) ? resp.mensaje : 'Error al procesar la venta.');
                 cerrarConfirmacionImpresion();
                 return;

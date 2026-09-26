@@ -106,11 +106,14 @@ $router->post('/proveedores/actualizar/{id}', 'ProveedoresController@actualizar'
 $router->post('/proveedores/eliminar/{id}', 'ProveedoresController@eliminar');
 
 $router->get('/clientes', 'ClientesController@index');
+$router->get('/clientes/cartera', 'ClientesController@cartera');
 $router->post('/clientes/guardar', 'ClientesController@guardar');
+$router->post('/clientes/anular-abono', 'ClientesController@anularAbono');
 $router->post('/clientes/guardar-ajax', 'ClientesController@guardarAjax');
 $router->get('/clientes/editar/{id}', 'ClientesController@editar');
 $router->post('/clientes/actualizar/{id}', 'ClientesController@actualizar');
 $router->get('/clientes/estado-cuenta/{id}', 'ClientesController@estadoCuenta');
+$router->get('/clientes/estado-cuenta/{id}/imprimir', 'ClientesController@imprimirEstadoCuenta');
 $router->post('/clientes/abonar', 'ClientesController@abonar');
 $router->get('/clientes/abono/ticket/{id}', 'ClientesController@imprimirAbono');
 $router->get('/clientes/buscar', 'ClientesController@buscar');

@@ -327,6 +327,9 @@ class VentasController extends Controller
         $clienteTelefono  = isset($datos['cliente_telefono']) ? trim($datos['cliente_telefono'])  : '';
         $clienteDireccion = isset($datos['cliente_direccion'])? trim($datos['cliente_direccion']) : '';
         $cotizacionId     = isset($datos['cotizacion_id'])    ? (int)$datos['cotizacion_id']     : 0;
+        // P4: autorización de supervisor para exceder el límite de crédito.
+        $supervisorUsuario  = isset($datos['supervisor_usuario'])  ? trim((string)$datos['supervisor_usuario'])  : '';
+        $supervisorPassword = isset($datos['supervisor_password']) ? (string)$datos['supervisor_password'] : '';
 
         $pagos = [];
         if (isset($datos['pagos']) && is_array($datos['pagos'])) {
@@ -370,6 +373,12 @@ class VentasController extends Controller
         }
 
         $this->asegurarSoportePagosMixtos($pdo);
+        Cliente::asegurarEsquema($pdo);
+
+        $excedeLimite = false;
+        $autorizadoPor = null;
+        $autorizadoPorNombre = '';
+        $diasCreditoVenta = Cliente::DIAS_CREDITO_DEFECTO;
 
         try {
             $pdo->beginTransaction();
@@ -403,6 +412,10 @@ class VentasController extends Controller
             $valoresExtra  = '';
             $ventaTieneTipo = $this->columnaExiste($pdo, 'ventas', 'tipo_comprobante');
             $hasPagosVenta  = $this->columnaExiste($pdo, 'ventas', 'pagos');
+            // P1/P4: vencimiento y autorización de crédito (auto-creadas por Cliente::asegurarEsquema).
+            $hasVencimiento = $this->columnaExiste($pdo, 'ventas', 'fecha_vencimiento');
+            $hasExcede      = $this->columnaExiste($pdo, 'ventas', 'excede_limite');
+            $hasAutorizado  = $this->columnaExiste($pdo, 'ventas', 'autorizado_por');
 
             if ($columnaCajaVenta) {
                 $columnasExtra .= ', caja_id';
@@ -455,6 +468,18 @@ class VentasController extends Controller
             if ($hasDescuentoVenta) {
                 $columnasExtra .= ', descuento_total';
                 $valoresExtra  .= ', :descuento_total';
+            }
+            if ($hasVencimiento) {
+                $columnasExtra .= ', fecha_vencimiento';
+                $valoresExtra  .= ', :fecha_vencimiento';
+            }
+            if ($hasExcede) {
+                $columnasExtra .= ', excede_limite';
+                $valoresExtra  .= ', :excede_limite';
+            }
+            if ($hasAutorizado) {
+                $columnasExtra .= ', autorizado_por';
+                $valoresExtra  .= ', :autorizado_por';
             }
 
             // Primera pasada: releer cada producto desde BD (nunca confiar en el impuesto enviado por el cliente)
@@ -598,12 +623,26 @@ class VentasController extends Controller
                         $pagos = [['metodo' => 'credito', 'monto' => $total]];
                     }
                     if ($clienteId <= 0) throw new Exception('Debes seleccionar un cliente para la venta a crédito.');
-                    $stmtCredito = $pdo->prepare('SELECT limite_credito, saldo_pendiente FROM clientes WHERE id = :id FOR UPDATE');
-                    $stmtCredito->execute([':id' => $clienteId]);
-                    $cliente = $stmtCredito->fetch(PDO::FETCH_ASSOC);
-                    if (!$cliente || (float)$cliente['saldo_pendiente'] + $total > (float)$cliente['limite_credito']) {
-                        throw new Exception('La venta supera el crédito disponible del cliente.');
+                    // P4: valida límite; si excede exige autorización de supervisor.
+                    $eval = $this->evaluarCreditoCliente($pdo, $clienteId, $total, $supervisorUsuario, $supervisorPassword, $usuarioId);
+                    if (!$eval['ok']) {
+                        if ($pdo->inTransaction()) {
+                            $pdo->rollBack();
+                        }
+                        echo json_encode([
+                            'exito' => false,
+                            'mensaje' => $eval['mensaje'],
+                            'codigo' => $eval['codigo'],
+                            'requiere_autorizacion' => $eval['codigo'] === 'LIMITE_EXCEDE',
+                            'disponible' => $eval['disponible'],
+                            'solicitado' => round($total, 2)
+                        ]);
+                        return;
                     }
+                    $excedeLimite = $eval['excede'];
+                    $autorizadoPor = $eval['autorizado_por'];
+                    $autorizadoPorNombre = $eval['autorizado_por_nombre'];
+                    $diasCreditoVenta = $eval['dias_credito'];
                     $metodoPago = 'credito';
                     $efectivo = 0.0;
                 } else {
@@ -615,12 +654,26 @@ class VentasController extends Controller
                 $cambio = $hayCredito ? 0.0 : round(max(0, $efectivo - max(0, $total - $otros)), 2);
             } elseif ($metodoPago === 'credito') {
                 if ($clienteId <= 0) throw new Exception('Debes seleccionar un cliente para la venta a crédito.');
-                $stmtCredito = $pdo->prepare('SELECT limite_credito, saldo_pendiente FROM clientes WHERE id = :id FOR UPDATE');
-                $stmtCredito->execute([':id' => $clienteId]);
-                $cliente = $stmtCredito->fetch(PDO::FETCH_ASSOC);
-                if (!$cliente || (float)$cliente['saldo_pendiente'] + $total > (float)$cliente['limite_credito']) {
-                    throw new Exception('La venta supera el crédito disponible del cliente.');
+                // P4: valida límite; si excede exige autorización de supervisor.
+                $eval = $this->evaluarCreditoCliente($pdo, $clienteId, $total, $supervisorUsuario, $supervisorPassword, $usuarioId);
+                if (!$eval['ok']) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                    echo json_encode([
+                        'exito' => false,
+                        'mensaje' => $eval['mensaje'],
+                        'codigo' => $eval['codigo'],
+                        'requiere_autorizacion' => $eval['codigo'] === 'LIMITE_EXCEDE',
+                        'disponible' => $eval['disponible'],
+                        'solicitado' => round($total, 2)
+                    ]);
+                    return;
                 }
+                $excedeLimite = $eval['excede'];
+                $autorizadoPor = $eval['autorizado_por'];
+                $autorizadoPorNombre = $eval['autorizado_por_nombre'];
+                $diasCreditoVenta = $eval['dias_credito'];
                 $efectivo = 0;
                 $cambio = 0;
             } else {
@@ -656,6 +709,20 @@ class VentasController extends Controller
             }
             if ($hasDescuentoVenta) {
                 $stmtVenta->bindValue(':descuento_total', $descuentoTotal, PDO::PARAM_STR);
+            }
+            // P1: la factura a crédito vence a N días; P4: marca de autorización.
+            $fechaVencimiento = null;
+            if ($metodoPago === 'credito') {
+                $fechaVencimiento = date('Y-m-d', strtotime('+' . max(0, (int)$diasCreditoVenta) . ' days'));
+            }
+            if ($hasVencimiento) {
+                $stmtVenta->bindValue(':fecha_vencimiento', $fechaVencimiento, $fechaVencimiento ? PDO::PARAM_STR : PDO::PARAM_NULL);
+            }
+            if ($hasExcede) {
+                $stmtVenta->bindValue(':excede_limite', $excedeLimite ? 1 : 0, PDO::PARAM_INT);
+            }
+            if ($hasAutorizado) {
+                $stmtVenta->bindValue(':autorizado_por', $autorizadoPor > 0 ? $autorizadoPor : null, $autorizadoPor > 0 ? PDO::PARAM_INT : PDO::PARAM_NULL);
             }
 
             $stmtVenta->bindValue(':total',       $total,     PDO::PARAM_STR);
@@ -718,6 +785,10 @@ class VentasController extends Controller
             if ($metodoPago === 'credito') {
                 $stmtCredito = $pdo->prepare('UPDATE clientes SET saldo_pendiente = saldo_pendiente + :total WHERE id = :id');
                 $stmtCredito->execute([':total' => $total, ':id' => $clienteId]);
+                // P4: deja rastro de quién autorizó exceder el límite.
+                if ($excedeLimite) {
+                    $this->modeloCliente->auditar($clienteId, $usuarioId, 'venta_excede_limite', 'venta', $ventaId, 'Venta folio ' . $folio . ' por L ' . number_format($total, 2) . ' (vence ' . ($fechaVencimiento ?: 'N/D') . '). Autorizó: ' . ($autorizadoPorNombre !== '' ? $autorizadoPorNombre : 'ID ' . (int)$autorizadoPor));
+                }
             }
 
             // La secuencia SAR solo avanza tras insertar venta/detalle sin error, dentro de la misma transacción.
@@ -773,6 +844,50 @@ class VentasController extends Controller
                 'mensaje' => 'Error al registrar la venta: ' . $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * P4: evalúa el crédito del cliente dentro de la transacción de la venta
+     * (con bloqueo FOR UPDATE). Si la venta cabe en el disponible, ok.
+     * Si excede, solo procede con credenciales válidas de un supervisor
+     * (admin distinto del cajero); si no, retorna rechazo estructurado con
+     * código LIMITE_EXCEDE para que el POS pida autorización y reintente.
+     */
+    private function evaluarCreditoCliente($pdo, $clienteId, $total, $supUsuario, $supPassword, $cajeroId)
+    {
+        $tieneDias = $this->columnaExiste($pdo, 'clientes', 'dias_credito');
+        $stmt = $pdo->prepare('SELECT limite_credito, saldo_pendiente' . ($tieneDias ? ', dias_credito' : '') . ' FROM clientes WHERE id = :id FOR UPDATE');
+        $stmt->execute([':id' => (int)$clienteId]);
+        $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$cliente) {
+            return ['ok' => false, 'codigo' => 'CLIENTE_NO_ENCONTRADO', 'mensaje' => 'Cliente de crédito no encontrado.', 'disponible' => 0.0];
+        }
+        $limite = (float)$cliente['limite_credito'];
+        $saldo = (float)$cliente['saldo_pendiente'];
+        $dias = $tieneDias ? max(0, (int)$cliente['dias_credito']) : Cliente::DIAS_CREDITO_DEFECTO;
+        $disponible = round($limite - $saldo, 2);
+
+        if ($saldo + $total <= $limite) {
+            return ['ok' => true, 'excede' => false, 'autorizado_por' => null, 'autorizado_por_nombre' => '', 'dias_credito' => $dias, 'disponible' => $disponible];
+        }
+
+        // Excede: requiere supervisor.
+        if ($supUsuario === '') {
+            return [
+                'ok' => false, 'codigo' => 'LIMITE_EXCEDE',
+                'mensaje' => 'La venta supera el crédito disponible del cliente (disponible L ' . number_format($disponible, 2) . '). Se requiere autorización de un supervisor.',
+                'disponible' => $disponible,
+            ];
+        }
+        $sup = $this->modeloCliente->verificarSupervisor($supUsuario, $supPassword, $cajeroId);
+        if (!$sup) {
+            return [
+                'ok' => false, 'codigo' => 'SUPERVISOR_INVALIDO',
+                'mensaje' => 'La autorización del supervisor no es válida (debe ser un administrador distinto del cajero).',
+                'disponible' => $disponible,
+            ];
+        }
+        return ['ok' => true, 'excede' => true, 'autorizado_por' => (int)$sup['id'], 'autorizado_por_nombre' => (string)($sup['nombre'] ?? $sup['usuario']), 'dias_credito' => $dias, 'disponible' => $disponible];
     }
 
     /**

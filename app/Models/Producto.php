@@ -5,11 +5,76 @@ require_once CORE_PATH . 'Controller.php';
 class Producto extends Controller
 {
     private $pdo;
+    private static $cacheColumnas = [];
 
     public function __construct()
     {
         parent::__construct();
         $this->pdo = Database::getInstancia()->getConexion();
+    }
+
+    /**
+     * Precio 2 (mayorista) por producto. Crea la columna si falta;
+     * idempotente y seguro de llamar en cada request.
+     */
+    public static function asegurarPrecioMayorista($pdo = null)
+    {
+        if ($pdo === null) {
+            $pdo = Database::getInstancia()->getConexion();
+        }
+        if (self::tieneColumnaEstatica($pdo, 'precio_mayorista')) {
+            return;
+        }
+        if (method_exists($pdo, 'inTransaction') && $pdo->inTransaction()) {
+            return;
+        }
+        try {
+            $pdo->exec("ALTER TABLE productos ADD COLUMN precio_mayorista DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Precio 2 para clientes mayoristas (0 = sin precio mayorista)'");
+        } catch (Throwable $e) {
+        }
+        self::$cacheColumnas = [];
+    }
+
+    private static function tieneColumnaEstatica($pdo, $columna)
+    {
+        $columna = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$columna);
+        if ($columna === '') {
+            return false;
+        }
+        if (array_key_exists($columna, self::$cacheColumnas)) {
+            return self::$cacheColumnas[$columna];
+        }
+        try {
+            $stmt = $pdo->query("SHOW COLUMNS FROM `productos` LIKE '{$columna}'");
+            return self::$cacheColumnas[$columna] = ($stmt !== false && $stmt->rowCount() > 0);
+        } catch (Throwable $e) {
+            return self::$cacheColumnas[$columna] = false;
+        }
+    }
+
+    /**
+     * Fragmento SELECT para precio_mayorista (vacío si la columna aún no existe).
+     * $alias null = consulta sin alias de tabla.
+     */
+    private function selPrecioMayorista($alias = 'p')
+    {
+        if (!self::tieneColumnaEstatica($this->pdo, 'precio_mayorista')) {
+            return '';
+        }
+        if ($alias === null) {
+            return ', precio_mayorista';
+        }
+        $alias = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$alias);
+        if ($alias === '') {
+            $alias = 'p';
+        }
+        return ", {$alias}.precio_mayorista";
+    }
+
+    /** Precio mayorista de la fila (0 si no hay o la columna no existe). */
+    public static function extraerMayorista($fila)
+    {
+        return max(0.0, (float)($fila['precio_mayorista'] ?? 0));
     }
 
     public function buscarPorCodigoBarras($codigoBarras)
@@ -19,7 +84,7 @@ class Producto extends Controller
                     p.codigo_barras,
                     p.nombre,
                     p.precio_venta,
-                    p.precio_costo,
+                    p.precio_costo' . $this->selPrecioMayorista('p') . ',
                     p.stock,
                     p.stock_minimo,
                     p.unidad_medida,
@@ -86,7 +151,7 @@ class Producto extends Controller
         $stmt->execute();
         $total = (int)$stmt->fetchColumn();
 
-        $sql = 'SELECT p.id, p.codigo_barras, p.nombre, p.precio_costo, p.precio_venta,
+        $sql = 'SELECT p.id, p.codigo_barras, p.nombre, p.precio_costo, p.precio_venta' . $this->selPrecioMayorista('p') . ',
                        p.stock, p.stock_minimo, p.categoria_id, c.nombre AS categoria_nombre,
                        p.tipo_venta, p.nombre_empaque, p.unidades_por_empaque, p.precio_empaque, p.codigo_barras_empaque,
                        p.tipo_impuesto, p.porcentaje_isv, p.imagen
@@ -133,7 +198,7 @@ class Producto extends Controller
 
     public function obtenerPorId($id)
     {
-        $sql = 'SELECT p.id, p.codigo_barras, p.nombre, p.precio_venta, p.precio_costo,
+        $sql = 'SELECT p.id, p.codigo_barras, p.nombre, p.precio_venta, p.precio_costo' . $this->selPrecioMayorista('p') . ',
                        p.stock, p.stock_minimo, p.categoria_id, c.nombre AS categoria_nombre,
                        p.unidad_medida, p.permite_decimales,
                        p.tipo_venta, p.nombre_empaque, p.unidades_por_empaque, p.precio_empaque, p.codigo_barras_empaque,
@@ -186,8 +251,9 @@ class Producto extends Controller
 
     public function insertar($datos)
     {
-        $stmt = $this->pdo->prepare('INSERT INTO productos (codigo_barras, nombre, precio_costo, precio_venta, stock, stock_minimo, unidad_medida, permite_decimales, categoria_id, tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque, tipo_impuesto, porcentaje_isv, imagen)
-                VALUES (:codigo_barras, :nombre, :precio_costo, :precio_venta, :stock, :stock_minimo, :unidad_medida, :permite_decimales, :categoria_id, :tipo_venta, :nombre_empaque, :unidades_por_empaque, :precio_empaque, :codigo_barras_empaque, :tipo_impuesto, :porcentaje_isv, :imagen)');
+        $tieneMay = self::tieneColumnaEstatica($this->pdo, 'precio_mayorista');
+        $stmt = $this->pdo->prepare('INSERT INTO productos (codigo_barras, nombre, precio_costo, precio_venta' . ($tieneMay ? ', precio_mayorista' : '') . ', stock, stock_minimo, unidad_medida, permite_decimales, categoria_id, tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque, tipo_impuesto, porcentaje_isv, imagen)
+                VALUES (:codigo_barras, :nombre, :precio_costo, :precio_venta' . ($tieneMay ? ', :precio_mayorista' : '') . ', :stock, :stock_minimo, :unidad_medida, :permite_decimales, :categoria_id, :tipo_venta, :nombre_empaque, :unidades_por_empaque, :precio_empaque, :codigo_barras_empaque, :tipo_impuesto, :porcentaje_isv, :imagen)');
         $this->vincularDatos($stmt, $datos);
         $ok = $stmt->execute();
         if ($ok) self::invalidarCacheStockBajo();
@@ -196,8 +262,9 @@ class Producto extends Controller
 
     public function actualizar($id, $datos)
     {
+        $tieneMay = self::tieneColumnaEstatica($this->pdo, 'precio_mayorista');
         $stmt = $this->pdo->prepare('UPDATE productos SET codigo_barras = :codigo_barras, nombre = :nombre,
-                precio_costo = :precio_costo, precio_venta = :precio_venta, stock = :stock,
+                precio_costo = :precio_costo, precio_venta = :precio_venta' . ($tieneMay ? ', precio_mayorista = :precio_mayorista' : '') . ', stock = :stock,
                 stock_minimo = :stock_minimo, unidad_medida = :unidad_medida, permite_decimales = :permite_decimales, categoria_id = :categoria_id,
                 tipo_venta = :tipo_venta, nombre_empaque = :nombre_empaque, unidades_por_empaque = :unidades_por_empaque,
                 precio_empaque = :precio_empaque, codigo_barras_empaque = :codigo_barras_empaque,
@@ -236,6 +303,9 @@ class Producto extends Controller
         $stmt->bindValue(':nombre', $datos['nombre'], PDO::PARAM_STR);
         $stmt->bindValue(':precio_costo', $datos['precio_costo']);
         $stmt->bindValue(':precio_venta', $datos['precio_venta']);
+        if (self::tieneColumnaEstatica($this->pdo, 'precio_mayorista')) {
+            $stmt->bindValue(':precio_mayorista', max(0.0, (float)($datos['precio_mayorista'] ?? 0)), PDO::PARAM_STR);
+        }
         $stmt->bindValue(':stock', (float)$datos['stock'], PDO::PARAM_STR);
         $stmt->bindValue(':stock_minimo', (float)$datos['stock_minimo'], PDO::PARAM_STR);
         $stmt->bindValue(':unidad_medida', $unidadMedida !== '' ? $unidadMedida : 'unidad', PDO::PARAM_STR);
@@ -259,7 +329,7 @@ class Producto extends Controller
     public function buscarPorNombreOCodigo($termino, $limite = 20)
     {
         $terminoLike = '%' . $termino . '%';
-        $sql = 'SELECT id, codigo_barras, nombre, precio_venta, stock,
+        $sql = 'SELECT id, codigo_barras, nombre, precio_venta' . (self::tieneColumnaEstatica($this->pdo, 'precio_mayorista') ? ', precio_mayorista' : '') . ', stock,
                        tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque
                 FROM productos
                 WHERE codigo_barras LIKE :termino
@@ -323,7 +393,7 @@ class Producto extends Controller
         $prefijo = $termino . '%';
 
         // 1) Coincidencia por código (prefijo) — índice BTREE de codigo_barras
-        $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta, stock, stock_minimo,
+        $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta' . $this->selPrecioMayorista(null) . ', stock, stock_minimo,
                                             unidad_medida, permite_decimales,
                                             tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque,
                                             tipo_impuesto, porcentaje_isv, imagen
@@ -340,7 +410,7 @@ class Producto extends Controller
         // 2) Coincidencia por nombre — índice FULLTEXT.
         // Sin ORDER BY: el LIMIT corta el escaneo de coincidencias temprano;
         // el orden alfabético final lo aplica PHP sobre los pocos resultados.
-        $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta, stock, stock_minimo,
+        $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta' . $this->selPrecioMayorista(null) . ', stock, stock_minimo,
                                             unidad_medida, permite_decimales,
                                             tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque,
                                             tipo_impuesto, porcentaje_isv, imagen
@@ -382,7 +452,7 @@ class Producto extends Controller
         }
         if ($filas === false || count($filas) === 0) {
             $terminoLike = '%' . $termino . '%';
-            $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta, stock, stock_minimo,
+            $stmt = $this->pdo->prepare('SELECT id, codigo_barras, nombre, precio_venta' . $this->selPrecioMayorista(null) . ', stock, stock_minimo,
                                                 unidad_medida, permite_decimales,
                                                 tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque,
                                                 tipo_impuesto, porcentaje_isv, imagen
@@ -417,6 +487,7 @@ class Producto extends Controller
                     'nombre'            => ($tipoVenta === 'ambos' ? '[Unidad] ' : '') . $p['nombre'],
                     'nombre_original'   => $p['nombre'],
                     'precio_venta'      => (float)$p['precio_venta'],
+                    'precio_mayorista'  => self::extraerMayorista($p),
                     'stock'             => $stockBase,
                     'stock_minimo'      => (float)$p['stock_minimo'],
                     'unidad_medida'     => $p['unidad_medida'] ?? 'unidad',

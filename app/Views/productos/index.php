@@ -57,6 +57,9 @@
                     <td><?php echo formatearMoneda($producto['precio_costo']); ?></td>
                     <td>
                         <?php echo formatearMoneda($producto['precio_venta']); ?>
+                        <?php if (!empty($producto['precio_mayorista']) && (float)$producto['precio_mayorista'] > 0): ?>
+                            <br><small style="color:#0369a1; font-size:10px;">May.: <?php echo formatearMoneda($producto['precio_mayorista']); ?></small>
+                        <?php endif; ?>
                         <?php if (($producto['tipo_venta'] ?? '') === 'solo_empaque'): ?>
                             <br><small style="color:#dc2626; font-size:10px;">(Solo empaque)</small>
                         <?php endif; ?>

@@ -6,5 +6,7 @@
 	<div class="campo form-group"><label for="cliente-telefono">Teléfono</label><input id="cliente-telefono" name="telefono" maxlength="30" value="<?php echo htmlspecialchars($cliente['telefono'] ?? ''); ?>"></div>
 	<div class="campo campo-ancho form-group"><label for="cliente-direccion">Dirección</label><input id="cliente-direccion" name="direccion" maxlength="255" value="<?php echo htmlspecialchars($cliente['direccion'] ?? ''); ?>"></div>
 	<div class="campo form-group"><label for="cliente-limite">Límite de crédito (L)</label><input id="cliente-limite" name="limite_credito" type="number" min="0" step="0.01" value="<?php echo htmlspecialchars($cliente['limite_credito'] ?? '0.00'); ?>"></div>
+	<div class="campo form-group"><label for="cliente-dias">Días de crédito (0 = contado)</label><input id="cliente-dias" name="dias_credito" type="number" min="0" max="365" step="1" value="<?php echo htmlspecialchars($cliente['dias_credito'] ?? '30'); ?>"></div>
+	<div class="campo form-group"><label for="cliente-tipo">Categoría</label><select id="cliente-tipo" name="tipo"><option value="minorista" <?php echo (($cliente['tipo'] ?? 'minorista') === 'minorista') ? 'selected' : ''; ?>>Minorista (detalle)</option><option value="mayorista" <?php echo (($cliente['tipo'] ?? '') === 'mayorista') ? 'selected' : ''; ?>>Mayorista</option></select></div>
 	<div class="form-acciones"><a class="btn btn-secondary" href="<?php echo URL_BASE; ?>clientes">Cancelar</a><button class="btn btn-success" type="submit">Guardar cliente</button></div>
 </form>

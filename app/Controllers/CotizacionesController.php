@@ -4,6 +4,7 @@ require_once CORE_PATH . 'Controller.php';
 require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Cotizacion.php';
 require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Producto.php';
 require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Configuracion.php';
+require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Cliente.php';
 
 class CotizacionesController extends Controller
 {
@@ -17,6 +18,9 @@ class CotizacionesController extends Controller
         $this->modeloCotizacion = new Cotizacion();
         $this->modeloProducto = new Producto();
         $this->modeloConfiguracion = new Configuracion();
+        Producto::asegurarPrecioMayorista();
+        // El precio mayorista depende de clientes.tipo: garantizarlo aquí también.
+        Cliente::asegurarEsquema();
     }
 
     private function esVendedor()
@@ -102,6 +106,7 @@ class CotizacionesController extends Controller
         $detalles = $this->modeloCotizacion->obtenerDetalles($id);
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
         $esVendedor = $this->esVendedor();
+        $esClienteMayorista = $this->esClienteMayorista((int)($cotizacion['cliente_id'] ?? 0));
 
         require APP_PATH . 'Views' . DIRECTORY_SEPARATOR . 'cotizaciones' . DIRECTORY_SEPARATOR . 'ver.php';
     }
@@ -122,6 +127,7 @@ class CotizacionesController extends Controller
             return;
         }
         $detalles = $this->modeloCotizacion->obtenerDetalles($id);
+        $esClienteMayorista = $this->esClienteMayorista((int)($cotizacion['cliente_id'] ?? 0));
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
         $configuracion = array_merge([
             'empresa_nombre' => $configuracion['nombre_negocio'] ?? 'MI NEGOCIO',
@@ -152,7 +158,7 @@ class CotizacionesController extends Controller
 
         try {
             $pdo = Database::getInstancia()->getConexion();
-            $procesado = $this->procesarItems($datos['productos']);
+            $procesado = $this->procesarItems($datos['productos'], $this->esClienteMayorista($datos['cliente_id']));
 
             $pdo->beginTransaction();
             $folio = $this->modeloCotizacion->generarFolio();
@@ -211,7 +217,7 @@ class CotizacionesController extends Controller
 
         try {
             $pdo = Database::getInstancia()->getConexion();
-            $procesado = $this->procesarItems($datos['productos']);
+            $procesado = $this->procesarItems($datos['productos'], $this->esClienteMayorista($datos['cliente_id']));
 
             $pdo->beginTransaction();
             $this->modeloCotizacion->actualizarEncabezado($id, [
@@ -407,6 +413,7 @@ class CotizacionesController extends Controller
                 'nombre'              => ($tipoVenta === 'ambos' ? '[Unidad] ' : '') . $producto['nombre'],
                 'nombre_original'     => $producto['nombre'],
                 'precio_venta'        => (float)$producto['precio_venta'],
+                'precio_mayorista'    => max(0.0, (float)($producto['precio_mayorista'] ?? 0)),
                 'stock'               => $stockBase,
                 'stock_minimo'        => (float)($producto['stock_minimo'] ?? 0),
                 'unidad_medida'       => $producto['unidad_medida'] ?? 'unidad',
@@ -464,8 +471,24 @@ class CotizacionesController extends Controller
     private function todosLosClientes()
     {
         $pdo = Database::getInstancia()->getConexion();
-        $stmt = $pdo->query('SELECT id, nombre, rtn_identidad, telefono, direccion FROM clientes ORDER BY nombre ASC LIMIT 200');
+        $selTipo = $this->columnaExiste('clientes', 'tipo') ? ', tipo' : '';
+        $stmt = $pdo->query('SELECT id, nombre, rtn_identidad, telefono, direccion' . $selTipo . ' FROM clientes ORDER BY nombre ASC LIMIT 200');
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Precio mayorista: solo para clientes mayoristas registrados.
+     * Consumidor final, minoristas y clientes eventuales usan precio normal.
+     */
+    private function esClienteMayorista($clienteId)
+    {
+        $clienteId = (int)$clienteId;
+        if ($clienteId <= 0 || !$this->columnaExiste('clientes', 'tipo')) {
+            return false;
+        }
+        $stmt = Database::getInstancia()->getConexion()->prepare('SELECT tipo FROM clientes WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $clienteId]);
+        return $stmt->fetchColumn() === 'mayorista';
     }
 
     private function leerPeticion()
@@ -496,14 +519,18 @@ class CotizacionesController extends Controller
     /**
      * Procesa y valida cada artículo, calcula el desglose de ISV y los totales.
      * NO descuenta inventario: la cotización solo reserva la intención de venta.
+     * Precio mayorista: si $esMayorista y el producto tiene Precio 2, el precio
+     * final DEBE ser el mayorista (lista sigue siendo el normal y la diferencia
+     * se registra como descuento). Solo aplica a venta por unidad.
      */
-    private function procesarItems($productos)
+    private function procesarItems($productos, $esMayorista = false)
     {
         if (!is_array($productos) || count($productos) === 0) {
             throw new RuntimeException('No hay productos en la cotización.');
         }
 
         $pdo = Database::getInstancia()->getConexion();
+        $hasMayorista = $this->columnaExiste('productos', 'precio_mayorista');
         $items = [];
         $importeExento = 0.0;
         $importeExonerado = 0.0;
@@ -528,7 +555,7 @@ class CotizacionesController extends Controller
         }
         if ($idsProductos) {
             $idsTexto = implode(',', array_map('intval', $idsProductos));
-            $stmtInfo = $pdo->query('SELECT id, nombre, nombre_empaque, unidades_por_empaque, precio_venta, precio_empaque' . ($hasImpuesto ? ', tipo_impuesto, porcentaje_isv' : '') . ' FROM productos WHERE id IN (' . $idsTexto . ')');
+            $stmtInfo = $pdo->query('SELECT id, nombre, nombre_empaque, unidades_por_empaque, precio_venta, precio_empaque' . ($hasImpuesto ? ', tipo_impuesto, porcentaje_isv' : '') . ($hasMayorista ? ', precio_mayorista' : '') . ' FROM productos WHERE id IN (' . $idsTexto . ')');
             foreach ($stmtInfo->fetchAll(PDO::FETCH_ASSOC) as $fila) {
                 $infoProductos[(int)$fila['id']] = $fila;
             }
@@ -589,6 +616,16 @@ class CotizacionesController extends Controller
                 }
                 if (abs(round($precioLista, 2) - round($precioBase, 2)) > 0.01) {
                     throw new RuntimeException('El precio del producto "' . $nombreProducto . '" no coincide con el registrado en el sistema.');
+                }
+                // Precio mayorista automático: cliente mayorista + Precio 2 configurado
+                // (solo unidad). El frontend lo aplica solo; aquí se garantiza que a
+                // un mayorista nunca se le cobre por encima de su Precio 2
+                // (un final menor es descuento manual adicional y sí se permite).
+                $precioMayorista = ($hasMayorista && $tipoPresentacion === 'unidad')
+                    ? max(0.0, (float)($prodInfo['precio_mayorista'] ?? 0))
+                    : 0.0;
+                if ($esMayorista && $precioMayorista > 0 && round($precioFinal, 2) > round($precioMayorista, 2) + 0.01) {
+                    throw new RuntimeException('El producto "' . $nombreProducto . '" no puede superar su precio mayorista (L ' . number_format($precioMayorista, 2) . ').');
                 }
             }
 
@@ -661,6 +698,7 @@ class CotizacionesController extends Controller
                 $factorTexto = rtrim(rtrim(number_format($factor, 2, '.', ''), '0'), '.');
                 $prefijo = '[' . $nomPres . ' x' . $factorTexto . '] ';
             }
+            $pmDetalle = max(0.0, (float)($d['precio_mayorista'] ?? 0));
             $items[] = [
                 'id'                  => (int)($d['producto_id'] ?? 0),
                 'item_key'            => (($d['producto_id'] ?? 0) > 0 ? (int)$d['producto_id'] : 'libre_' . $d['id']) . '_' . ($tipoPres === 'empaque' ? 'empaque' : 'unidad'),
@@ -670,6 +708,8 @@ class CotizacionesController extends Controller
                 'precio_lista'        => (float)$d['precio_lista'],
                 'precio_unitario'     => (float)$d['precio_unitario'],
                 'descuento_unitario'  => (float)$d['descuento_unitario'],
+                'precio_mayorista'    => $pmDetalle,
+                'es_mayorista'        => ($tipoPres !== 'empaque' && $pmDetalle > 0 && abs((float)$d['precio_unitario'] - $pmDetalle) < 0.01),
                 'cantidad'            => (float)$d['cantidad'],
                 'stock'               => (float)($d['stock_actual'] ?? 0),
                 'stock_minimo'        => 0,

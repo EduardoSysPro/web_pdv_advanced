@@ -179,14 +179,35 @@ class Cotizacion extends Controller
 
     public function obtenerDetalles($id)
     {
+        $selMay = $this->columnaExiste('productos', 'precio_mayorista') ? ', p.precio_mayorista' : '';
         $stmt = $this->pdo->prepare('SELECT dc.*, p.nombre AS producto_actual, p.imagen AS producto_imagen,
-                                            p.codigo_barras AS codigo_barras, p.stock AS stock_actual
+                                            p.codigo_barras AS codigo_barras, p.stock AS stock_actual' . $selMay . '
                                      FROM detalle_cotizaciones dc
                                      LEFT JOIN productos p ON p.id = dc.producto_id
                                      WHERE dc.cotizacion_id = :id
                                      ORDER BY dc.id ASC');
         $stmt->execute([':id' => (int)$id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function columnaExiste($tabla, $columna)
+    {
+        $tabla = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$tabla);
+        $columna = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$columna);
+        if ($tabla === '' || $columna === '') {
+            return false;
+        }
+        static $cache = [];
+        $clave = $tabla . '.' . $columna;
+        if (array_key_exists($clave, $cache)) {
+            return $cache[$clave];
+        }
+        try {
+            $stmt = $this->pdo->query("SHOW COLUMNS FROM `{$tabla}` LIKE '{$columna}'");
+            return $cache[$clave] = ($stmt !== false && $stmt->rowCount() > 0);
+        } catch (Throwable $e) {
+            return $cache[$clave] = false;
+        }
     }
 
     public function marcarFacturada($id, $ventaId)

@@ -4,9 +4,62 @@
     var URL = URL_BASE;
     var MONEDA = typeof MONEDA_SIMBOLO !== 'undefined' ? MONEDA_SIMBOLO : 'L';
     var items = [];            // carrito
-    var cliente = { id: 0 };   // snapshot del cliente
+    var cliente = { id: 0, tipo: 'minorista' };   // snapshot del cliente
     var edicion = MODO_EDICION === 1;
     var cotizacionId = COTIZACION_ID;
+
+    // Precio mayorista: solo si el cliente es mayorista registrado.
+    function esMayorista() {
+        return cliente.tipo === 'mayorista';
+    }
+
+    function tipoDeCliente(id) {
+        for (var i = 0; i < CLIENTES.length; i++) {
+            if (Number(CLIENTES[i].id) === Number(id)) {
+                return CLIENTES[i].tipo === 'mayorista' ? 'mayorista' : 'minorista';
+            }
+        }
+        return 'minorista';
+    }
+
+    // Precio aplicable según cliente: {lista, final, mayorista}.
+    // La lista siempre es el precio normal; el final es el Precio 2
+    // solo para mayoristas en venta por unidad.
+    function precioParaCliente(p, presentacion) {
+        var lista = Number(p.precio_venta) || 0;
+        var pm = Number(p.precio_mayorista) || 0;
+        if (esMayorista() && presentacion !== 'empaque' && pm > 0) {
+            return { lista: lista, final: pm, mayorista: true };
+        }
+        return { lista: lista, final: lista, mayorista: false };
+    }
+
+    // Re-cotiza los artículos por unidad al cambiar de cliente:
+    // mayorista -> Precio 2, resto -> precio normal. El empaque no cambia.
+    function reaplicarPrecios() {
+        var cambiados = 0;
+        items.forEach(function (it) {
+            if (!it.id || it.tipo_presentacion === 'empaque') return;
+            var pm = Number(it.precio_mayorista) || 0;
+            var lista = Number(it.precio_lista) || 0;
+            var final = (esMayorista() && pm > 0) ? pm : lista;
+            var esMay = (esMayorista() && pm > 0 && final < lista);
+            if (Number(it.precio_v) !== final || !!it.es_mayorista !== esMay) {
+                cambiados++;
+            }
+            it.precio_v = final;
+            it.descuento = Math.max(0, Math.round((lista - final) * 100) / 100);
+            it.es_mayorista = esMay;
+        });
+        if (cambiados > 0) {
+            renderizarCarrito();
+            mostrarMensaje(esMayorista()
+                ? 'Precios actualizados a mayorista en ' + cambiados + ' artículo(s).'
+                : 'Precios actualizados a lista normal.');
+        } else {
+            renderizarCarrito();
+        }
+    }
 
     function moneda(n) {
         n = Number(n) || 0;
@@ -88,7 +141,8 @@
                         nombre: encontrado.nombre,
                         rtn: encontrado.rtn_identidad,
                         telefono: encontrado.telefono,
-                        direccion: encontrado.direccion
+                        direccion: encontrado.direccion,
+                        tipo: encontrado.tipo
                     };
                     aplicarCliente(sel, true);
                 }
@@ -105,23 +159,37 @@
                         nombre: c.nombre,
                         rtn: c.rtn_identidad,
                         telefono: c.telefono,
-                        direccion: c.direccion
+                        direccion: c.direccion,
+                        tipo: c.tipo
                     }, true);
                 } else {
                     cliente.id = 0;
+                    cliente.tipo = 'minorista';
+                    actualizarEtiquetaCliente();
+                    reaplicarPrecios();
                 }
             });
         }
     }
 
+    function actualizarEtiquetaCliente() {
+        var campo = document.getElementById('cot-cliente-tipo');
+        if (campo) {
+            campo.value = esMayorista() ? 'Mayorista (Precio 2)' : 'Minorista';
+        }
+    }
+
     function aplicarCliente(sel, sobreescribir) {
         cliente.id = sel.id || 0;
+        cliente.tipo = sel.tipo === 'mayorista' ? 'mayorista' : tipoDeCliente(cliente.id);
         if (!sobreescribir || !document.getElementById('cot-cliente-nombre').value) {
             document.getElementById('cot-cliente-nombre').value = sel.nombre || '';
         }
         document.getElementById('cot-cliente-rtn').value = sel.rtn || '';
         document.getElementById('cot-cliente-telefono').value = sel.telefono || '';
         document.getElementById('cot-cliente-direccion').value = sel.direccion || '';
+        actualizarEtiquetaCliente();
+        reaplicarPrecios();
     }
 
     // ---------- Modal registro rápido de cliente ----------
@@ -179,6 +247,7 @@
             params.append('telefono', document.getElementById('mc-telefono').value.trim());
             params.append('direccion', document.getElementById('mc-direccion').value.trim());
             params.append('limite_credito', document.getElementById('mc-credito').value.trim() || '0');
+            params.append('tipo', document.getElementById('mc-tipo').value === 'mayorista' ? 'mayorista' : 'minorista');
 
             fetch(URL + 'clientes/guardar-ajax', {
                 method: 'POST',
@@ -194,12 +263,14 @@
                         return;
                     }
                     var nuevo = resp.cliente;
+                    var nuevoTipo = nuevo.tipo === 'mayorista' ? 'mayorista' : 'minorista';
                     CLIENTES.push({
                         id: nuevo.id,
                         nombre: nuevo.nombre,
                         rtn_identidad: nuevo.rtn_identidad || '',
                         telefono: nuevo.telefono || '',
-                        direccion: nuevo.direccion || ''
+                        direccion: nuevo.direccion || '',
+                        tipo: nuevoTipo
                     });
                     construirDatalists();
                     cerrar();
@@ -208,7 +279,8 @@
                         nombre: nuevo.nombre,
                         rtn: nuevo.rtn_identidad || '',
                         telefono: nuevo.telefono || '',
-                        direccion: nuevo.direccion || ''
+                        direccion: nuevo.direccion || '',
+                        tipo: nuevoTipo
                     }, true);
                     mostrarMensaje('Cliente registrado correctamente.');
                 })
@@ -262,6 +334,14 @@
             tdNombre.className = 'cot-prod-nombre';
             var tdPrecio = document.createElement('td');
             tdPrecio.textContent = moneda(p.precio_venta);
+            var pmRes = Number(p.precio_mayorista) || 0;
+            if (esMayorista() && pmRes > 0 && p.tipo_presentacion !== 'empaque') {
+                var smallMay = document.createElement('small');
+                smallMay.style.display = 'block';
+                smallMay.style.color = '#0369a1';
+                smallMay.textContent = 'May. ' + moneda(pmRes);
+                tdPrecio.appendChild(smallMay);
+            }
             var tdStock = document.createElement('td');
             tdStock.textContent = String(Number(p.stock || 0).toFixed(p.permite_decimales ? 2 : 0));
             tdStock.className = (Number(p.stock) <= 0) ? 'cot-stock-cero' : '';
@@ -325,15 +405,18 @@
         if (existente) {
             existente.cantidad = Number(existente.cantidad) + incremento;
         } else {
+            var pr = precioParaCliente(p, p.tipo_presentacion);
             items.push({
                 id: p.id,
                 item_key: p.item_key,
                 codigo_barras: p.codigo_barras || '',
                 nombre: p.nombre,
                 nombre_original: p.nombre_original || p.nombre,
-                precio_lista: Number(p.precio_venta) || 0,
-                precio_v: Number(p.precio_venta) || 0,
-                descuento: 0,
+                precio_lista: pr.lista,
+                precio_v: pr.final,
+                descuento: Math.max(0, Math.round((pr.lista - pr.final) * 100) / 100),
+                precio_mayorista: Number(p.precio_mayorista) || 0,
+                es_mayorista: pr.mayorista && pr.final < pr.lista,
                 cantidad: 1,
                 stock: Number(p.stock) || 0,
                 stock_minimo: Number(p.stock_minimo) || 0,
@@ -405,6 +488,13 @@
         var spanNombre = document.createElement('span');
         spanNombre.textContent = it.nombre;
         tdNombre.appendChild(spanNombre);
+        if (it.es_mayorista) {
+            var badgeMay = document.createElement('span');
+            badgeMay.textContent = 'MAY';
+            badgeMay.title = 'Precio mayorista aplicado';
+            badgeMay.style.cssText = 'display:inline-block;margin-left:6px;font-size:10px;font-weight:700;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;border-radius:4px;padding:1px 5px;vertical-align:middle;';
+            tdNombre.appendChild(badgeMay);
+        }
 
         function crearInputNumerico(valor, clase, paso, onCambio) {
             var inp = document.createElement('input');
@@ -491,7 +581,7 @@
         tr.appendChild(tdEliminar);
 
         // Firma del contenido para saber si esta fila cambió
-        tr.dataset.firma = [it.nombre, it.imagen || '', it.precio_lista, it.descuento, it.precio_v, it.cantidad, it.permite_decimales ? 1 : 0].join('\u0001');
+        tr.dataset.firma = [it.nombre, it.imagen || '', it.precio_lista, it.descuento, it.precio_v, it.cantidad, it.permite_decimales ? 1 : 0, it.es_mayorista ? 1 : 0].join('\u0001');
 
         return tr;
     }
@@ -692,6 +782,8 @@
                 precio_lista: Number(p.precio_lista) || 0,
                 precio_v: Number(p.precio_unitario) || 0,
                 descuento: Number(p.descuento_unitario) || 0,
+                precio_mayorista: Number(p.precio_mayorista) || 0,
+                es_mayorista: !!p.es_mayorista,
                 cantidad: Number(p.cantidad) || 1,
                 stock: Number(p.stock) || 0,
                 stock_minimo: Number(p.stock_minimo) || 0,

@@ -19,7 +19,8 @@
             <div class="campo"><label for="categoria_id">Categoría</label><select id="categoria_id" name="categoria_id"><option value="">Sin categoría</option><?php foreach ($categorias as $categoria): ?><option value="<?php echo (int)$categoria['id']; ?>" <?php echo (string)($producto['categoria_id'] ?? '') === (string)$categoria['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($categoria['nombre']); ?></option><?php endforeach; ?></select></div>
             <div class="campo"><label for="unidad_medida">Unidad de medida</label><select id="unidad_medida" name="unidad_medida"><option value="unidad" <?php echo (($producto['unidad_medida'] ?? 'unidad') === 'unidad') ? 'selected' : ''; ?>>Unidades</option><option value="libra" <?php echo (($producto['unidad_medida'] ?? 'unidad') === 'libra') ? 'selected' : ''; ?>>Libras</option><option value="kg" <?php echo (($producto['unidad_medida'] ?? 'unidad') === 'kg') ? 'selected' : ''; ?>>Kilogramos</option><option value="arroba" <?php echo (($producto['unidad_medida'] ?? 'unidad') === 'arroba') ? 'selected' : ''; ?>>Arroba</option><option value="litro" <?php echo (($producto['unidad_medida'] ?? 'unidad') === 'litro') ? 'selected' : ''; ?>>Litros</option></select></div>
             <div class="campo"><label for="precio_costo">Precio costo (L)</label><input id="precio_costo" name="precio_costo" type="number" min="0" step="0.01" value="<?php echo htmlspecialchars($producto['precio_costo'] ?? '0.00'); ?>" required></div>
-            <div class="campo"><label for="precio_venta">Precio venta (L)</label><input id="precio_venta" name="precio_venta" type="number" min="0" step="0.01" value="<?php echo htmlspecialchars($producto['precio_venta'] ?? '0.00'); ?>" required></div>
+            <div class="campo"><label for="precio_venta">Precio venta / Precio 1 normal (L)</label><input id="precio_venta" name="precio_venta" type="number" min="0" step="0.01" value="<?php echo htmlspecialchars($producto['precio_venta'] ?? '0.00'); ?>" required></div>
+            <div class="campo"><label for="precio_mayorista">Precio mayorista / Precio 2 (L)</label><input id="precio_mayorista" name="precio_mayorista" type="number" min="0" step="0.01" value="<?php echo htmlspecialchars($producto['precio_mayorista'] ?? '0.00'); ?>"><small style="color:#64748b; font-size:11px;" id="info-precio-mayorista">0 = sin precio mayorista. Se aplica solo a clientes mayoristas en cotizaciones.</small></div>
             <div class="campo">
                 <label for="tipo_impuesto">Impuesto (ISV)</label>
                 <select id="tipo_impuesto" name="tipo_impuesto">
@@ -140,6 +141,8 @@
 (function () {
     const costo = document.getElementById('precio_costo');
     const venta = document.getElementById('precio_venta');
+    const mayorista = document.getElementById('precio_mayorista');
+    const infoMayorista = document.getElementById('info-precio-mayorista');
     const ganancia = document.getElementById('ganancia');
     const codigoInput = document.getElementById('codigo_barras');
     const botonGenerar = document.getElementById('generar-codigo-interno');
@@ -190,7 +193,22 @@
     }
 
     function calcular() { const c = Number(costo.value) || 0; const v = Number(venta.value) || 0; ganancia.textContent = (c ? ((v - c) / c * 100).toFixed(2) : '0.00') + '%'; }
+    function actualizarInfoMayorista() {
+        if (!mayorista || !infoMayorista) return;
+        const v = Number(venta.value) || 0;
+        const m = Number(mayorista.value) || 0;
+        if (m > 0 && v > 0 && m <= v) {
+            infoMayorista.textContent = 'Ahorro mayorista: L ' + (v - m).toFixed(2) + ' (' + ((v - m) / v * 100).toFixed(1) + '% de descuento automático).';
+        } else if (m > 0 && v > 0 && m > v) {
+            infoMayorista.textContent = 'Atención: el precio mayorista supera al normal.';
+        } else {
+            infoMayorista.textContent = '0 = sin precio mayorista. Se aplica solo a clientes mayoristas en cotizaciones.';
+        }
+    }
     costo.addEventListener('input', calcular); venta.addEventListener('input', calcular);
+    if (mayorista) { mayorista.addEventListener('input', actualizarInfoMayorista); }
+    if (venta) { venta.addEventListener('input', actualizarInfoMayorista); }
+    actualizarInfoMayorista();
     document.getElementById('sugerir-precio').addEventListener('click', function () { venta.value = ((Number(costo.value) || 0) * 1.3).toFixed(2); calcular(); });
     if (botonGenerar) {
         botonGenerar.addEventListener('click', function () {

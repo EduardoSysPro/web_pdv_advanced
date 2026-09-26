@@ -95,6 +95,7 @@ $etiquetasEstado = ['pendiente' => 'Pendiente', 'facturada' => 'Facturada', 'can
 
 <section class="cot-ver-totales">
     <div class="cot-ver-totales-block">
+        <?php if (!empty($esClienteMayorista) && (float)($cotizacion['descuento_total'] ?? 0) > 0): ?><div class="cot-resumen-fila"><span>Precio mayorista aplicado</span><strong>Cliente mayorista</strong></div><?php endif; ?>
         <div class="cot-resumen-fila"><span>Subtotal (lista)</span><strong><?php echo formatearMoneda($cotizacion['subtotal'] + $cotizacion['descuento_total']); ?></strong></div>
         <div class="cot-resumen-fila"><span>Descuentos</span><strong>- <?php echo formatearMoneda($cotizacion['descuento_total']); ?></strong></div>
         <div class="cot-resumen-fila"><span>Base gravada 15%</span><strong><?php echo formatearMoneda($cotizacion['importe_gravado_15']); ?></strong></div>

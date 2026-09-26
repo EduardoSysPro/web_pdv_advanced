@@ -1448,6 +1448,9 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
         const clienteTelefono = document.getElementById('cliente_telefono')?.value.trim() || '';
         const clienteDireccion = document.getElementById('cliente_direccion')?.value.trim() || '';
         const cotizacionIdCobro = Number(ticket.cotizacion_id || 0);
+        // P4: autorización de supervisor en reintento (se limpia al leerla).
+        const authSupervisor = window.PDV_SUPERVISOR_AUTH || null;
+        window.PDV_SUPERVISOR_AUTH = null;
 
         const usarWebApp = typeof PDV_WEBAPP !== 'undefined' && PDV_WEBAPP.instalada;
         const abrirTicket = (typeof PDV_WEBAPP !== 'undefined' && PDV_WEBAPP.abrirTicket)
@@ -1473,6 +1476,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
                 cliente_rtn: clienteRtn,
                 cliente_telefono: clienteTelefono,
                 cliente_direccion: clienteDireccion,
+                ...(authSupervisor ? { supervisor_usuario: authSupervisor.u, supervisor_password: authSupervisor.p } : {}),
                 productos: ticket.productos.map(item => ({
                     ...item,
                     cantidad: Number(parseFloat(String(item.cantidad).replace(',', '.')).toFixed(3))
@@ -1480,12 +1484,25 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
             })
         })
         .then(resp => resp.json()).then(resp => {
-            if (!resp || resp.exito !== true) { 
-                if (ventanaTicket) ventanaTicket.close(); 
+            if (!resp || resp.exito !== true) {
+                // P4: límite excedido -> pedir supervisor y reintentar con autorización.
+                if (resp && esCredito && (resp.requiere_autorizacion || resp.codigo === 'SUPERVISOR_INVALIDO')) {
+                    if (ventanaTicket) ventanaTicket.close();
+                    procesandoVenta = false;
+                    setCobroProcesando(false);
+                    const supUser = prompt('La venta excede el crédito disponible.\n' + (resp.mensaje || '') + '\n\nUsuario del supervisor (admin):');
+                    if (!supUser) return;
+                    const supPass = prompt('Contraseña del supervisor ' + supUser + ':');
+                    if (!supPass) return;
+                    window.PDV_SUPERVISOR_AUTH = { u: supUser, p: supPass };
+                    confirmarCobro();
+                    return;
+                }
+                if (ventanaTicket) ventanaTicket.close();
                 procesandoVenta = false;
                 setCobroProcesando(false);
-                alert(resp?.mensaje || 'No se pudo registrar la venta.'); 
-                return; 
+                alert(resp?.mensaje || 'No se pudo registrar la venta.');
+                return;
             }
 
             const esFacturaCredito = metodoPago === 'credito' && tipoComprobante === 'factura';

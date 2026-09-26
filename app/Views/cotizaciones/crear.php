@@ -62,6 +62,10 @@
                         <span>Estado</span>
                         <input type="text" class="form-control-pos" value="Pendiente de facturar" readonly>
                     </label>
+                    <label class="cot-campo">
+                        <span>Categoría</span>
+                        <input type="text" id="cot-cliente-tipo" class="form-control-pos" value="Minorista" readonly>
+                    </label>
                 </div>
                 </div>
             </fieldset>
@@ -142,7 +146,8 @@ $clientesJson = array_map(static function ($cliente) {
         'nombre'      => (string)($cliente['nombre'] ?? ''),
         'rtn_identidad' => (string)($cliente['rtn_identidad'] ?? ''),
         'telefono'    => (string)($cliente['telefono'] ?? ''),
-        'direccion'   => (string)($cliente['direccion'] ?? '')
+        'direccion'   => (string)($cliente['direccion'] ?? ''),
+        'tipo'        => (string)($cliente['tipo'] ?? 'minorista')
     ];
 }, $clientes ?? []);
 ?>
@@ -155,6 +160,7 @@ $clientesJson = array_map(static function ($cliente) {
             <div class="campo"><label>Nombre *</label><input type="text" id="mc-nombre" class="form-control-pos" placeholder="Nombre del cliente" required></div>
             <div class="campo"><label>RTN / Identidad</label><input type="text" id="mc-rtn" class="form-control-pos" maxlength="14" placeholder="0801-1990-12345"></div>
             <div class="campo"><label>Teléfono</label><input type="text" id="mc-telefono" class="form-control-pos" maxlength="20" placeholder="98XX-XXXX"></div>
+            <div class="campo"><label>Categoría</label><select id="mc-tipo" class="form-control-pos"><option value="minorista">Minorista (detalle)</option><option value="mayorista">Mayorista</option></select></div>
             <div class="campo"><label>Límite de crédito (L)</label><input type="number" id="mc-credito" class="form-control-pos" min="0" step="0.01" value="0"></div>
             <div class="campo campo-ancho"><label>Dirección</label><input type="text" id="mc-direccion" class="form-control-pos" placeholder="Dirección del cliente"></div>
             <div class="campo-ancho">

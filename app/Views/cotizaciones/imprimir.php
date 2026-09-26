@@ -167,6 +167,7 @@ $nombreCliente = $cotizacion['cliente_nombre'] ?: 'CONSUMIDOR FINAL';
                 <div><?php echo nl2br(htmlspecialchars($cotizacion['observaciones'])); ?></div>
             <?php endif; ?>
             <div class="titulo" style="margin-top:8px;">Condiciones de la cotización</div>
+            <?php if (!empty($esClienteMayorista) && (float)($cotizacion['descuento_total'] ?? 0) > 0): ?><div>• <strong>Precio mayorista aplicado</strong> (cliente mayorista).</div><?php endif; ?>
             <div>• Esta cotización es una oferta comercial y no constituye factura ni comprobante fiscal.</div>
             <div>• Precios sujetos a cambio por variaciones del mercado y disponibilidad de producto.</div>
             <?php if ($cotizacion['fecha_validez']): ?><div>• Válida hasta el <?php echo date('d/m/Y', strtotime($cotizacion['fecha_validez'])); ?>.</div><?php endif; ?>

@@ -87,6 +87,7 @@ CREATE TABLE productos (
     nombre          VARCHAR(150) NOT NULL COMMENT 'Nombre o descripción del producto',
     precio_costo    DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Precio de compra al proveedor',
     precio_venta    DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Precio de venta al público',
+    precio_mayorista DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Precio 2 para clientes mayoristas (0 = sin precio mayorista)',
     stock           DECIMAL(10,3) NOT NULL DEFAULT 0.000 COMMENT 'Cantidad disponible en inventario',
     stock_minimo    DECIMAL(10,3) NOT NULL DEFAULT 1.000 COMMENT 'Stock mínimo para alerta de reposición',
     unidad_medida   VARCHAR(20) NOT NULL DEFAULT 'unidad' COMMENT 'Unidad de medida del producto',
@@ -127,6 +128,8 @@ CREATE TABLE clientes (
     direccion VARCHAR(255) NULL,
     limite_credito DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     saldo_pendiente DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    dias_credito INT NOT NULL DEFAULT 30 COMMENT 'Días de crédito otorgados (0 = contado)',
+    tipo ENUM('minorista','mayorista') NOT NULL DEFAULT 'minorista' COMMENT 'Categoría: minorista (detalle) o mayorista',
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_clientes_nombre (nombre),
     UNIQUE KEY idx_clientes_rtn (rtn_identidad)
@@ -280,6 +283,9 @@ CREATE TABLE ventas (
     rango_autorizado     VARCHAR(100) NULL COMMENT 'Rango CAI autorizado vigente al emitir la factura',
     fecha_limite_emision DATE NULL COMMENT 'Fecha límite de emisión del CAI vigente al emitir la factura',
     fecha_venta     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Fecha y hora en que se realizó la venta',
+    fecha_vencimiento DATE NULL COMMENT 'Vencimiento de la factura a crédito',
+    excede_limite   TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = se vendió excediendo el límite con autorización',
+    autorizado_por  INT NULL COMMENT 'Usuario supervisor que autorizó exceder el límite',
     UNIQUE KEY idx_ventas_folio (folio),
     KEY idx_ventas_fecha_venta (fecha_venta),
     KEY idx_ventas_usuario_id (usuario_id),
@@ -317,12 +323,32 @@ CREATE TABLE pagos_clientes (
     forma_pago ENUM('efectivo','tarjeta','transferencia') NOT NULL DEFAULT 'efectivo',
     observacion VARCHAR(255) NULL,
     fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado ENUM('activo','anulado') NOT NULL DEFAULT 'activo' COMMENT 'activo o anulado (reversado)',
+    motivo_anulacion VARCHAR(255) NULL COMMENT 'Motivo de la anulación',
+    anulado_por INT NULL COMMENT 'Usuario que anuló el abono',
+    anulado_en DATETIME NULL COMMENT 'Fecha y hora de la anulación',
     KEY idx_pagos_cliente (cliente_id),
     KEY idx_pagos_cli_fecha (cliente_id, fecha),
     KEY idx_pagos_usuario (usuario_id),
     CONSTRAINT fk_pagos_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_pagos_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Abonos de clientes';
+
+-- =============================================================
+-- TABLA: abono_aplicaciones
+-- Aplicación de cada abono a facturas específicas (FIFO automático)
+-- =============================================================
+CREATE TABLE abono_aplicaciones (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    pago_id    INT NOT NULL COMMENT 'Abono en pagos_clientes',
+    venta_id   INT NOT NULL COMMENT 'Factura saldada parcial o totalmente',
+    monto      DECIMAL(10,2) NOT NULL COMMENT 'Monto del abono aplicado a esta factura',
+    creado_en  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_abono_aplic_pago_venta (pago_id, venta_id),
+    KEY idx_abono_aplic_venta (venta_id),
+    CONSTRAINT fk_abono_aplic_pago FOREIGN KEY (pago_id) REFERENCES pagos_clientes (id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_abono_aplic_venta FOREIGN KEY (venta_id) REFERENCES ventas (id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Abono aplicado a facturas (FIFO)';
 
 -- =============================================================
 -- TABLA: detalle_ventas
@@ -486,6 +512,26 @@ CREATE TABLE secuencias (
     nombre VARCHAR(50) NOT NULL PRIMARY KEY,
     valor  INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================
+-- TABLA: credito_auditoria
+-- Bitácora de eventos de crédito y cobranza
+-- =============================================================
+CREATE TABLE credito_auditoria (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id      INT NULL COMMENT 'Cliente involucrado (si aplica)',
+    usuario_id      INT NOT NULL COMMENT 'Usuario que originó el evento',
+    accion          VARCHAR(40) NOT NULL COMMENT 'venta_excede_limite | abono_anulado | limite_modificado',
+    referencia_tipo VARCHAR(20) NULL COMMENT 'venta | pago | cliente',
+    referencia_id   INT NULL COMMENT 'Id de la venta/pago/cliente referenciado',
+    detalle         VARCHAR(255) NULL COMMENT 'Descripción legible del evento',
+    creado_en       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_credito_aud_cliente (cliente_id),
+    KEY idx_credito_aud_usuario (usuario_id),
+    KEY idx_credito_aud_accion (accion),
+    CONSTRAINT fk_credito_aud_cliente FOREIGN KEY (cliente_id) REFERENCES clientes (id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_credito_aud_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bitácora de crédito y cobranza';
 
 -- =============================================================
 -- DATOS BASE DEL SISTEMA (configuración y usuarios)

@@ -15,6 +15,8 @@
 --       reales de sus productos.
 -- Precios en Lempiras (HNL). ISV: canasta básica exenta (0%),
 -- dulces/confitería 18%, el resto 15%.
+-- Al final se asigna Precio 2 (mayorista, -10%) a ~90 productos
+-- de alta rotación para probar clientes mayoristas en cotizaciones.
 -- =============================================================
 
 USE web_pdv_advanced_db;
@@ -890,9 +892,42 @@ INSERT INTO productos (codigo_barras, nombre, precio_costo, precio_venta, stock,
 ('7410000000750','Set de Utensilios de Cocina',600.00,744.00,8.000,1.000,19,'unidad',0,'gravado_15',15.00);
 
 -- =============================================================
+-- PRECIO 2 (MAYORISTA) DE EJEMPLO
+-- -------------------------------------------------------------
+-- ~90 productos de alta rotación con 10% de descuento mayorista.
+-- Requiere la columna productos.precio_mayorista (viene en
+-- esquema_instalacion_limpia.sql). Los códigos son secuenciales:
+-- n 1-750 = 7410000000001 - 7410000000750.
+--   Abarrotes básicos (n 1-30), Bebidas (n 61-70),
+--   Granos y Semillas (toda la cat. 8), Limpieza (n 561-575),
+--   Desechables (n 646-660).
+-- =============================================================
+
+-- Abarrotes básicos: arroz, frijoles, azúcar, sal, aceites, etc.
+UPDATE productos SET precio_mayorista = ROUND(precio_venta * 0.90, 2)
+WHERE codigo_barras BETWEEN '7410000000001' AND '7410000000030';
+
+-- Bebidas de alta rotación.
+UPDATE productos SET precio_mayorista = ROUND(precio_venta * 0.90, 2)
+WHERE codigo_barras BETWEEN '7410000000061' AND '7410000000070';
+
+-- Granos y semillas (categoría 8): clásico de venta mayorista.
+UPDATE productos SET precio_mayorista = ROUND(precio_venta * 0.90, 2)
+WHERE categoria_id = 8;
+
+-- Limpieza del hogar (primeros 15).
+UPDATE productos SET precio_mayorista = ROUND(precio_venta * 0.90, 2)
+WHERE codigo_barras BETWEEN '7410000000561' AND '7410000000575';
+
+-- Desechables y empaques (primeros 15).
+UPDATE productos SET precio_mayorista = ROUND(precio_venta * 0.90, 2)
+WHERE codigo_barras BETWEEN '7410000000646' AND '7410000000660';
+
+-- =============================================================
 -- VERIFICACIÓN
 -- =============================================================
 SELECT COUNT(*) AS total_productos FROM productos;
+SELECT COUNT(*) AS con_precio_mayorista FROM productos WHERE precio_mayorista > 0;
 SELECT c.nombre AS categoria, COUNT(*) AS cantidad
 FROM productos p
 JOIN categorias c ON c.id = p.categoria_id

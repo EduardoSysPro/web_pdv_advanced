@@ -4,6 +4,13 @@
     var URL = URL_BASE;
     var MONEDA = typeof MONEDA_SIMBOLO !== 'undefined' ? MONEDA_SIMBOLO : 'L';
     var items = [];            // carrito
+    // La imagen del producto puede ser archivo local o URL de internet.
+    function urlImagenProducto(v) {
+        v = (v || '').toString().trim();
+        if (!v) return '';
+        if (/^https?:\/\//i.test(v)) return v;
+        return URL + 'uploads/productos/' + v;
+    }
     var cliente = { id: 0, tipo: 'minorista' };   // snapshot del cliente
     var edicion = MODO_EDICION === 1;
     var cotizacionId = COTIZACION_ID;
@@ -318,9 +325,9 @@
         datos.forEach(function (p) {
             var tr = document.createElement('tr');
             var tdImagen = document.createElement('td');
-            if (p.imagen) {
+            if (urlImagenProducto(p.imagen)) {
                 var img = document.createElement('img');
-                img.src = URL + 'uploads/productos/' + p.imagen;
+                img.src = urlImagenProducto(p.imagen);
                 img.alt = p.nombre;
                 img.className = 'cot-prod-miniatura cot-prod-miniatura-zoom';
                 img.title = 'Ver imagen grande';
@@ -474,9 +481,9 @@
 
         var tdNombre = document.createElement('td');
         tdNombre.className = 'cot-celda-nombre';
-        if (it.imagen) {
+        if (urlImagenProducto(it.imagen)) {
             var img = document.createElement('img');
-            img.src = URL + 'uploads/productos/' + it.imagen;
+            img.src = urlImagenProducto(it.imagen);
             img.alt = it.nombre;
             img.className = 'cot-prod-miniatura cot-prod-miniatura-zoom';
             img.title = 'Ver imagen grande';

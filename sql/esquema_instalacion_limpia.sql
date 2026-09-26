@@ -98,7 +98,7 @@ CREATE TABLE productos (
     precio_empaque  DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Precio de venta por empaque',
     tipo_impuesto   ENUM('exento','gravado_15','gravado_18','exonerado') NOT NULL DEFAULT 'gravado_15' COMMENT 'Régimen de ISV del producto',
     porcentaje_isv  DECIMAL(5,2) NOT NULL DEFAULT 15.00 COMMENT 'Porcentaje de ISV aplicado',
-    imagen          VARCHAR(255) NULL COMMENT 'Ruta de la foto del producto (uploads/productos/...)',
+    imagen          VARCHAR(255) NULL COMMENT 'Foto del producto: nombre de archivo local (uploads/productos/...) o URL http(s) de internet',
     codigo_barras_empaque VARCHAR(50) NULL COMMENT 'Código de barras exclusivo del empaque',
     categoria_id    INT NULL COMMENT 'Llave foránea hacia la categoría del producto',
     creado_en       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Fecha y hora de alta del producto',

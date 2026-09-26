@@ -177,6 +177,29 @@ class ProductosController extends Controller
     {
         $resultado = ['nombre' => (string)$nombreActual, 'error' => ''];
         $quitar = isset($_POST['quitar_imagen']);
+        $origen = (($_POST['imagen_origen'] ?? 'archivo') === 'url') ? 'url' : 'archivo';
+
+        // Origen URL de internet: se guarda el enlace tal cual (sin descargar).
+        if ($origen === 'url') {
+            $url = trim((string)($_POST['imagen_url'] ?? ''));
+            if ($url === '') {
+                if ($quitar) {
+                    $this->eliminarArchivoImagen((string)$nombreActual);
+                    $resultado['nombre'] = '';
+                }
+                return $resultado;
+            }
+            if (strlen($url) > 255 || filter_var($url, FILTER_VALIDATE_URL) === false || !Producto::esUrlImagen($url)) {
+                $resultado['error'] = 'La URL de la imagen no es válida (debe empezar con http:// o https:// y no superar 255 caracteres).';
+                return $resultado;
+            }
+            if ((string)$nombreActual !== '' && $nombreActual !== $url) {
+                $this->eliminarArchivoImagen((string)$nombreActual);
+            }
+            $resultado['nombre'] = $url;
+            return $resultado;
+        }
+
         $subio = !empty($_FILES['imagen']['name']);
 
         if (!$subio && !$quitar) {
@@ -238,6 +261,11 @@ class ProductosController extends Controller
 
     private function eliminarArchivoImagen($nombre)
     {
+        // Las URL externas nunca son archivos locales (y su basename
+        // podría coincidir con otro archivo: no tocar nada).
+        if (Producto::esUrlImagen($nombre)) {
+            return;
+        }
         $nombre = basename((string)$nombre);
         if ($nombre === '' || $nombre === '.' || $nombre === '..') {
             return;

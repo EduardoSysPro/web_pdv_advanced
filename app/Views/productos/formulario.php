@@ -42,15 +42,35 @@
         </div>
 
         <!-- ================= FOTO DEL PRODUCTO (OPCIONAL) ================= -->
+        <?php $origenImagenActual = Producto::esUrlImagen($producto['imagen'] ?? '') ? 'url' : 'archivo'; ?>
         <div class="campo campo-ancho" style="margin-top:20px; padding-top:16px; border-top:1px solid #dbe1ea;">
-            <label for="imagen" style="font-weight:700; font-size:14px; color:#1e293b;">📷 Foto del producto (opcional)</label>
-            <input id="imagen" name="imagen" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:6px;">
-            <small style="color:#64748b; font-size:12px;">JPG, PNG o WebP de hasta 2 MB. Se mostrará en el buscador del vendedor y del POS.</small>
+            <label style="font-weight:700; font-size:14px; color:#1e293b;">📷 Foto del producto (opcional)</label>
+            <div style="display:flex; gap:16px; margin:8px 0; font-size:13px;">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                    <input type="radio" name="imagen_origen" value="archivo" <?php echo $origenImagenActual === 'archivo' ? 'checked' : ''; ?>> Subir archivo
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                    <input type="radio" name="imagen_origen" value="url" <?php echo $origenImagenActual === 'url' ? 'checked' : ''; ?>> URL de internet
+                </label>
+            </div>
+            <div id="seccion-imagen-archivo" style="<?php echo $origenImagenActual === 'url' ? 'display:none;' : ''; ?>">
+                <input id="imagen" name="imagen" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:6px;">
+                <small style="color:#64748b; font-size:12px;">JPG, PNG o WebP de hasta 2 MB. Se mostrará en el buscador del vendedor y del POS.</small>
+            </div>
+            <div id="seccion-imagen-url" style="<?php echo $origenImagenActual === 'url' ? '' : 'display:none;'; ?>">
+                <input id="imagen_url" name="imagen_url" type="url" maxlength="255" placeholder="https://ejemplo.com/foto-producto.jpg" value="<?php echo $origenImagenActual === 'url' ? htmlspecialchars($producto['imagen']) : ''; ?>" style="margin-top:6px; width:100%;">
+                <small style="color:#64748b; font-size:12px;">Pega el enlace directo de la imagen (debe empezar con http:// o https://). No se descarga: se muestra desde internet.</small>
+                <div id="vista-previa-url" style="margin-top:10px; display:none;">
+                    <img id="img-previa-url" alt="Vista previa URL" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
+                    <div id="error-previa-url" style="display:none; color:#dc2626; font-size:12px;">No se pudo cargar esa URL como imagen.</div>
+                </div>
+            </div>
             <?php if (!empty($producto['imagen'])): ?>
                 <div id="imagen-actual" style="margin-top:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                    <img src="<?php echo URL_BASE; ?>uploads/productos/<?php echo htmlspecialchars($producto['imagen']); ?>" alt="Foto del producto" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
+                    <img src="<?php echo htmlspecialchars(Producto::urlImagen($producto['imagen'], URL_BASE)); ?>" alt="Foto del producto" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
+                    <?php if ($origenImagenActual === 'url'): ?><small style="color:#0369a1; font-size:11px;">Desde internet</small><?php endif; ?>
                     <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
-                        <input type="checkbox" name="quitar_imagen" value="1" id="quitar_imagen"> Quitar foto actual
+                        <input type="checkbox" name="quitar_imagen" value="1" id="quitar_imagen"> Quitar imagen actual
                     </label>
                 </div>
             <?php else: ?>
@@ -234,6 +254,50 @@
     calcular();
     actualizarUnidad();
     actualizarPreviewCodigo();
+
+    // ================= ORIGEN DE LA IMAGEN (archivo / URL) =================
+    const radiosOrigen = document.querySelectorAll('input[name="imagen_origen"]');
+    const seccionArchivo = document.getElementById('seccion-imagen-archivo');
+    const seccionUrl = document.getElementById('seccion-imagen-url');
+    const inputUrl = document.getElementById('imagen_url');
+    const previaUrl = document.getElementById('vista-previa-url');
+    const imgPreviaUrl = document.getElementById('img-previa-url');
+    const errorPreviaUrl = document.getElementById('error-previa-url');
+
+    function actualizarOrigenImagen() {
+        const sel = document.querySelector('input[name="imagen_origen"]:checked');
+        const esUrl = sel && sel.value === 'url';
+        if (seccionArchivo) seccionArchivo.style.display = esUrl ? 'none' : '';
+        if (seccionUrl) seccionUrl.style.display = esUrl ? '' : 'none';
+        if (esUrl) actualizarPreviaUrl();
+    }
+
+    function actualizarPreviaUrl() {
+        if (!inputUrl || !previaUrl || !imgPreviaUrl) return;
+        const v = (inputUrl.value || '').trim();
+        if (!/^https?:\/\//i.test(v)) {
+            previaUrl.style.display = 'none';
+            return;
+        }
+        if (errorPreviaUrl) errorPreviaUrl.style.display = 'none';
+        previaUrl.style.display = 'block';
+        imgPreviaUrl.src = v;
+    }
+
+    radiosOrigen.forEach(function (r) { r.addEventListener('change', actualizarOrigenImagen); });
+    if (inputUrl) {
+        inputUrl.addEventListener('input', actualizarPreviaUrl);
+        inputUrl.addEventListener('change', actualizarPreviaUrl);
+    }
+    if (imgPreviaUrl) {
+        imgPreviaUrl.addEventListener('error', function () {
+            if (errorPreviaUrl) errorPreviaUrl.style.display = 'block';
+        });
+        imgPreviaUrl.addEventListener('load', function () {
+            if (errorPreviaUrl) errorPreviaUrl.style.display = 'none';
+        });
+    }
+    actualizarOrigenImagen();
 
     // ================= FOTO DEL PRODUCTO (PREVIEW) =================
     const inputImagen = document.getElementById('imagen');

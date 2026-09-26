@@ -77,6 +77,36 @@ class Producto extends Controller
         return max(0.0, (float)($fila['precio_mayorista'] ?? 0));
     }
 
+    /**
+     * La columna `imagen` guarda el nombre del archivo local O una URL
+     * completa (http/https) de internet, según lo que elija el usuario.
+     */
+    public static function esUrlImagen($valor)
+    {
+        $v = trim((string)$valor);
+        return $v !== '' && preg_match('#^https?://#i', $v) === 1;
+    }
+
+    /**
+     * Resuelve la imagen a su src final: la URL tal cual si es externa,
+     * o la ruta de uploads si es archivo local. Vacío si no hay imagen.
+     */
+    public static function urlImagen($valor, $baseUrl = null)
+    {
+        $v = trim((string)$valor);
+        if ($v === '') {
+            return '';
+        }
+        if (self::esUrlImagen($v)) {
+            return $v;
+        }
+        if (strpos($v, 'uploads/productos/') === 0) {
+            $v = substr($v, strlen('uploads/productos/'));
+        }
+        $base = $baseUrl !== null && $baseUrl !== '' ? rtrim((string)$baseUrl, '/') . '/' : '';
+        return $base . 'uploads/productos/' . $v;
+    }
+
     public function buscarPorCodigoBarras($codigoBarras)
     {
         $sql = 'SELECT

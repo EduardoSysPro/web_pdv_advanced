@@ -190,6 +190,36 @@
     color: #94a3b8;
 }
 
+/* ---------------- Configuración: coherencia con el sistema ---------------- */
+:root[data-tema="oscuro"] .config-switch,
+:root[data-tema="oscuro"] .config-radio {
+    background: #131e33;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+:root[data-tema="oscuro"] .config-hint,
+:root[data-tema="oscuro"] .config-hint-small {
+    color: #94a3b8;
+}
+
+:root[data-tema="oscuro"] .config-acciones {
+    background: #0f172a;
+    border-color: #24334d;
+}
+
+:root[data-tema="oscuro"] .ticket-preview-head {
+    background: #111a2e;
+    border-bottom-color: #24334d;
+    color: #e2e8f0;
+}
+
+:root[data-tema="oscuro"] .ticket-preview-wrapper {
+    background: #0b1220;
+}
+
+/* El papel del ticket se mantiene claro para simular la impresión real */
+
 :root[data-tema="oscuro"] .tabla-catalogo {
     border-color: #24334d;
 }
@@ -832,24 +862,47 @@
 
 /* ---------------- POS_MOVIL.CSS ---------------- */
 
+/* Botón tema hereda el estilo neutro .btn-movil-icon en modo claro; en oscuro va slate */
 .btn-tema-movil {
-    background: #1e293b;
-    color: #cbd5e1;
-    border: 1px solid var(--movil-border);
-    border-radius: 8px;
-    width: 38px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    cursor: pointer;
-    margin-right: 6px;
+    min-width: 38px;
 }
 
 :root[data-tema="oscuro"] .movil-header,
 :root[data-tema="oscuro"] .movil-search-section {
     background: #0f172a;
+    border-bottom-color: #24334d;
+}
+
+:root[data-tema="oscuro"] .movil-brand-title {
+    color: #f1f5f9;
+}
+
+:root[data-tema="oscuro"] .movil-brand-sub {
+    color: #94a3b8;
+}
+
+:root[data-tema="oscuro"] .btn-movil-icon,
+:root[data-tema="oscuro"] .btn-movil-logout,
+:root[data-tema="oscuro"] .btn-tema-movil {
+    background: #1e293b;
+    border-color: #334155;
+    color: #cbd5e1;
+}
+
+:root[data-tema="oscuro"] .btn-movil-icon:hover,
+:root[data-tema="oscuro"] .btn-movil-logout:hover {
+    background: #273549;
+    border-color: #475569;
+}
+
+:root[data-tema="oscuro"] .btn-movil-icon.is-peligro {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+}
+
+:root[data-tema="oscuro"] .btn-movil-icon.is-peligro:hover {
+    background: rgba(239, 68, 68, 0.22);
 }
 
 :root[data-tema="oscuro"] .movil-search-input {
@@ -1309,4 +1362,69 @@
     background: #111a2e;
     color: #cbd5e1;
     border-color: #334155;
+}
+
+/* ---- Modal "Registrar cliente" de cotizaciones + búsqueda de cliente ---- */
+:root[data-tema="oscuro"] #modal-cliente-rapido .tarjeta {
+    background-color: #0f172a;
+    border: 1px solid #24334d;
+    color: #e2e8f0;
+}
+:root[data-tema="oscuro"] #modal-cliente-rapido .tarjeta-titulo {
+    color: #e2e8f0;
+    border-bottom-color: #24334d;
+}
+:root[data-tema="oscuro"] #modal-cliente-rapido .form-nota {
+    color: #94a3b8;
+}
+:root[data-tema="oscuro"] #modal-cliente-rapido .campo label {
+    color: #a6b3c7;
+}
+:root[data-tema="oscuro"] #modal-cliente-rapido .form-control-pos {
+    background-color: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+    color-scheme: dark;
+}
+:root[data-tema="oscuro"] #modal-cliente-rapido .form-control-pos:focus {
+    background-color: #131e33;
+    border-color: #60a5fa;
+}
+:root[data-tema="oscuro"] #modal-cliente-rapido .modal-cerrar-x {
+    border-color: #334155;
+    background: #131e33;
+    color: #e2e8f0;
+}
+:root[data-tema="oscuro"] #modal-cliente-rapido .modal-cerrar-x:hover {
+    background: rgba(239, 68, 68, .8);
+    border-color: rgba(239, 68, 68, .8);
+    color: #fff;
+}
+
+/* Listas de sugerencias (select + datalist): evita texto claro sobre fondo claro */
+:root[data-tema="oscuro"] option {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+:root[data-tema="oscuro"] input[list],
+:root[data-tema="oscuro"] #cot-cliente-selector,
+:root[data-tema="oscuro"] #cot-cliente-rtn {
+    color-scheme: dark;
+}
+
+/* Placeholders legibles en oscuro */
+:root[data-tema="oscuro"] input::placeholder,
+:root[data-tema="oscuro"] textarea::placeholder {
+    color: #64748b;
+    opacity: 1;
+}
+
+/* Avisos informativos azules (sección de productos) */
+.hint-info,
+.hint-info-box {
+    color: #0369a1;
+}
+:root[data-tema="oscuro"] .hint-info,
+:root[data-tema="oscuro"] .hint-info-box {
+    color: #7dd3fc;
 }

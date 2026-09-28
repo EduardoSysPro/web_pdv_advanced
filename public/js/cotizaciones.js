@@ -20,15 +20,6 @@
         return cliente.tipo === 'mayorista';
     }
 
-    function tipoDeCliente(id) {
-        for (var i = 0; i < CLIENTES.length; i++) {
-            if (Number(CLIENTES[i].id) === Number(id)) {
-                return CLIENTES[i].tipo === 'mayorista' ? 'mayorista' : 'minorista';
-            }
-        }
-        return 'minorista';
-    }
-
     // Precio aplicable según cliente: {lista, final, mayorista}.
     // La lista siempre es el precio normal; el final es el Precio 2
     // solo para mayoristas en venta por unidad.
@@ -83,54 +74,126 @@
         window.setTimeout(function () { cont.remove(); }, error ? 9000 : 4000);
     }
 
-    // ---------- Cliente / datalist ----------
-    function construirDatalists() {
-        var dlNombres = document.getElementById('cot-lista-clientes');
-        var dlRtn = document.getElementById('cot-lista-rtn');
-        var nombres = {}, rtns = {};
-        if (dlNombres) dlNombres.innerHTML = '';
-        if (dlRtn) dlRtn.innerHTML = '';
-        CLIENTES.forEach(function (c) {
-            var n = (c.nombre || '').trim();
-            if (n && !nombres[n]) {
-                nombres[n] = true;
-                if (dlNombres) {
-                    var op = document.createElement('option');
-                    op.value = n;
-                    dlNombres.appendChild(op);
-                }
+    // ---------- Cliente / autocompletado AJAX ----------
+    // Los clientes NO se precargan: se buscan en el servidor (escala a miles
+    // sin congelar el navegador ni inflar la página).
+    var panelCli = null;
+    var temporizadorCli = null;
+    var campoCliActivo = null;
+
+    function panelClientes() {
+        if (!panelCli) {
+            panelCli = document.createElement('div');
+            panelCli.className = 'cot-cli-panel';
+            panelCli.hidden = true;
+            // Evita que el input pierda el foco antes del clic en un resultado.
+            panelCli.addEventListener('mousedown', function (e) { e.preventDefault(); });
+            document.body.appendChild(panelCli);
+        }
+        return panelCli;
+    }
+
+    function cerrarPanelCli() {
+        if (panelCli) panelCli.hidden = true;
+        campoCliActivo = null;
+    }
+
+    function posicionarPanelCli(input) {
+        var panel = panelClientes();
+        var r = input.getBoundingClientRect();
+        panel.style.minWidth = Math.max(240, Math.min(340, r.width)) + 'px';
+        panel.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 348)) + 'px';
+        var altoMax = 260;
+        var debajo = window.innerHeight - r.bottom - 8;
+        if (debajo >= 120 || debajo >= (r.top - 8)) {
+            panel.style.top = (r.bottom + 4) + 'px';
+            panel.style.bottom = 'auto';
+            panel.style.maxHeight = Math.min(altoMax, Math.max(120, debajo - 4)) + 'px';
+        } else {
+            panel.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+            panel.style.top = 'auto';
+            panel.style.maxHeight = Math.min(altoMax, Math.max(120, r.top - 12)) + 'px';
+        }
+        panel.hidden = false;
+        campoCliActivo = input;
+    }
+
+    function renderizarPanelCli(lista, input) {
+        var panel = panelClientes();
+        panel.innerHTML = '';
+        posicionarPanelCli(input);
+        if (!lista || lista.length === 0) {
+            var vacio = document.createElement('div');
+            vacio.className = 'cot-cli-vacio';
+            vacio.textContent = 'Sin coincidencias. Puedes registrarlo con “Registrar cliente”.';
+            panel.appendChild(vacio);
+            return;
+        }
+        lista.forEach(function (c) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cot-cli-item';
+            var titulo = document.createElement('strong');
+            titulo.textContent = c.nombre || 'Sin nombre';
+            btn.appendChild(titulo);
+            if (c.tipo === 'mayorista') {
+                var badge = document.createElement('span');
+                badge.className = 'cot-cli-may';
+                badge.textContent = 'MAY';
+                badge.title = 'Cliente mayorista';
+                btn.appendChild(badge);
             }
-            var r = (c.rtn_identidad || '').trim();
-            if (r && !rtns[r]) {
-                rtns[r] = true;
-                if (dlRtn) {
-                    var opR = document.createElement('option');
-                    opR.value = r;
-                    dlRtn.appendChild(opR);
-                }
-            }
+            var det = document.createElement('small');
+            var rtn = String(c.rtn_identidad || '').trim() || 'sin RTN';
+            var tel = String(c.telefono || '').trim();
+            det.textContent = rtn + (tel ? ' · ' + tel : '');
+            btn.appendChild(det);
+            btn.addEventListener('click', function () {
+                aplicarCliente({
+                    id: c.id,
+                    nombre: c.nombre,
+                    rtn: c.rtn_identidad,
+                    telefono: c.telefono,
+                    direccion: c.direccion,
+                    tipo: c.tipo
+                }, true);
+                var sel = document.getElementById('cot-cliente-selector');
+                if (sel) sel.value = c.nombre || '';
+                cerrarPanelCli();
+            });
+            panel.appendChild(btn);
         });
     }
 
-    function clientePorRtn(rtnTexto) {
-        var buscar = String(rtnTexto || '').replace(/\D/g, '');
-        if (buscar === '') return null;
-        for (var i = 0; i < CLIENTES.length; i++) {
-            if (String(CLIENTES[i].rtn_identidad || '').replace(/\D/g, '') === buscar) {
-                return CLIENTES[i];
-            }
-        }
-        return null;
+    function buscarClientesAjax(termino, input) {
+        window.clearTimeout(temporizadorCli);
+        temporizadorCli = window.setTimeout(function () {
+            var t = String(termino || '').trim();
+            if (t.length < 2) { cerrarPanelCli(); return; }
+            fetch(URL + 'clientes/buscar?busqueda=' + encodeURIComponent(t) + '&limite=12', { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function (lista) {
+                    if (campoCliActivo !== input && document.activeElement !== input) return;
+                    renderizarPanelCli(Array.isArray(lista) ? lista : [], input);
+                })
+                .catch(function () { cerrarPanelCli(); });
+        }, 250);
+    }
+
+    function restablecerClienteVacio() {
+        cliente.id = 0;
+        cliente.tipo = 'minorista';
+        actualizarEtiquetaCliente();
+        reaplicarPrecios();
     }
 
     function poblarClientes() {
-        construirDatalists();
-        var campo = document.getElementById('cot-cliente-selector');
         if (edicion && COTIZACION_CLIENTE) {
             aplicarCliente(COTIZACION_CLIENTE);
         }
+        var campo = document.getElementById('cot-cliente-selector');
         if (campo) {
-            campo.value = edicion && COTIZACION_CLIENTE ? COTIZACION_CLIENTE.nombre : '';
+            campo.value = edicion && COTIZACION_CLIENTE ? (COTIZACION_CLIENTE.nombre || '') : '';
         }
     }
 
@@ -139,43 +202,90 @@
         if (campo && !campo.__conectado) {
             campo.__conectado = true;
             campo.addEventListener('input', function () {
-                var nombreBuscado = this.value.trim();
-                if (nombreBuscado === '') return;
-                var encontrado = CLIENTES.find(function (c) { return c.nombre === nombreBuscado; });
-                if (encontrado) {
-                    var sel = {
-                        id: encontrado.id,
-                        nombre: encontrado.nombre,
-                        rtn: encontrado.rtn_identidad,
-                        telefono: encontrado.telefono,
-                        direccion: encontrado.direccion,
-                        tipo: encontrado.tipo
-                    };
-                    aplicarCliente(sel, true);
+                buscarClientesAjax(this.value, campo);
+            });
+            campo.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    var t = this.value.trim();
+                    if (t.length < 2) return;
+                    fetch(URL + 'clientes/buscar?busqueda=' + encodeURIComponent(t) + '&limite=12', { headers: { 'Accept': 'application/json' } })
+                        .then(function (r) { return r.json(); })
+                        .then(function (lista) {
+                            if (Array.isArray(lista) && lista.length === 1) {
+                                var c = lista[0];
+                                aplicarCliente({
+                                    id: c.id,
+                                    nombre: c.nombre,
+                                    rtn: c.rtn_identidad,
+                                    telefono: c.telefono,
+                                    direccion: c.direccion,
+                                    tipo: c.tipo
+                                }, true);
+                                campo.value = c.nombre || '';
+                                cerrarPanelCli();
+                            } else {
+                                renderizarPanelCli(Array.isArray(lista) ? lista : [], campo);
+                            }
+                        })
+                        .catch(function () {});
                 }
+            });
+            campo.addEventListener('change', function () {
+                if (this.value.trim() === '') restablecerClienteVacio();
             });
         }
         var rtnInput = document.getElementById('cot-cliente-rtn');
         if (rtnInput && !rtnInput.__conectado) {
             rtnInput.__conectado = true;
+            rtnInput.addEventListener('input', function () {
+                buscarClientesAjax(this.value, rtnInput);
+            });
             rtnInput.addEventListener('change', function () {
-                var c = clientePorRtn(this.value);
-                if (c) {
-                    aplicarCliente({
-                        id: c.id,
-                        nombre: c.nombre,
-                        rtn: c.rtn_identidad,
-                        telefono: c.telefono,
-                        direccion: c.direccion,
-                        tipo: c.tipo
-                    }, true);
-                } else {
-                    cliente.id = 0;
-                    cliente.tipo = 'minorista';
-                    actualizarEtiquetaCliente();
-                    reaplicarPrecios();
+                var t = this.value.trim();
+                if (t === '') { restablecerClienteVacio(); return; }
+                var soloDig = t.replace(/\D/g, '');
+                fetch(URL + 'clientes/buscar?busqueda=' + encodeURIComponent(t) + '&limite=12', { headers: { 'Accept': 'application/json' } })
+                    .then(function (r) { return r.json(); })
+                    .then(function (lista) {
+                        var c = null;
+                        if (Array.isArray(lista)) {
+                            for (var i = 0; i < lista.length; i++) {
+                                if (String(lista[i].rtn_identidad || '').replace(/\D/g, '') === soloDig) { c = lista[i]; break; }
+                            }
+                            if (!c && lista.length === 1) c = lista[0];
+                        }
+                        if (c) {
+                            aplicarCliente({
+                                id: c.id,
+                                nombre: c.nombre,
+                                rtn: c.rtn_identidad,
+                                telefono: c.telefono,
+                                direccion: c.direccion,
+                                tipo: c.tipo
+                            }, true);
+                        } else {
+                            restablecerClienteVacio();
+                        }
+                        cerrarPanelCli();
+                    })
+                    .catch(function () {});
+            });
+        }
+        // Cierre global del panel (una sola vez aunque el script corra en
+        // escritorio y móvil con el mismo archivo).
+        if (!document.__cotCliGlobal && document.addEventListener) {
+            document.__cotCliGlobal = true;
+            document.addEventListener('click', function (e) {
+                if (panelCli && !panelCli.hidden && campoCliActivo && !panelCli.contains(e.target) && e.target !== campoCliActivo) {
+                    cerrarPanelCli();
                 }
             });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') cerrarPanelCli();
+            });
+            window.addEventListener('scroll', function () { cerrarPanelCli(); }, true);
+            window.addEventListener('resize', function () { cerrarPanelCli(); });
         }
     }
 
@@ -188,7 +298,8 @@
 
     function aplicarCliente(sel, sobreescribir) {
         cliente.id = sel.id || 0;
-        cliente.tipo = sel.tipo === 'mayorista' ? 'mayorista' : tipoDeCliente(cliente.id);
+        // El tipo viene del servidor (búsqueda AJAX o ficha de edición).
+        cliente.tipo = sel.tipo === 'mayorista' ? 'mayorista' : 'minorista';
         if (!sobreescribir || !document.getElementById('cot-cliente-nombre').value) {
             document.getElementById('cot-cliente-nombre').value = sel.nombre || '';
         }
@@ -271,15 +382,6 @@
                     }
                     var nuevo = resp.cliente;
                     var nuevoTipo = nuevo.tipo === 'mayorista' ? 'mayorista' : 'minorista';
-                    CLIENTES.push({
-                        id: nuevo.id,
-                        nombre: nuevo.nombre,
-                        rtn_identidad: nuevo.rtn_identidad || '',
-                        telefono: nuevo.telefono || '',
-                        direccion: nuevo.direccion || '',
-                        tipo: nuevoTipo
-                    });
-                    construirDatalists();
                     cerrar();
                     aplicarCliente({
                         id: nuevo.id,
@@ -473,6 +575,18 @@
     }
 
     // ---------- Carrito ----------
+    function firmaArticulo(it) {
+        return [it.nombre, it.imagen || '', it.precio_lista, it.descuento, it.precio_v, it.cantidad, it.permite_decimales ? 1 : 0, it.es_mayorista ? 1 : 0].join('');
+    }
+
+    // Actualiza el importe y la firma de la fila sin reconstruir el DOM:
+    // el input conserva el foco y la fila nunca se duplica al editar precios.
+    function sincronizarFila(tr, it, tdImporte) {
+        if (tdImporte) tdImporte.textContent = moneda(it.cantidad * it.precio_v);
+        if (tr) tr.dataset.firma = firmaArticulo(it);
+        calcularTotales();
+    }
+
     function construirFilaArticulo(it, indice) {
         var itemKey = it.item_key || (String(it.id) + '_' + (it.tipo_presentacion || 'unidad'));
         var tr = document.createElement('tr');
@@ -511,19 +625,24 @@
             inp.value = String(valor);
             inp.className = 'form-control-pos ' + clase;
             inp.addEventListener('change', onCambio);
-            inp.addEventListener('input', function () { it.guardar = true; });
             return inp;
         }
+
+        var tdImporte = document.createElement('td');
+        tdImporte.dataset.label = 'Importe';
+        tdImporte.className = 'text-right cot-celda-importe';
+        tdImporte.textContent = moneda(it.cantidad * it.precio_v);
 
         var tdLista = document.createElement('td');
         tdLista.className = 'cot-celda-input';
         tdLista.dataset.label = 'P. Lista';
         var inpLista = crearInputNumerico(it.precio_lista, 'cot-inp-monto', '0.01', function () {
             var n = Math.max(0, parseFloat(this.value) || 0);
-            it.precio_lista = n;
-            var nuevofinal = Math.max(0, n - it.descuento);
-            it.precio_v = nuevofinal;
-            renderizarCarrito();
+            it.precio_lista = Math.round(n * 100) / 100;
+            it.precio_v = Math.max(0, Math.round((it.precio_lista - it.descuento) * 100) / 100);
+            this.value = String(it.precio_lista);
+            inpFinal.value = String(it.precio_v);
+            sincronizarFila(tr, it, tdImporte);
         });
         tdLista.appendChild(inpLista);
 
@@ -532,9 +651,11 @@
         tdDesc.dataset.label = 'Descuento';
         var inpDesc = crearInputNumerico(it.descuento, 'cot-inp-monto', '0.01', function () {
             var d = Math.min(it.precio_lista, Math.max(0, parseFloat(this.value) || 0));
-            it.descuento = d;
-            it.precio_v = Math.max(0, it.precio_lista - d);
-            renderizarCarrito();
+            it.descuento = Math.round(d * 100) / 100;
+            it.precio_v = Math.max(0, Math.round((it.precio_lista - it.descuento) * 100) / 100);
+            this.value = String(it.descuento);
+            inpFinal.value = String(it.precio_v);
+            sincronizarFila(tr, it, tdImporte);
         });
         tdDesc.appendChild(inpDesc);
 
@@ -543,9 +664,11 @@
         tdFinal.dataset.label = 'P. Final';
         var inpFinal = crearInputNumerico(it.precio_v, 'cot-inp-monto', '0.01', function () {
             var f = Math.max(0, parseFloat(this.value) || 0);
-            it.precio_v = f;
-            it.descuento = Math.min(it.precio_lista, Math.max(0, it.precio_lista - f));
-            renderizarCarrito();
+            it.precio_v = Math.round(f * 100) / 100;
+            it.descuento = Math.min(it.precio_lista, Math.max(0, Math.round((it.precio_lista - it.precio_v) * 100) / 100));
+            this.value = String(it.precio_v);
+            inpDesc.value = String(it.descuento);
+            sincronizarFila(tr, it, tdImporte);
         });
         tdFinal.appendChild(inpFinal);
 
@@ -555,14 +678,9 @@
         var inpCant = crearInputNumerico(it.cantidad, 'cot-inp-cant', it.permite_decimales ? '0.001' : '1', function () {
             var c = Math.max(0, parseFloat(this.value) || 0);
             it.cantidad = c;
-            renderizarCarrito();
+            sincronizarFila(tr, it, tdImporte);
         });
         tdCant.appendChild(inpCant);
-
-        var tdImporte = document.createElement('td');
-        tdImporte.dataset.label = 'Importe';
-        tdImporte.className = 'text-right cot-celda-importe';
-        tdImporte.textContent = moneda(it.cantidad * it.precio_v);
 
         var tdEliminar = document.createElement('td');
         tdEliminar.dataset.label = '';
@@ -588,7 +706,7 @@
         tr.appendChild(tdEliminar);
 
         // Firma del contenido para saber si esta fila cambió
-        tr.dataset.firma = [it.nombre, it.imagen || '', it.precio_lista, it.descuento, it.precio_v, it.cantidad, it.permite_decimales ? 1 : 0, it.es_mayorista ? 1 : 0].join('\u0001');
+        tr.dataset.firma = firmaArticulo(it);
 
         return tr;
     }
@@ -622,6 +740,11 @@
                 tr.dataset.indice = String(indice);
                 fragmento.appendChild(tr);
             } else {
+                // La fila cambió: hay que descartar la anterior antes de
+                // insertar la nueva. Sin este remove() la fila vieja quedaba
+                // en el tbody y el artículo aparecía duplicado al editar
+                // precio, descuento o cantidad.
+                if (tr && tr.parentNode) tr.parentNode.removeChild(tr);
                 fragmento.appendChild(nuevaFila);
             }
         });
@@ -630,8 +753,26 @@
         filasExistentes.forEach(function (tr) { tr.remove(); });
 
         cuerpo.appendChild(fragmento);
-        vacio.style.display = items.length === 0 ? '' : 'none';
+        if (vacio) vacio.style.display = items.length === 0 ? '' : 'none';
+        actualizarConteoCarrito();
         calcularTotales();
+    }
+
+    // Muestra "N artículo(s)" en la leyenda de la sección del carrito.
+    function actualizarConteoCarrito() {
+        var tabla = document.getElementById('cot-carrito');
+        if (!tabla || !tabla.closest) return;
+        var seccion = tabla.closest('fieldset');
+        var leyenda = seccion ? seccion.querySelector('legend') : null;
+        if (!leyenda) return;
+        var badge = leyenda.querySelector('.cot-conteo');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'cot-conteo';
+            leyenda.appendChild(badge);
+        }
+        var n = items.length;
+        badge.textContent = n === 0 ? '' : (' \u00b7 ' + n + (n === 1 ? ' art\u00edculo' : ' art\u00edculos'));
     }
 
     // ---------- Totales (mismo criterio que el backend) ----------

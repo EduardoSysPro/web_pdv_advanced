@@ -326,3 +326,107 @@
     .cot-ver-totales { page-break-inside: avoid; }
     .cot-ver-cabecera { page-break-inside: avoid; }
 }
+
+/* ---- Carrito compacto con scroll + responsive 4:3 (solo pantalla) ---- */
+@media screen {
+    .cot-carrito { min-width: 600px; }
+    .cot-carrito thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        box-shadow: inset 0 -1px 0 var(--borde, #e2e2e2);
+    }
+    .tabla-responsive.cot-carrito-wrap {
+        overflow: auto;
+        max-height: min(52vh, 480px);
+        border: 1px solid var(--borde, #e6e6ef);
+        border-radius: 10px;
+    }
+    .cot-carrito tbody td { padding: 6px 8px; font-size: 13px; vertical-align: middle; }
+    .cot-carrito thead th { padding: 8px; font-size: 11px; }
+    .cot-prod-miniatura { width: 28px; height: 28px; }
+    .cot-celda-nombre { gap: 6px; }
+    .cot-celda-nombre > span {
+        min-width: 0;
+        max-width: 260px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .cot-inp-monto { width: 84px; padding: 6px 8px; font-size: 13px; }
+    .cot-inp-cant { width: 72px; padding: 6px 8px; font-size: 13px; }
+    .cot-conteo { font-size: 12px; font-weight: 600; color: var(--texto-suave, #666); }
+    .cot-seccion { padding: 14px; }
+}
+
+/* Pantallas 4:3 / angostas (1024-1280px): resumen mas angosto y celdas compactas */
+@media screen and (max-width: 1280px) {
+    .cotizaciones-editor-grid { grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; }
+    .cot-prod-nombre { max-width: 180px; }
+    .cot-celda-nombre > span { max-width: 160px; }
+    .cot-inp-monto { width: 78px; }
+    .cot-inp-cant { width: 64px; }
+    .cotizaciones-editor-resumen { padding: 14px; }
+}
+
+/* En 4:3 pequeno el editor se apila: el resumen deja de ser sticky y el carrito limita su alto */
+@media screen and (max-width: 1100px) {
+    .cotizaciones-editor-grid { grid-template-columns: 1fr; }
+    .cotizaciones-editor-resumen { position: static; }
+    .tabla-responsive.cot-carrito-wrap { max-height: min(46vh, 420px); }
+}
+
+/* Pantallas bajas (tipico 4:3 de 1024x768): densidad extra */
+@media screen and (max-height: 800px) {
+    .cot-seccion { padding: 12px; margin-bottom: 12px; }
+    .cot-carrito tbody td { padding: 5px 6px; }
+    .tabla-responsive.cot-carrito-wrap { max-height: 44vh; }
+    .cotizaciones-editor-resumen { padding: 12px; }
+}
+
+/* ---- Autocompletado de clientes (panel flotante, ambas vistas) ---- */
+.cot-cli-panel {
+    position: fixed;
+    z-index: 1500;
+    min-width: 240px;
+    max-width: 340px;
+    max-height: 260px;
+    overflow: auto;
+    background: var(--superficie-carta, #fff);
+    border: 1px solid var(--borde, #e2e2e2);
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(2, 6, 23, .18);
+    padding: 6px;
+    box-sizing: border-box;
+}
+.cot-cli-panel[hidden] { display: none !important; }
+.cot-cli-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin: 0 0 2px;
+    cursor: pointer;
+    color: var(--texto, #1e293b);
+    font-size: 13px;
+    font-family: inherit;
+}
+.cot-cli-item:hover { background: var(--fondo-suave, #f1f5f9); border-color: var(--borde, #e2e2e2); }
+.cot-cli-item strong { font-weight: 700; }
+.cot-cli-item small { display: block; margin-top: 2px; font-size: 11px; color: var(--texto-suave, #666); }
+.cot-cli-may {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #0369a1;
+    background: #e0f2fe;
+    border: 1px solid #bae6fd;
+    border-radius: 4px;
+    padding: 1px 5px;
+    vertical-align: middle;
+}
+.cot-cli-vacio { padding: 8px 10px; font-size: 12px; color: var(--texto-suave, #666); }

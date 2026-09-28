@@ -187,7 +187,8 @@ $clientesJson = array_map(static function ($cliente) {
         'nombre' => (string)($cotizacion['cliente_nombre'] ?? ''),
         'rtn' => (string)($cotizacion['cliente_rtn'] ?? ''),
         'telefono' => (string)($cotizacion['cliente_telefono'] ?? ''),
-        'direccion' => (string)($cotizacion['cliente_direccion'] ?? '')
+        'direccion' => (string)($cotizacion['cliente_direccion'] ?? ''),
+        'tipo' => (string)($tipoClienteEdicion ?? 'minorista')
     ], JSON_UNESCAPED_UNICODE) : 'null'; ?>;
     const COTIZACION_FECHA_VALIDEZ = '<?php echo htmlspecialchars($cotizacion['fecha_validez'] ?? ($fechaValidez ?? '')); ?>';
     const COTIZACION_OBSERVACIONES = '<?php echo htmlspecialchars($cotizacion['observaciones'] ?? ''); ?>';

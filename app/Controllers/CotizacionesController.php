@@ -54,7 +54,9 @@ class CotizacionesController extends Controller
             $this->redirigir('cotizaciones');
         }
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
-        $clientes = $this->todosLosClientes();
+        // Los clientes se buscan vía AJAX (clientes/buscar): no se precargan
+        // para no colapsar con catálogos grandes.
+        $clientes = [];
         $diasValidez = max(0, (int)($configuracion['cotizacion_dias_validez'] ?? 15));
         $fechaValidez = $diasValidez > 0 ? date('Y-m-d', strtotime('+' . $diasValidez . ' days')) : '';
         $cotizacion = null;
@@ -82,7 +84,10 @@ class CotizacionesController extends Controller
             $this->redirigir('cotizaciones');
         }
         $configuracion = $this->modeloConfiguracion->obtenerMapa();
-        $clientes = $this->todosLosClientes();
+        // Los clientes se buscan vía AJAX (clientes/buscar): no se precargan
+        // para no colapsar con catálogos grandes.
+        $clientes = [];
+        $tipoClienteEdicion = $this->esClienteMayorista((int)($cotizacion['cliente_id'] ?? 0)) ? 'mayorista' : 'minorista';
         $itemsEdicion = $this->transformarDetallesParaEdicion($this->modeloCotizacion->obtenerDetalles($id));
         $urlBase = URL_BASE;
 
@@ -466,14 +471,6 @@ class CotizacionesController extends Controller
     {
         return (int)($_SESSION['rol_id'] ?? 0) === 1
             || in_array(strtolower((string)($_SESSION['rol'] ?? '')), ['admin', 'administrador'], true);
-    }
-
-    private function todosLosClientes()
-    {
-        $pdo = Database::getInstancia()->getConexion();
-        $selTipo = $this->columnaExiste('clientes', 'tipo') ? ', tipo' : '';
-        $stmt = $pdo->query('SELECT id, nombre, rtn_identidad, telefono, direccion' . $selTipo . ' FROM clientes ORDER BY nombre ASC LIMIT 200');
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

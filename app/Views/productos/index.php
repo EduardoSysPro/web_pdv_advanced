@@ -7,7 +7,7 @@
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <a class="btn-pos btn-success" href="<?php echo URL_BASE; ?>productos/crear">+ Nuevo Producto</a>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>productos/exportar-csv?busqueda=<?php echo urlencode($busqueda); ?>&categoria_id=<?php echo urlencode((string)$categoriaId); ?>">⬇ Exportar CSV (etiquetas)</a>
+        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>productos/exportar-csv?busqueda=<?php echo urlencode($busqueda); ?>&categoria_id=<?php echo urlencode((string)$categoriaId); ?>">Exportar CSV (etiquetas)</a>
         <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>categorias">Gestionar categorías</a>
     </div>
 </section>
@@ -40,7 +40,7 @@
                     <td>
                         <?php echo htmlspecialchars($producto['codigo_barras']); ?>
                         <?php if (!empty($producto['codigo_barras_empaque'])): ?>
-                            <br><small style="color: #64748b; font-size: 10px;">📦 <?php echo htmlspecialchars($producto['codigo_barras_empaque']); ?></small>
+                            <br><small style="color: var(--pos-texto-soft); font-size: 10px;"><?php echo htmlspecialchars($producto['codigo_barras_empaque']); ?></small>
                         <?php endif; ?>
                     </td>
                     <td>
@@ -48,7 +48,7 @@
                         <?php if ($tieneEmpaque): ?>
                             <div style="margin-top: 3px;">
                                 <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 11px; padding: 2px 6px; border-radius: 4px;">
-                                    📦 <?php echo htmlspecialchars($nomEmp); ?> x<?php echo htmlspecialchars((string)$cantEmp); ?>: <?php echo formatearMoneda($producto['precio_empaque']); ?>
+                                    <?php echo htmlspecialchars($nomEmp); ?> x<?php echo htmlspecialchars((string)$cantEmp); ?>: <?php echo formatearMoneda($producto['precio_empaque']); ?>
                                 </span>
                             </div>
                         <?php endif; ?>
@@ -58,17 +58,17 @@
                     <td>
                         <?php echo formatearMoneda($producto['precio_venta']); ?>
                         <?php if (!empty($producto['precio_mayorista']) && (float)$producto['precio_mayorista'] > 0): ?>
-                            <br><small style="color:#0369a1; font-size:10px;">May.: <?php echo formatearMoneda($producto['precio_mayorista']); ?></small>
+                            <br><small class="hint-info" style="font-size:10px;">May.: <?php echo formatearMoneda($producto['precio_mayorista']); ?></small>
                         <?php endif; ?>
                         <?php if (($producto['tipo_venta'] ?? '') === 'solo_empaque'): ?>
-                            <br><small style="color:#dc2626; font-size:10px;">(Solo empaque)</small>
+                            <br><small style="color: var(--pos-rojo); font-size:10px;">(Solo empaque)</small>
                         <?php endif; ?>
                     </td>
                     <td><?php echo number_format($ganancia, 2); ?>%</td>
                     <td>
                         <span class="stock <?php echo (int)$producto['stock'] <= (int)$producto['stock_minimo'] ? 'stock-bajo' : ''; ?>"><?php echo (int)$producto['stock']; ?></span>
                         <?php if ($tieneEmpaque && (float)($producto['unidades_por_empaque'] ?? 1) > 0): ?>
-                            <div style="font-size: 10px; color: #64748b;">
+                            <div style="font-size: 10px; color: var(--pos-texto-soft);">
                                 (~<?php echo floor((float)$producto['stock'] / (float)$producto['unidades_por_empaque']); ?> <?php echo strtolower(htmlspecialchars($nomEmp)); ?>s)
                             </div>
                         <?php endif; ?>

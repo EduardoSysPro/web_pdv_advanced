@@ -9,9 +9,9 @@
                 <label for="codigo_barras">Código de barras</label>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <input id="codigo_barras" name="codigo_barras" value="<?php echo htmlspecialchars($producto['codigo_barras'] ?? ''); ?>" maxlength="50" class="codigo-barras-input" style="flex:1;">
-                    <button type="button" id="generar-codigo-interno" class="btn-pos btn-secondary" style="white-space:nowrap;">⚡ Generar Código</button>
+                    <button type="button" id="generar-codigo-interno" class="btn-pos btn-secondary" style="white-space:nowrap;">Generar Código</button>
                 </div>
-                <div id="barcode-preview-wrapper" style="display:none; margin-top:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px; text-align:center;">
+                <div id="barcode-preview-wrapper" style="display:none; margin-top:10px; background: var(--pos-panel-2); border:1px solid var(--pos-border); border-radius:8px; padding:8px; text-align:center;">
                     <svg id="barcode-preview" style="max-width:100%; height:70px;"></svg>
                 </div>
             </div>
@@ -20,7 +20,7 @@
             <div class="campo"><label for="unidad_medida">Unidad de medida</label><select id="unidad_medida" name="unidad_medida"><option value="unidad" <?php echo (($producto['unidad_medida'] ?? 'unidad') === 'unidad') ? 'selected' : ''; ?>>Unidades</option><option value="libra" <?php echo (($producto['unidad_medida'] ?? 'unidad') === 'libra') ? 'selected' : ''; ?>>Libras</option><option value="kg" <?php echo (($producto['unidad_medida'] ?? 'unidad') === 'kg') ? 'selected' : ''; ?>>Kilogramos</option><option value="arroba" <?php echo (($producto['unidad_medida'] ?? 'unidad') === 'arroba') ? 'selected' : ''; ?>>Arroba</option><option value="litro" <?php echo (($producto['unidad_medida'] ?? 'unidad') === 'litro') ? 'selected' : ''; ?>>Litros</option></select></div>
             <div class="campo"><label for="precio_costo">Precio costo (L)</label><input id="precio_costo" name="precio_costo" type="number" min="0" step="0.01" value="<?php echo htmlspecialchars($producto['precio_costo'] ?? '0.00'); ?>" required></div>
             <div class="campo"><label for="precio_venta">Precio venta / Precio 1 normal (L)</label><input id="precio_venta" name="precio_venta" type="number" min="0" step="0.01" value="<?php echo htmlspecialchars($producto['precio_venta'] ?? '0.00'); ?>" required></div>
-            <div class="campo"><label for="precio_mayorista">Precio mayorista / Precio 2 (L)</label><input id="precio_mayorista" name="precio_mayorista" type="number" min="0" step="0.01" value="<?php echo htmlspecialchars($producto['precio_mayorista'] ?? '0.00'); ?>"><small style="color:#64748b; font-size:11px;" id="info-precio-mayorista">0 = sin precio mayorista. Se aplica solo a clientes mayoristas en cotizaciones.</small></div>
+            <div class="campo"><label for="precio_mayorista">Precio mayorista / Precio 2 (L)</label><input id="precio_mayorista" name="precio_mayorista" type="number" min="0" step="0.01" value="<?php echo htmlspecialchars($producto['precio_mayorista'] ?? '0.00'); ?>"><small style="color: var(--pos-texto-soft); font-size:11px;" id="info-precio-mayorista">0 = sin precio mayorista. Se aplica solo a clientes mayoristas en cotizaciones.</small></div>
             <div class="campo">
                 <label for="tipo_impuesto">Impuesto (ISV)</label>
                 <select id="tipo_impuesto" name="tipo_impuesto">
@@ -43,8 +43,8 @@
 
         <!-- ================= FOTO DEL PRODUCTO (OPCIONAL) ================= -->
         <?php $origenImagenActual = Producto::esUrlImagen($producto['imagen'] ?? '') ? 'url' : 'archivo'; ?>
-        <div class="campo campo-ancho" style="margin-top:20px; padding-top:16px; border-top:1px solid #dbe1ea;">
-            <label style="font-weight:700; font-size:14px; color:#1e293b;">📷 Foto del producto (opcional)</label>
+        <div class="campo campo-ancho" style="margin-top:20px; padding-top:16px; border-top:1px solid var(--pos-border);">
+            <label style="font-weight:700; font-size:14px; color: var(--pos-texto);">Foto del producto (opcional)</label>
             <div style="display:flex; gap:16px; margin:8px 0; font-size:13px;">
                 <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
                     <input type="radio" name="imagen_origen" value="archivo" <?php echo $origenImagenActual === 'archivo' ? 'checked' : ''; ?>> Subir archivo
@@ -55,20 +55,20 @@
             </div>
             <div id="seccion-imagen-archivo" style="<?php echo $origenImagenActual === 'url' ? 'display:none;' : ''; ?>">
                 <input id="imagen" name="imagen" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:6px;">
-                <small style="color:#64748b; font-size:12px;">JPG, PNG o WebP de hasta 2 MB. Se mostrará en el buscador del vendedor y del POS.</small>
+                <small style="color: var(--pos-texto-soft); font-size:12px;">JPG, PNG o WebP de hasta 2 MB. Se mostrará en el buscador del vendedor y del POS.</small>
             </div>
             <div id="seccion-imagen-url" style="<?php echo $origenImagenActual === 'url' ? '' : 'display:none;'; ?>">
                 <input id="imagen_url" name="imagen_url" type="url" maxlength="255" placeholder="https://ejemplo.com/foto-producto.jpg" value="<?php echo $origenImagenActual === 'url' ? htmlspecialchars($producto['imagen']) : ''; ?>" style="margin-top:6px; width:100%;">
-                <small style="color:#64748b; font-size:12px;">Pega el enlace directo de la imagen (debe empezar con http:// o https://). No se descarga: se muestra desde internet.</small>
+                <small style="color: var(--pos-texto-soft); font-size:12px;">Pega el enlace directo de la imagen (debe empezar con http:// o https://). No se descarga: se muestra desde internet.</small>
                 <div id="vista-previa-url" style="margin-top:10px; display:none;">
-                    <img id="img-previa-url" alt="Vista previa URL" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
-                    <div id="error-previa-url" style="display:none; color:#dc2626; font-size:12px;">No se pudo cargar esa URL como imagen.</div>
+                    <img id="img-previa-url" alt="Vista previa URL" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--pos-borde-strong);">
+                    <div id="error-previa-url" style="display:none; color: var(--pos-rojo); font-size:12px;">No se pudo cargar esa URL como imagen.</div>
                 </div>
             </div>
             <?php if (!empty($producto['imagen'])): ?>
                 <div id="imagen-actual" style="margin-top:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                    <img src="<?php echo htmlspecialchars(Producto::urlImagen($producto['imagen'], URL_BASE)); ?>" alt="Foto del producto" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
-                    <?php if ($origenImagenActual === 'url'): ?><small style="color:#0369a1; font-size:11px;">Desde internet</small><?php endif; ?>
+                    <img src="<?php echo htmlspecialchars(Producto::urlImagen($producto['imagen'], URL_BASE)); ?>" alt="Foto del producto" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--pos-borde-strong);">
+                    <?php if ($origenImagenActual === 'url'): ?><small class="hint-info" style="font-size:11px;">Desde internet</small><?php endif; ?>
                     <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
                         <input type="checkbox" name="quitar_imagen" value="1" id="quitar_imagen"> Quitar imagen actual
                     </label>
@@ -77,7 +77,7 @@
                 <div id="imagen-actual"></div>
             <?php endif; ?>
             <div id="vista-previa-imagen" style="margin-top:10px; display:none;">
-                <img id="img-previa-producto" alt="Vista previa" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
+                <img id="img-previa-producto" alt="Vista previa" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--pos-borde-strong);">
             </div>
         </div>
         <?php
@@ -87,13 +87,13 @@
             $opcionesEmpaqueComunes = ['Caja', 'Bulto', 'Fardo', 'Paquete', 'Display'];
             $esEmpaquePersonalizado = !in_array($nombreEmpaqueActual, $opcionesEmpaqueComunes, true);
         ?>
-        <div class="tarjeta-empaque-config" style="margin-top: 20px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px;">
+        <div class="tarjeta-empaque-config" style="margin-top: 20px; background: var(--pos-panel-2); border: 1px solid var(--pos-borde-strong); border-radius: 8px; padding: 16px;">
             <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom: 12px;">
-                <label style="font-weight: 700; font-size: 14px; color: #1e293b; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label style="font-weight: 700; font-size: 14px; color: var(--pos-texto); display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" id="tiene_empaque" name="tiene_empaque" value="1" <?php echo $tieneEmpaqueInicial ? 'checked' : ''; ?>>
-                    📦 Configurar venta por Caja, Bulto o Fardo (Mayorista)
+                    Configurar venta por Caja, Bulto o Fardo (Mayorista)
                 </label>
-                <span style="font-size: 12px; color: #64748b;">El inventario siempre se descuenta en unidades individuales automáticamente</span>
+                <span style="font-size: 12px; color: var(--pos-texto-soft);">El inventario siempre se descuenta en unidades individuales automáticamente</span>
             </div>
 
             <div id="contenedor-campos-empaque" style="<?php echo $tieneEmpaqueInicial ? '' : 'display:none;'; ?>">
@@ -127,26 +127,26 @@
                     <div class="campo">
                         <label for="unidades_por_empaque">Unidades por empaque</label>
                         <input id="unidades_por_empaque" name="unidades_por_empaque" type="number" min="2" step="0.001" value="<?php echo htmlspecialchars((string)max(2, (float)($producto['unidades_por_empaque'] ?? 2))); ?>" placeholder="Ej: 2, 10, 12, 24">
-                        <small style="color:#64748b; font-size:11px;">Ej: 1 caja contiene 10 unidades</small>
+                        <small style="color: var(--pos-texto-soft); font-size:11px;">Ej: 1 caja contiene 10 unidades</small>
                     </div>
 
                     <div class="campo">
                         <label for="precio_empaque">Precio de venta del empaque (L)</label>
                         <input id="precio_empaque" name="precio_empaque" type="number" min="0" step="0.01" value="<?php echo htmlspecialchars((string)($producto['precio_empaque'] ?? '0.00')); ?>" placeholder="0.00">
-                        <small style="color:#64748b; font-size:11px;" id="info-precio-unidad-empaque">L 0.00 / unidad en caja</small>
+                        <small style="color: var(--pos-texto-soft); font-size:11px;" id="info-precio-unidad-empaque">L 0.00 / unidad en caja</small>
                     </div>
 
                     <div class="campo campo-ancho">
                         <label for="codigo_barras_empaque">Código de barras exclusivo del empaque (opcional)</label>
                         <div style="display:flex; gap:8px; align-items:center;">
                             <input id="codigo_barras_empaque" name="codigo_barras_empaque" value="<?php echo htmlspecialchars($producto['codigo_barras_empaque'] ?? ''); ?>" maxlength="50" placeholder="Escanea el código de la caja si viene de fábrica" style="flex:1;">
-                            <button type="button" id="btn-gen-codigo-empaque" class="btn-pos btn-secondary" style="white-space:nowrap;">⚡ Generar Código</button>
+                            <button type="button" id="btn-gen-codigo-empaque" class="btn-pos btn-secondary" style="white-space:nowrap;">Generar Código</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Resumen informativo de venta mayorista -->
-                <div id="resumen-empaque" style="margin-top: 10px; padding: 8px 12px; background: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 4px; font-size: 12px; color: #0369a1;">
+                <div id="resumen-empaque" class="hint-info-box" style="margin-top: 10px; padding: 8px 12px; background: var(--pos-azul-muy-claro); border-left: 4px solid var(--pos-azul-claro); border-radius: 4px; font-size: 12px;">
                     Al vender 1 <strong id="lbl-tipo-empaque">Caja</strong>, se descontarán automáticamente <strong id="lbl-unidades-descuento">10</strong> unidades del inventario base.
                 </div>
             </div>

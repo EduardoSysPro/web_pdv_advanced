@@ -163,6 +163,15 @@ button {
     box-shadow: 0 10px 20px rgba(16, 185, 129, 0.22);
 }
 
+/* Resultados de búsqueda de cliente en el acordeón de cobro */
+.cliente-buscar-item {
+    transition: border-color .15s ease, background .15s ease;
+}
+.cliente-buscar-item:hover {
+    border-color: var(--pos-azul-claro);
+    background: var(--pos-panel-2);
+}
+
 .btn-pos-danger {
     background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
     border-color: rgba(239, 68, 68, 0.18);
@@ -1535,12 +1544,206 @@ textarea.form-control-pos:focus,
     }
 }
 .config-layout {
-    max-width: 1200px;
+    max-width: 1280px;
     margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 24px;
+    align-items: start;
+    padding-bottom: 40px;
+}
+
+.config-form {
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 24px;
-    padding-bottom: 40px;
+}
+
+/* Encabezado de tarjeta con título + switch en línea (SAR / impresora) */
+.config-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.config-card-head .tarjeta-titulo {
+    margin: 0;
+    padding: 0;
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.config-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--pos-texto, #0f172a);
+    background: var(--pos-panel-2, #f8fafc);
+    border: 1px solid var(--pos-borde, #e2e8f0);
+    border-radius: 10px;
+    padding: 8px 12px;
+    white-space: nowrap;
+}
+
+.config-switch input {
+    accent-color: var(--pos-verde, #10b981);
+    width: 16px;
+    height: 16px;
+}
+
+/* Radios y checks del formulario */
+.config-radio-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.config-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    background: var(--pos-panel-2, #f8fafc);
+    border: 1px solid var(--pos-borde, #e2e8f0);
+    border-radius: 10px;
+    padding: 9px 12px;
+    cursor: pointer;
+}
+
+.config-radio input,
+.config-check input {
+    accent-color: var(--pos-azul-brand, #2563eb);
+    width: 16px;
+    height: 16px;
+}
+
+.config-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* Textos de ayuda */
+.config-hint {
+    margin: 0 0 1rem;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.config-hint-small {
+    margin: 8px 0 0;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.config-resultado {
+    margin-top: 10px;
+}
+
+.config-resultado:empty {
+    display: none;
+}
+
+/* Barra de guardado: coherente con el sistema, siempre visible */
+.config-acciones {
+    position: sticky;
+    bottom: 16px;
+    z-index: 20;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: var(--pos-card-bg, #ffffff);
+    border: 1px solid var(--pos-borde, #e2e8f0);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: var(--pos-sombra, 0 10px 24px rgba(15, 23, 42, 0.08));
+}
+
+/* Columna y tarjeta de vista previa del ticket */
+.config-preview-col {
+    width: 100%;
+    min-width: 0;
+    position: sticky;
+    top: 16px;
+}
+
+.ticket-preview-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.ticket-preview-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--pos-borde, #e2e8f0);
+    background: var(--pos-panel-2, #f8fafc);
+    font-size: 14px;
+}
+
+.ticket-preview-head i {
+    color: var(--pos-verde-oscuro, #059669);
+    margin-right: 6px;
+}
+
+.ticket-preview-wrapper {
+    padding: 16px;
+    background: #f1f5f9;
+}
+
+.ticket-preview {
+    width: 80mm;
+    max-width: 100%;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #111827;
+    line-height: 1.35;
+}
+
+@media (max-width: 1024px) {
+    .config-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .config-preview-col {
+        position: static;
+    }
+
+    .config-acciones {
+        bottom: 12px;
+    }
+}
+
+@media (max-width: 640px) {
+    .config-card-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .config-acciones .btn-pos {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 .tarjeta {

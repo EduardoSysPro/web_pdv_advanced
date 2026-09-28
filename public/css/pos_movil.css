@@ -31,7 +31,7 @@ body.pos-movil-body {
     user-select: none;
 }
 
-/* Header Móvil */
+/* Header Móvil — unificado con la estética del sistema (sidebar / pos.css) */
 .movil-header {
     position: sticky;
     top: 0;
@@ -42,68 +42,183 @@ body.pos-movil-body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 .movil-brand {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
 }
 
 .movil-brand-icon {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
     background: #d1fae5;
     color: #059669;
-    border-radius: 8px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 17px;
+}
+
+.movil-brand-texto {
+    min-width: 0;
+    flex: 1;
 }
 
 .movil-brand-title {
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     line-height: 1.2;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .movil-brand-sub {
-    font-size: 11px;
-    color: var(--movil-text-muted);
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .movil-header-actions {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-shrink: 0;
 }
 
-.movil-badge-caja {
-    background: #f1f5f9;
-    color: #334155;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+.movil-logout-form {
+    display: inline-flex;
+    margin: 0;
 }
 
-.btn-movil-logout {
-    background: #fef2f2;
-    color: var(--movil-danger);
-    border: none;
-    border-radius: 8px;
-    padding: 7px 11px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
+/* Botón de icono neutro — mismo lenguaje que .btn-menu / .btn-pos-secondary */
+.btn-movil-icon {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    gap: 6px;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 10px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    color: #334155;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+}
+
+.btn-movil-icon:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.btn-movil-icon:active {
+    transform: scale(0.96);
+}
+
+/* En móvil solo icono: oculta la etiqueta para que el header no se apriete */
+.btn-movil-icon span {
+    display: none;
+}
+
+.btn-movil-icon.is-peligro {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+
+.btn-movil-icon.is-peligro:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
+/* Compatibilidad con marcado antiguo */
+.btn-movil-logout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 10px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-movil-logout span {
+    display: none;
+}
+
+/* En tablet hay espacio: muestra etiquetas */
+@media (min-width: 768px) {
+    .btn-movil-icon,
+    .btn-movil-logout {
+        padding: 0 12px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .btn-movil-icon span,
+    .btn-movil-logout span {
+        display: inline;
+    }
+}
+
+/* Móviles muy angostos: header más compacto */
+@media (max-width: 480px) {
+    .movil-header {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    .movil-brand {
+        gap: 8px;
+    }
+
+    .movil-brand-icon {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+        font-size: 16px;
+    }
+
+    .movil-brand-title {
+        font-size: 14px;
+    }
+
+    .movil-header-actions {
+        gap: 6px;
+    }
+
+    .btn-movil-icon,
+    .btn-movil-logout {
+        min-width: 36px;
+        height: 36px;
+        padding: 0 8px;
+        border-radius: 9px;
+    }
 }
 
 /* Barra de Búsqueda y Botón Escáner */

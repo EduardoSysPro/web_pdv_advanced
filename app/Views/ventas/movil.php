@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/pos_movil.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/pos_movil.css'); ?>">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/cotizaciones.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/cotizaciones.css'); ?>">
-    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/dark.css">
+    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/dark.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/dark.css'); ?>">
     <meta name="csrf-token" content="<?php echo htmlspecialchars(csrf_token()); ?>">
 </head>
 <body class="pos-movil-body">
@@ -20,29 +20,29 @@
         <!-- Header Móvil -->
         <header class="movil-header">
             <div class="movil-brand">
-                <div class="movil-brand-icon" style="background:#0ea5e9;">
+                <div class="movil-brand-icon">
                     <i class="fa-solid fa-file-lines"></i>
                 </div>
-                <div>
+                <div class="movil-brand-texto">
                     <div class="movil-brand-title"><?php echo htmlspecialchars($configuracion['nombre_negocio'] ?? 'Web PDV'); ?></div>
                     <div class="movil-brand-sub">Cotizaciones · <?php echo htmlspecialchars($nombreUsuario ?? 'Vendedor'); ?> · <?php echo htmlspecialchars($sucursalNombre ?? 'Mi Negocio'); ?></div>
                 </div>
             </div>
             <div class="movil-header-actions">
-                <button class="btn-tema-movil" id="pos-boton-tema" type="button" aria-label="Cambiar tema claro/oscuro" title="Cambiar tema"><i class="fa-solid fa-moon"></i></button>
-                <a href="<?php echo URL_BASE; ?>cotizaciones" class="btn-movil-logout" title="Mis cotizaciones" style="background:#d1fae5; margin-right:6px;">
+                <button class="btn-movil-icon btn-tema-movil" id="pos-boton-tema" type="button" aria-label="Cambiar tema claro/oscuro" title="Cambiar tema"><i class="fa-solid fa-moon"></i></button>
+                <a href="<?php echo URL_BASE; ?>cotizaciones" class="btn-movil-icon" title="Mis cotizaciones" aria-label="Mis cotizaciones">
                     <i class="fa-solid fa-list"></i>
                     <span>Mis</span>
                 </a>
             <?php if ($esAdmin): ?>
-                <a href="<?php echo URL_BASE; ?>" class="btn-movil-logout" title="Volver a la vista normal" style="background:#b9f3fd; margin-right:6px;">
+                <a href="<?php echo URL_BASE; ?>" class="btn-movil-icon" title="Volver a la vista normal" aria-label="Volver a la vista normal">
                     <i class="fa-solid fa-desktop"></i>
                     <span>Escritorio</span>
                 </a>
             <?php endif; ?>
-                <form action="<?php echo URL_BASE; ?>logout" method="POST" style="display:inline;">
+                <form action="<?php echo URL_BASE; ?>logout" method="POST" class="movil-logout-form">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-                    <button type="submit" class="btn-movil-logout" title="Cerrar Sesión">
+                    <button type="submit" class="btn-movil-icon is-peligro" title="Cerrar sesión" aria-label="Cerrar sesión">
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
                         <span>Salir</span>
                     </button>
@@ -121,6 +121,7 @@
                                     <thead>
                                         <tr>
                                             <th>Producto</th>
+                                            <th>P. Lista</th>
                                             <th>Desc.</th>
                                             <th>P. Final</th>
                                             <th>Cant.</th>

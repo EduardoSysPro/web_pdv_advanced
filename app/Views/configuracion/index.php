@@ -16,12 +16,12 @@
     <div class="alerta alerta-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
-<div class="config-layout" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start; width: 100%;">
-    <form id="form-configuracion" method="POST" action="<?php echo URL_BASE; ?>configuracion/guardar-empresa" enctype="multipart/form-data" class="form-grid" style="width: 100%; min-width: 0;">
+<div class="config-layout">
+    <form id="form-configuracion" method="POST" action="<?php echo URL_BASE; ?>configuracion/guardar-empresa" enctype="multipart/form-data" class="config-form">
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
 
         <section class="tarjeta campo-ancho">
-            <h2 class="tarjeta-titulo">Datos del negocio y ticket</h2>
+            <h2 class="tarjeta-titulo"><span class="formulario-icono" aria-hidden="true"><i class="fa-solid fa-store"></i></span>Datos del negocio y ticket</h2>
             <div class="form-grid">
                 <div class="campo campo-ancho">
                     <label>Nombre del negocio</label>
@@ -63,12 +63,12 @@
 
                 <div class="campo">
                     <label>Tipo de comprobante por defecto</label>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
-                        <label style="display:flex; align-items:center; gap:6px; font-weight:600;">
+                    <div class="config-radio-group">
+                        <label class="config-radio">
                             <input type="radio" name="tipo_comprobante_default" value="recibo" <?php echo (($configuracion['tipo_comprobante_default'] ?? 'recibo') === 'recibo') ? 'checked' : ''; ?>>
                             Recibo
                         </label>
-                        <label style="display:flex; align-items:center; gap:6px; font-weight:600;">
+                        <label class="config-radio">
                             <input type="radio" name="tipo_comprobante_default" value="factura" <?php echo (($configuracion['tipo_comprobante_default'] ?? 'recibo') === 'factura') ? 'checked' : ''; ?>>
                             Factura Fiscal
                         </label>
@@ -106,14 +106,14 @@
                 </div>
 
                 <div class="campo">
-                    <label style="display:flex; align-items:center; gap:8px;">
+                    <label class="config-check">
                         <input type="checkbox" name="ticket_mostrar_logo" value="1" <?php echo (($configuracion['ticket_mostrar_logo'] ?? '1') === '1' || ($configuracion['ticket_mostrar_logo'] ?? 1) == 1) ? 'checked' : ''; ?>>
                         Mostrar logo
                     </label>
                 </div>
 
                 <div class="campo">
-                    <label style="display:flex; align-items:center; gap:8px;">
+                    <label class="config-check">
                         <input type="checkbox" name="ticket_mostrar_sar" value="1" <?php echo (($configuracion['ticket_mostrar_sar'] ?? '1') === '1' || ($configuracion['ticket_mostrar_sar'] ?? 1) == 1) ? 'checked' : ''; ?>>
                         Mostrar pie SAR
                     </label>
@@ -134,9 +134,9 @@
         </section>
 
         <section class="tarjeta campo-ancho">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2 class="tarjeta-titulo" style="margin: 0;">Facturación Fiscal (SAR)</h2>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold;">
+            <div class="config-card-head">
+                <h2 class="tarjeta-titulo"><span class="formulario-icono" aria-hidden="true"><i class="fa-solid fa-file-invoice"></i></span>Facturación Fiscal (SAR)</h2>
+                <label class="config-switch">
                     <input type="checkbox" name="sar_activo" value="1" <?php echo ($configuracion['sar_activo'] ?? '0') === '1' ? 'checked' : ''; ?> onchange="document.getElementById('bloque-sar').style.display = this.checked ? 'grid' : 'none'">
                     Habilitar exigencias SAR
                 </label>
@@ -186,15 +186,15 @@
         </section>
 
         <section class="tarjeta campo-ancho">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
-                <h2 class="tarjeta-titulo" style="margin: 0;">Impresora térmica por red (LAN)</h2>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold;">
+            <div class="config-card-head">
+                <h2 class="tarjeta-titulo"><span class="formulario-icono" aria-hidden="true"><i class="fa-solid fa-print"></i></span>Impresora térmica por red (LAN)</h2>
+                <label class="config-switch">
                     <input type="checkbox" name="impresora_lan_activa" value="1" <?php echo (($configuracion['impresora_lan_activa'] ?? '0') === '1') ? 'checked' : ''; ?>>
                     Activar impresión por red
                 </label>
             </div>
 
-            <p style="margin: 0 0 1rem; color: #64748b; font-size: 13px;">
+            <p class="config-hint">
                 Imprime el ticket directo a una impresora térmica conectada a la red mediante su dirección IP
                 (puerto 9100 estándar). Mientras esté desactivada, se usa la impresión del navegador como hoy.
             </p>
@@ -211,36 +211,36 @@
                 </div>
 
                 <div class="campo campo-ancho">
-                    <button type="button" class="btn btn-ligero" id="btn-probar-impresora"><i class="fa-solid fa-plug"></i> Probar impresión de red</button>
-                    <div id="resultado-impresora" style="margin-top: 10px;"></div>
+                    <button type="button" class="btn-pos btn-secondary" id="btn-probar-impresora"><i class="fa-solid fa-plug"></i> Probar impresión de red</button>
+                    <div id="resultado-impresora" class="config-resultado"></div>
                 </div>
 
                 <div class="campo campo-ancho">
-                    <button type="button" class="btn btn-ligero" id="btn-analizar-red">
+                    <button type="button" class="btn-pos btn-secondary" id="btn-analizar-red">
                         <i class="fa-solid fa-network-wired" id="btn-analizar-icono"></i>
                         <span id="btn-analizar-texto">Analizar red e identificar impresoras</span>
                     </button>
-                    <p style="margin: 8px 0 0; color: #64748b; font-size: 12px;">
+                    <p class="config-hint-small">
                         Busca en el segmento de red del servidor (puerto 9100) las impresoras térmicas conectadas por red e identifica la dirección IP de cada una.
                     </p>
-                    <div id="resultado-analisis" style="margin-top: 10px;"></div>
+                    <div id="resultado-analisis" class="config-resultado"></div>
                 </div>
             </div>
         </section>
 
-        <div class="form-acciones campo-ancho">
-            <button class="btn btn-exito">Guardar configuración</button>
+        <div class="config-acciones">
+            <button class="btn-pos btn-success"><i class="fa-solid fa-floppy-disk"></i> Guardar configuración</button>
         </div>
     </form>
 
-    <aside style="width: 100%; min-width: 0;">
-        <div class="tarjeta" style="padding:0; overflow:hidden;">
-            <div style="padding:12px 16px; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
-                <strong>Vista previa del ticket</strong>
+    <aside class="config-preview-col">
+        <div class="tarjeta ticket-preview-card">
+            <div class="ticket-preview-head">
+                <strong><i class="fa-solid fa-receipt"></i> Vista previa del ticket</strong>
             </div>
 
-            <div id="ticket-preview-wrapper" style="padding:16px; background:#f1f5f9;">
-                <div id="ticket-preview" style="width: 80mm; max-width: 100%; margin: 0 auto; background: #fff; padding: 10px; border: 1px solid #cbd5e1; box-shadow: 0 4px 12px rgba(15,23,42,0.08); font-family: 'Courier New'; font-size: 11px; color: #111827; line-height: 1.35;">
+            <div id="ticket-preview-wrapper" class="ticket-preview-wrapper">
+                <div id="ticket-preview" class="ticket-preview">
                     <div class="preview-header" style="text-align:center;">
                         <div id="preview-logo" style="display: block; margin-bottom:8px;">
                             <img src="<?php echo !empty($configuracion['logotipo_path']) ? URL_BASE . htmlspecialchars(ltrim((string)$configuracion['logotipo_path'], '/')) : ''; ?>" alt="Logo" style="max-width: 160px; max-height: 90px; display: block; margin: 0 auto;">

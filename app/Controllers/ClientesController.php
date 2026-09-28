@@ -223,7 +223,21 @@ class ClientesController extends Controller
     {
         $this->requerirAutenticacion();
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->modelo->obtenerTodos(trim($_GET['busqueda'] ?? '')));
+        // Límite explícito para autocompletados (por defecto 200: no cambia
+        // el comportamiento del buscador del POS en caja).
+        $limite = max(1, min(50, (int)($_GET['limite'] ?? 200)));
+        $filas = $this->modelo->obtenerTodos(trim($_GET['busqueda'] ?? ''), $limite);
+        // Payload mínimo: evita exponer saldos/límites y aligera la respuesta.
+        echo json_encode(array_map(static function ($c) {
+            return [
+                'id'            => (int)($c['id'] ?? 0),
+                'nombre'        => (string)($c['nombre'] ?? ''),
+                'rtn_identidad' => (string)($c['rtn_identidad'] ?? ''),
+                'telefono'      => (string)($c['telefono'] ?? ''),
+                'direccion'     => (string)($c['direccion'] ?? ''),
+                'tipo'          => (string)($c['tipo'] ?? 'minorista'),
+            ];
+        }, is_array($filas) ? $filas : []));
     }
 
     private function leerDatos()

@@ -28,7 +28,7 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/estilos.css">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/pos.css">
-    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/dark.css">
+    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/dark.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/dark.css'); ?>">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/soporte.css">
     <link rel="icon" type="image/x-icon" href="<?php echo URL_BASE; ?>favicon.ico">
 </head>

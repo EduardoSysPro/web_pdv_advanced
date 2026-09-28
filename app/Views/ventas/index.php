@@ -148,8 +148,8 @@
                 </div>
 
                 <!-- DATOS DEL CLIENTE (OPCIONALES) -->
-                <details class="cobro-cliente-acordeon" style="margin-bottom: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px;">
-                    <summary style="font-weight: bold; cursor: pointer; color: #334155;">
+                <details class="cobro-cliente-acordeon" style="margin-bottom: 12px; background: var(--pos-panel-2); border: 1px solid var(--pos-border); border-radius: 6px; padding: 8px;">
+                    <summary style="font-weight: bold; cursor: pointer; color: var(--pos-texto);">
                         <i class="fa-solid fa-user-tag"></i> Datos del Cliente (Facturación/Opcional)
                     </summary>
                     <div style="margin-top: 8px;">
@@ -159,7 +159,7 @@
                                 <input type="text" id="cliente_buscar" class="cobro-input" placeholder="Nombre o RTN / DNI" style="padding: 4px 8px; font-size: 12px; flex: 1;">
                                 <button type="button" id="btn-nuevo-cliente" class="btn-pos-success" style="padding: 6px 10px; font-size: 11px; white-space: nowrap;">+ Nuevo Cliente</button>
                             </div>
-                            <div id="cliente_buscar_resultados" style="display: none; margin-top: 6px; background: #fff; border: 1px solid #dbeafe; border-radius: 6px; max-height: 160px; overflow: auto; padding: 6px;"></div>
+                            <div id="cliente_buscar_resultados" style="display: none; margin-top: 6px; background: var(--pos-panel); border: 1px solid var(--pos-border); border-radius: 6px; max-height: 160px; overflow: auto; padding: 6px;"></div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                             <div class="campo">
@@ -237,7 +237,7 @@
                             <option value="<?php echo (int)$cliente['id']; ?>"><?php echo htmlspecialchars($cliente['nombre']); ?> - Saldo <?php echo formatearMoneda($cliente['saldo_pendiente']); ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <?php if (count($clientes) >= 100): ?><small style="color:#64748b;">Mostrando los primeros 100. Busca por RTN para encontrar otros clientes.</small><?php endif; ?>
+                    <?php if (count($clientes) >= 100): ?><small style="color: var(--pos-texto-soft);">Mostrando los primeros 100. Busca por RTN para encontrar otros clientes.</small><?php endif; ?>
                 </div>
 
                 <!-- Pendiente por cubrir -->
@@ -260,7 +260,7 @@
                         <input type="checkbox" id="cobro-imprimir-lan" <?php echo !empty($impresoraLanActiva) ? 'checked' : ''; ?>>
                         <i class="fa-solid fa-wifi" aria-hidden="true"></i> Imprimir en impresora de red (LAN)
                     </label>
-                    <small style="color: #64748b; display: block; margin-top: 2px;">Si lo desmarcas, el comprobante se imprime con el diálogo del navegador.</small>
+                    <small style="color: var(--pos-texto-soft); display: block; margin-top: 2px;">Si lo desmarcas, el comprobante se imprime con el diálogo del navegador.</small>
                 </div>
             </div>
 

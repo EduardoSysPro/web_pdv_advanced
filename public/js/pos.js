@@ -1915,7 +1915,7 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
         const contenedor = document.getElementById('cliente_buscar_resultados');
         if (contenedor) {
             contenedor.style.display = 'block';
-            contenedor.innerHTML = '<div class="cliente-buscar-cargando" style="padding: 8px 10px; color: #64748b; font-size: 12px;"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Buscando cliente...</div>';
+            contenedor.innerHTML = '<div class="cliente-buscar-cargando" style="padding: 8px 10px; color: var(--pos-texto-soft); font-size: 12px;"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Buscando cliente...</div>';
         }
         fetch(URL_BASE + 'clientes/buscar?busqueda=' + encodeURIComponent(termino), {
             credentials: 'same-origin'
@@ -1939,9 +1939,9 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
 
         contenedor.style.display = 'block';
         contenedor.innerHTML = clientes.map((cliente) => `
-            <button type="button" class="cliente-buscar-item" data-cliente-id="${cliente.id}" style="display: block; width: 100%; text-align: left; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; margin-bottom: 6px; cursor: pointer;">
+            <button type="button" class="cliente-buscar-item" data-cliente-id="${cliente.id}" style="display: block; width: 100%; text-align: left; padding: 8px 10px; border: 1px solid var(--pos-border); border-radius: 6px; background: var(--pos-panel); color: var(--pos-texto); margin-bottom: 6px; cursor: pointer;">
                 <strong>${escaparTexto(cliente.nombre || 'Sin nombre')}</strong><br>
-                <small>RTN: ${escaparTexto(cliente.rtn_identidad || 'N/A')} · Tel: ${escaparTexto(cliente.telefono || 'N/A')}</small>
+                <small style="color: var(--pos-texto-soft);">RTN: ${escaparTexto(cliente.rtn_identidad || 'N/A')} · Tel: ${escaparTexto(cliente.telefono || 'N/A')}</small>
             </button>
         `).join('');
 
@@ -2127,7 +2127,7 @@ function consultarRtnCliente(rtn) {
     inputsRtn.forEach(input => { input.setAttribute('aria-busy', 'true'); input.disabled = true; });
     if (contenedor) {
         contenedor.style.display = 'block';
-        contenedor.innerHTML = '<div class="cliente-buscar-cargando" style="padding: 8px 10px; color: #64748b; font-size: 12px;"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Consultando RTN...</div>';
+        contenedor.innerHTML = '<div class="cliente-buscar-cargando" style="padding: 8px 10px; color: var(--pos-texto-soft); font-size: 12px;"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Consultando RTN...</div>';
     }
     const limpiarIndicador = () => {
         inputsRtn.forEach(input => { input.removeAttribute('aria-busy'); input.disabled = false; });

@@ -647,10 +647,9 @@ body.modal-open {
 .cliente-formulario .form-group label {
     display: block;
     margin-bottom: 6px;
-    color: var(--pos-text-muted, #475569);
-    font-size: .85rem;
+    color: var(--color-secundario);
+    font-size: 0.9rem;
     font-weight: 600;
-    text-transform: uppercase;
 }
 .cliente-formulario .form-group input[type="text"],
 .cliente-formulario .form-group input[type="number"],

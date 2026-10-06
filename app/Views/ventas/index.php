@@ -1,5 +1,30 @@
 <?php $tituloPagina = 'Ventas'; $claseMain = 'pos-ventas-main'; require APP_PATH . 'Views/layouts/pos_header.php'; ?>
 <?php $posEsVendedor = in_array(strtolower((string)($_SESSION['rol'] ?? '')), ['vendedor', 'cajero_movil'], true); ?>
+<link rel="stylesheet" href="<?php echo URL_BASE; ?>css/odoo.css?v=<?php echo file_exists(PUBLIC_PATH . 'css/odoo.css') ? filemtime(PUBLIC_PATH . 'css/odoo.css') : 1; ?>">
+
+<!-- ========== ZONA CLIENTE (vista Odoo: ver + editar) ========== -->
+    <section class="odoo-barra-cliente" id="odoo-barra-cliente" aria-label="Cliente de la venta">
+        <div class="odoo-cliente-info" id="odoo-cliente-info">
+            <span class="odoo-cliente-avatar" id="odoo-cliente-avatar" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
+            <div class="odoo-cliente-datos">
+                <strong id="odoo-cliente-nombre">Consumidor Final</strong>
+                <span id="odoo-cliente-meta">Sin RTN registrado</span>
+            </div>
+            <span class="odoo-cliente-cotizacion" id="odoo-cliente-cotizacion" hidden></span>
+        </div>
+        <div class="odoo-cliente-acciones">
+            <button class="cb-btn-secundario" id="odoo-cliente-cambiar" type="button" title="Buscar y asignar cliente al ticket">
+                <i class="fa-solid fa-user-pen pos-action-icon" aria-hidden="true"></i><span>Cambiar</span>
+            </button>
+            <button class="cb-btn-secundario cb-btn-peligro" id="odoo-cliente-quitar" type="button" title="Quitar cliente (volver a Consumidor Final)">
+                <i class="fa-solid fa-user-xmark pos-action-icon" aria-hidden="true"></i><span>Quitar</span>
+            </button>
+        </div>
+        <div class="odoo-cliente-buscador" id="odoo-cliente-buscador" hidden>
+            <input type="search" id="odoo-cliente-input" placeholder="Nombre o RTN del cliente..." autocomplete="off" aria-label="Buscar cliente">
+            <div class="odoo-cliente-resultados" id="odoo-cliente-resultados" hidden></div>
+        </div>
+    </section>
 
 <!-- ========== ZONA DE CODIGO DE BARRAS Y BOTONES PRINCIPALES ========== -->
     <section class="pos-codigo-barra">
@@ -51,6 +76,10 @@
                 <i class="fa-solid fa-ban pos-action-icon" aria-hidden="true"></i>
                 <span>Cancelar todo</span>
                 <kbd class="pos-tecla">F9</kbd>
+            </button>
+            <button class="cb-btn-secundario odoo-vista-toggle" id="btn-vista-odoo" type="button" title="Alternar entre vista de tabla y vista catálogo estilo Odoo" aria-pressed="false">
+                <i class="fa-solid fa-table-cells pos-action-icon" aria-hidden="true"></i>
+                <span>Vista catálogo</span>
             </button>
         </div>
     </section>
@@ -115,6 +144,26 @@
         </div>
     </section>
 
+    <!-- ========== CATÁLOGO VISUAL CON IMÁGENES (vista Odoo) ========== -->
+    <section class="odoo-catalogo" id="odoo-catalogo" aria-label="Catálogo de productos">
+        <div class="odoo-catalogo-cabecera">
+            <label class="cb-label" for="odoo-catalogo-busqueda">
+                <span class="cb-label-icono"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></span> Catálogo
+            </label>
+            <input
+                type="search"
+                id="odoo-catalogo-busqueda"
+                class="cb-input odoo-catalogo-input"
+                placeholder="Buscar producto por nombre o código..."
+                autocomplete="off">
+        </div>
+        <div class="odoo-catalogo-categorias" id="odoo-catalogo-categorias" role="tablist" aria-label="Filtrar por categoría">
+            <button type="button" class="odoo-cat is-activo" role="tab" aria-selected="true" data-cat="0">Todas</button>
+        </div>
+        <p class="odoo-catalogo-estado" id="odoo-catalogo-estado">Cargando catálogo…</p>
+        <div class="odoo-catalogo-grid" id="odoo-catalogo-grid" role="list"></div>
+    </section>
+
   <!-- ========== MODAL DE COBRO ========== -->
     <div id="modal-cobro" class="modal-contenedor" style="display: none;" aria-hidden="true">
         <div class="modal-fondo" data-modal-cerrar></div>
@@ -157,7 +206,7 @@
                             <label for="cliente_buscar" style="font-size: 11px;">Buscar cliente registrado:</label>
                             <div style="display: flex; gap: 6px; align-items: center;">
                                 <input type="text" id="cliente_buscar" class="cobro-input" placeholder="Nombre o RTN / DNI" style="padding: 4px 8px; font-size: 12px; flex: 1;">
-                                <button type="button" id="btn-nuevo-cliente" class="btn-pos-success" style="padding: 6px 10px; font-size: 11px; white-space: nowrap;">+ Nuevo Cliente</button>
+                                <button type="button" id="btn-nuevo-cliente" class="btn-pos btn-pos-primary btn-pequeno"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo Cliente</button>
                             </div>
                             <div id="cliente_buscar_resultados" style="display: none; margin-top: 6px; background: var(--pos-panel); border: 1px solid var(--pos-border); border-radius: 6px; max-height: 160px; overflow: auto; padding: 6px;"></div>
                         </div>
@@ -310,4 +359,6 @@
     </script>
     <?php $versionJs = file_exists(PUBLIC_PATH . 'js/pos.js') ? filemtime(PUBLIC_PATH . 'js/pos.js') : time(); ?>
     <script src="<?php echo URL_BASE; ?>js/pos.js?v=<?php echo $versionJs; ?>"></script>
+    <?php $versionOdooJs = file_exists(PUBLIC_PATH . 'js/odoo.js') ? filemtime(PUBLIC_PATH . 'js/odoo.js') : 1; ?>
+    <script src="<?php echo URL_BASE; ?>js/odoo.js?v=<?php echo $versionOdooJs; ?>"></script>
 <?php require APP_PATH . 'Views/layouts/footer.php'; ?>

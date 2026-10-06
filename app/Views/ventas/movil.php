@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <script>(function(){try{var t=localStorage.getItem('web_pdv_tema')||'claro';if(t==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
+    <script>(function(){try{var t=localStorage.getItem('web_pdv_tema')||'claro';if(t==='oscuro'||t==='minimal')document.documentElement.setAttribute('data-tema',t);}catch(e){}})();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web PDV - Cotizaciones Móvil</title>
@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/pos_movil.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/pos_movil.css'); ?>">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/cotizaciones.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/cotizaciones.css'); ?>">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/dark.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/dark.css'); ?>">
+    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/minimal.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/minimal.css'); ?>">
     <meta name="csrf-token" content="<?php echo htmlspecialchars(csrf_token()); ?>">
 </head>
 <body class="pos-movil-body">
@@ -164,9 +165,9 @@
                         </div>
 
                         <div class="cot-resumen-acciones">
-                            <button type="button" class="btn btn-exito" id="cot-btn-guardar"><i class="fa-solid fa-check"></i> Guardar cotización</button>
-                            <button type="button" class="btn btn-secondary" id="cot-btn-imprimir"><i class="fa-solid fa-print"></i> Guardar e imprimir</button>
-                            <button type="button" class="btn btn-danger" id="cot-btn-vaciar"><i class="fa-solid fa-broom"></i> Vaciar carrito</button>
+                            <button type="button" class="btn-pos btn-pos-primary" id="cot-btn-guardar"><i class="fa-solid fa-check" aria-hidden="true"></i> Guardar cotización</button>
+                            <button type="button" class="btn-pos btn-pos-secondary" id="cot-btn-imprimir"><i class="fa-solid fa-print" aria-hidden="true"></i> Guardar e imprimir</button>
+                            <button type="button" class="btn-pos btn-pos-danger" id="cot-btn-vaciar"><i class="fa-solid fa-broom" aria-hidden="true"></i> Vaciar carrito</button>
                         </div>
                     </aside>
                 </div>
@@ -211,28 +212,40 @@ $clientesJson = array_map(static function ($c) {
     (function () {
         var botonTema = document.getElementById('pos-boton-tema');
         var temaKey = 'web_pdv_tema';
+        var ordenTemas = ['claro', 'minimal', 'oscuro'];
+
+        function temaActual() {
+            var t = document.documentElement.getAttribute('data-tema');
+            return (t === 'oscuro' || t === 'minimal') ? t : 'claro';
+        }
 
         function iconoTema(t) {
-            return t === 'oscuro' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+            if (t === 'oscuro') return '<i class="fa-solid fa-sun"></i>';
+            if (t === 'minimal') return '<i class="fa-solid fa-wand-magic-sparkles"></i>';
+            return '<i class="fa-solid fa-moon"></i>';
         }
 
         function actualizarIconoTema(t) {
             if (!botonTema) return;
             botonTema.innerHTML = iconoTema(t);
-            botonTema.setAttribute('aria-label', t === 'oscuro' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+            botonTema.setAttribute('aria-label', t === 'oscuro' ? 'Tema oscuro. Cambiar a claro' : (t === 'minimal' ? 'Tema minimalista. Cambiar a oscuro' : 'Tema claro. Cambiar a minimalista'));
         }
 
         function aplicarTema(t) {
-            document.documentElement.setAttribute('data-tema', t);
+            if (t === 'claro') {
+                document.documentElement.removeAttribute('data-tema');
+            } else {
+                document.documentElement.setAttribute('data-tema', t);
+            }
             actualizarIconoTema(t);
             try { localStorage.setItem(temaKey, t); } catch (e) {}
         }
 
-        actualizarIconoTema(document.documentElement.getAttribute('data-tema') === 'oscuro' ? 'oscuro' : 'claro');
+        actualizarIconoTema(temaActual());
         if (botonTema) {
             botonTema.addEventListener('click', function () {
-                var actual = document.documentElement.getAttribute('data-tema') === 'oscuro' ? 'oscuro' : 'claro';
-                aplicarTema(actual === 'oscuro' ? 'claro' : 'oscuro');
+                var actual = temaActual();
+                aplicarTema(ordenTemas[(ordenTemas.indexOf(actual) + 1) % ordenTemas.length]);
             });
         }
     }());

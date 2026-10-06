@@ -15,16 +15,16 @@ require APP_PATH . 'Views/layouts/pos_header.php';
     </div>
     <div>
         <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>clientes/cartera">Cartera CxC</a>
-        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>clientes/estado-cuenta/<?php echo (int)$cliente['id']; ?>/imprimir" target="_blank">Imprimir</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>clientes/estado-cuenta/<?php echo (int)$cliente['id']; ?>/imprimir" target="_blank"><i class="fa-solid fa-print" aria-hidden="true"></i> Imprimir</a>
         <?php
         $waDigitos = preg_replace('/\D+/', '', (string)($cliente['telefono'] ?? ''));
         if (strlen($waDigitos) === 8) { $waDigitos = '504' . $waDigitos; }
         $waTexto = 'Hola ' . $cliente['nombre'] . ', su estado de cuenta: saldo ' . formatearMoneda($resumen['saldo']) . ' (vencido ' . formatearMoneda($resumen['vencido']) . '). ¡Gracias por su pago!';
         ?>
         <?php if (strlen($waDigitos) >= 11): ?>
-            <a class="btn-pos btn-pos-primary" href="https://wa.me/<?php echo htmlspecialchars($waDigitos); ?>?text=<?php echo urlencode($waTexto); ?>" target="_blank">WhatsApp</a>
+            <a class="btn-pos btn-pos-primary" href="https://wa.me/<?php echo htmlspecialchars($waDigitos); ?>?text=<?php echo urlencode($waTexto); ?>" target="_blank"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp</a>
         <?php endif; ?>
-        <button class="btn-pos btn-success" type="button" onclick="document.getElementById('modal-abono').hidden=false">Registrar Nuevo Abono</button>
+        <button class="btn-pos btn-pos-primary" type="button" onclick="document.getElementById('modal-abono').hidden=false"><i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar Nuevo Abono</button>
     </div>
 </section>
 <?php if ($mensaje): ?><div class="alerta alerta-exito"><?php echo htmlspecialchars($mensaje); ?><?php if (!empty($_SESSION['ultimo_abono_id'])): ?> <a href="<?php echo URL_BASE; ?>clientes/abono/ticket/<?php echo (int)$_SESSION['ultimo_abono_id']; ?>">Imprimir comprobante</a><?php unset($_SESSION['ultimo_abono_id']); endif; ?></div><?php endif; ?>
@@ -123,7 +123,7 @@ require APP_PATH . 'Views/layouts/pos_header.php';
                         <td><?php echo htmlspecialchars($abono['forma_pago']); ?></td>
                         <td><?php echo htmlspecialchars($abono['observacion'] ?? ''); ?></td>
                         <td><?php echo formatearMoneda($abono['monto']); ?></td>
-                        <td><a class="btn btn-pequeno btn-primario" href="<?php echo URL_BASE; ?>clientes/abono/ticket/<?php echo (int)$abono['id']; ?>?reimpresion=1" target="_blank">Reimprimir</a></td>
+                        <td><a class="btn-pos btn-pos-primary btn-pequeno" href="<?php echo URL_BASE; ?>clientes/abono/ticket/<?php echo (int)$abono['id']; ?>?reimpresion=1" target="_blank">Reimprimir</a></td>
                         <?php if ($esAdmin): ?>
                             <td>
                                 <form method="POST" action="<?php echo URL_BASE; ?>clientes/anular-abono" onsubmit="return pedirMotivoAnulacion(this);">
@@ -131,7 +131,7 @@ require APP_PATH . 'Views/layouts/pos_header.php';
                                     <input type="hidden" name="pago_id" value="<?php echo (int)$abono['id']; ?>">
                                     <input type="hidden" name="cliente_id" value="<?php echo (int)$cliente['id']; ?>">
                                     <input type="hidden" name="motivo" value="">
-                                    <button class="btn btn-pequeno btn-ligero" type="submit">Anular</button>
+                                     <button class="btn-pos btn-pos-danger btn-pequeno" type="submit">Anular</button>
                                 </form>
                             </td>
                         <?php endif; ?>
@@ -155,5 +155,5 @@ function pedirMotivoAnulacion(form) {
 }
 </script>
 
-<div class="modal-simple" id="modal-abono" hidden><div class="tarjeta"><h2 class="tarjeta-titulo">Registrar abono (se aplica a las facturas más antiguas)</h2><form method="POST" action="<?php echo URL_BASE; ?>clientes/abonar" class="form-grid"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>"><input type="hidden" name="cliente_id" value="<?php echo (int)$cliente['id']; ?>"><div class="campo"><label>Monto (L)</label><input name="monto" type="number" min="0.01" max="<?php echo htmlspecialchars($resumen['saldo']); ?>" step="0.01" required></div><div class="campo"><label>Forma de pago</label><select name="forma_pago"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="transferencia">Transferencia</option></select></div><div class="campo campo-ancho"><label>Observación</label><input name="observacion" maxlength="255"></div><div class="form-acciones"><button type="button" class="btn btn-ligero" onclick="document.getElementById('modal-abono').hidden=true">Cancelar</button><button class="btn btn-exito">Guardar abono</button></div></form></div></div>
+<div class="modal-simple" id="modal-abono" hidden><div class="tarjeta"><h2 class="tarjeta-titulo">Registrar abono (se aplica a las facturas más antiguas)</h2><form method="POST" action="<?php echo URL_BASE; ?>clientes/abonar" class="form-grid"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>"><input type="hidden" name="cliente_id" value="<?php echo (int)$cliente['id']; ?>"><div class="campo"><label>Monto (L)</label><input name="monto" type="number" min="0.01" max="<?php echo htmlspecialchars($resumen['saldo']); ?>" step="0.01" required></div><div class="campo"><label>Forma de pago</label><select name="forma_pago"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="transferencia">Transferencia</option></select></div><div class="campo campo-ancho"><label>Observación</label><input name="observacion" maxlength="255"></div><div class="form-acciones"><button type="button" class="btn-pos btn-pos-secondary" onclick="document.getElementById('modal-abono').hidden=true"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancelar</button><button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar abono</button></div></form></div></div>
 <?php require APP_PATH . 'Views/layouts/footer.php'; ?>

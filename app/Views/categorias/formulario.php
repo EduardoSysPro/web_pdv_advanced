@@ -5,7 +5,7 @@
         <h1><?php echo htmlspecialchars($titulo); ?></h1>
         <p>Define el nombre y la descripción de la categoría.</p>
     </div>
-    <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>categorias">Volver a categorías</a>
+    <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>categorias"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a categorías</a>
 </section>
 <section class="tarjeta formulario-producto">
     <?php foreach (($errores ?? []) as $error): ?>
@@ -25,8 +25,8 @@
         </div>
 
         <div class="form-acciones" style="grid-column: 1 / -1;">
-            <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>categorias">Cancelar</a>
-            <button class="btn-pos btn-success" type="submit">Guardar categoría</button>
+            <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>categorias"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancelar</a>
+            <button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar categoría</button>
         </div>
     </form>
 </section>

@@ -525,14 +525,16 @@ body.modal-open {
     letter-spacing: .08em; 
 }
 
-/* Solución para enlaces secundarios en banners oscuros (ej. "Gestionar productos") */
-.catalogo-encabezado a {
+/* Solución para enlaces secundarios en banners oscuros (ej. "Gestionar productos").
+   Se excluyen los botones-enlace ([class*="btn"]): ellos conservan el color
+   de su variante para que el texto siga siendo legible sobre su fondo. */
+.catalogo-encabezado a:not([class*="btn"]) {
     color: #10b981 !important;
     font-weight: 600;
     text-decoration: none;
 }
 
-.catalogo-encabezado a:hover {
+.catalogo-encabezado a:not([class*="btn"]):hover {
     text-decoration: underline;
 }
 .eyebrow { color: #9ed0ff; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }

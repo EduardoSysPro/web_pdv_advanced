@@ -160,6 +160,40 @@ class VentasController extends Controller
     }
 
     /**
+     * Catálogo para la vista Odoo de ventas: productos con imagen,
+     * con búsqueda, filtro por categoría y paginación por offset.
+     */
+    public function catalogo()
+    {
+        $this->requerirAutenticacion();
+        header('Content-Type: application/json; charset=utf-8');
+        $termino = trim($_GET['q'] ?? '');
+        $categoriaId = (int)($_GET['categoria_id'] ?? 0);
+        $limite = max(1, min(60, (int)($_GET['limite'] ?? 50)));
+        $pagina = max(1, (int)($_GET['pagina'] ?? 1));
+        $offset = ($pagina - 1) * $limite;
+        echo json_encode($this->modeloProducto->catalogoOdoo($termino, $categoriaId, $limite, $offset));
+    }
+
+    /**
+     * Categorías con conteo de productos para el filtro del catálogo Odoo.
+     */
+    public function categoriasCatalogo()
+    {
+        $this->requerirAutenticacion();
+        header('Content-Type: application/json; charset=utf-8');
+        require_once APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Categoria.php';
+        $modelo = new Categoria();
+        echo json_encode(array_map(static function ($c) {
+            return [
+                'id'     => (int)($c['id'] ?? 0),
+                'nombre' => (string)($c['nombre'] ?? ''),
+                'total'  => (int)($c['total_productos'] ?? 0)
+            ];
+        }, $modelo->obtenerTodasConConteo()));
+    }
+
+    /**
      * Devuelve las ventas registradas el día de hoy (para la terminal móvil),
      * filtradas por la caja o el usuario en sesión.
      */

@@ -57,32 +57,89 @@
             updateClock();
             window.setInterval(updateClock, 30000);
 
+            /* ===== Selector de temas: claro -> minimalista -> oscuro -> claro ===== */
             var botonTema = document.getElementById('pos-boton-tema');
             var temaKey = 'web_pdv_tema';
+            var ordenTemas = ['claro', 'minimal', 'oscuro'];
+
+            function temaActual() {
+                var t = document.documentElement.getAttribute('data-tema');
+                return (t === 'oscuro' || t === 'minimal') ? t : 'claro';
+            }
 
             function iconoTema(t) {
-                return t === 'oscuro' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+                if (t === 'oscuro') return '<i class="fa-solid fa-sun"></i>';
+                if (t === 'minimal') return '<i class="fa-solid fa-wand-magic-sparkles"></i>';
+                return '<i class="fa-solid fa-moon"></i>';
+            }
+
+            function etiquetaTema(t) {
+                if (t === 'oscuro') return 'Tema oscuro activo. Cambiar a tema claro';
+                if (t === 'minimal') return 'Tema minimalista activo. Cambiar a tema oscuro';
+                return 'Tema claro activo. Cambiar a tema minimalista';
             }
 
             function actualizarIconoTema(t) {
                 if (!botonTema) return;
                 botonTema.innerHTML = iconoTema(t);
-                botonTema.setAttribute('aria-label', t === 'oscuro' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+                botonTema.setAttribute('aria-label', etiquetaTema(t));
+                botonTema.setAttribute('title', etiquetaTema(t) + ' (claro → minimalista → oscuro)');
             }
 
             function aplicarTema(t) {
-                document.documentElement.setAttribute('data-tema', t);
+                if (t === 'claro') {
+                    document.documentElement.removeAttribute('data-tema');
+                } else {
+                    document.documentElement.setAttribute('data-tema', t);
+                }
                 actualizarIconoTema(t);
                 try { localStorage.setItem(temaKey, t); } catch (e) {}
             }
 
-            actualizarIconoTema(document.documentElement.getAttribute('data-tema') === 'oscuro' ? 'oscuro' : 'claro');
+            actualizarIconoTema(temaActual());
             if (botonTema) {
                 botonTema.addEventListener('click', function () {
-                    var actual = document.documentElement.getAttribute('data-tema') === 'oscuro' ? 'oscuro' : 'claro';
-                    aplicarTema(actual === 'oscuro' ? 'claro' : 'oscuro');
+                    var actual = temaActual();
+                    var siguiente = ordenTemas[(ordenTemas.indexOf(actual) + 1) % ordenTemas.length];
+                    aplicarTema(siguiente);
                 });
             }
+
+            /* ===== Buscador universal compacto (Ctrl + K o F10) ===== */
+            /* Reutiliza el modal de búsqueda existente (F10): no crea lógica nueva,
+               solo redirige el clic/teclado al flujo ya probado de pos.js. */
+            function abrirBusquedaUniversal() {
+                var btnBuscar = document.getElementById('btn-buscar');
+                if (btnBuscar) {
+                    btnBuscar.click();
+                    return;
+                }
+                var inputBusqueda = document.getElementById('busqueda-productos-input');
+                if (inputBusqueda) {
+                    var modal = document.getElementById('modal-busqueda-productos');
+                    if (modal) modal.hidden = false;
+                    inputBusqueda.focus();
+                    return;
+                }
+                /* Fuera de ventas: llevar a la pantalla de ventas (donde vive el buscador). */
+                var base = (typeof URL_BASE !== 'undefined') ? URL_BASE : './';
+                window.location.href = base + 'ventas';
+            }
+
+            var buscadorUniversal = document.getElementById('pos-busqueda-universal');
+            if (buscadorUniversal && !buscadorUniversal.dataset.wired) {
+                buscadorUniversal.dataset.wired = 'true';
+                buscadorUniversal.addEventListener('click', abrirBusquedaUniversal);
+            }
+
+            document.addEventListener('keydown', function (e) {
+                var esCtrlK = (e.ctrlKey || e.metaKey) && String(e.key || '').toLowerCase() === 'k';
+                if (!esCtrlK) return;
+                /* Si pos.js ya lo gestionó (pantalla de ventas), no duplicar. */
+                if (e.defaultPrevented) return;
+                e.preventDefault();
+                abrirBusquedaUniversal();
+            });
         }());
     </script>
     <script src="<?php echo URL_BASE; ?>js/webapp.js?v=<?php echo filemtime(PUBLIC_PATH . 'js/webapp.js'); ?>"></script>

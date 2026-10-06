@@ -13,8 +13,8 @@ require APP_PATH . 'Views/layouts/pos_header.php';
         <p><?php echo htmlspecialchars($compra['proveedor_nombre']); ?> | <?php echo htmlspecialchars($compra['numero_factura']); ?>
         <span class="badge" style="background:<?php echo $esAnulada ? '#fee2e2;color:#991b1b;' : '#dcfce7;color:#166534;'; ?>"><?php echo $esAnulada ? 'Anulada' : 'Recibida'; ?></span></p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>compras">Volver a Compras</a>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>compras/pagos">Cuentas por pagar</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>compras">Volver a Compras</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>compras/pagos">Cuentas por pagar</a>
     </div>
 </section>
 <?php if ($mensaje): ?><div class="alerta alerta-exito"><?php echo htmlspecialchars($mensaje); ?></div><?php endif; ?>
@@ -90,7 +90,7 @@ require APP_PATH . 'Views/layouts/pos_header.php';
 <section class="tarjeta"><h2 class="tarjeta-titulo">Pagos realizados</h2>
     <div style="margin-bottom:12px;">
         <?php if (!$esAnulada && $saldo > 0): ?>
-            <button class="btn-pos btn-success" type="button" onclick="document.getElementById('modal-pago').hidden=false">Registrar pago al proveedor</button>
+            <button class="btn-pos btn-pos-primary" type="button" onclick="document.getElementById('modal-pago').hidden=false"><i class="fa-solid fa-check" aria-hidden="true"></i> Registrar pago al proveedor</button>
         <?php else: ?>
             <span class="badge" style="<?php echo $saldo <= 0 ? 'background:#dcfce7;color:#166534;' : 'background:#e2e8f0;color:#475569;'; ?>"><?php echo $saldo <= 0 ? 'Saldada' : 'Sin pagos disponibles'; ?></span>
         <?php endif; ?>
@@ -124,8 +124,8 @@ require APP_PATH . 'Views/layouts/pos_header.php';
             <div class="campo"><label>Forma de pago</label><select name="forma_pago"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="transferencia">Transferencia</option></select></div>
             <div class="campo campo-ancho"><label>Observación</label><input name="observacion" maxlength="255"></div>
             <div class="form-acciones">
-                <button type="button" class="btn btn-ligero" onclick="document.getElementById('modal-pago').hidden=true">Cancelar</button>
-                <button class="btn btn-exito">Guardar pago</button>
+                <button type="button" class="btn-pos btn-pos-secondary" onclick="document.getElementById('modal-pago').hidden=true"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancelar</button>
+                <button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar pago</button>
             </div>
         </form>
     </div>

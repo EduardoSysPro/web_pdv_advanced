@@ -499,6 +499,16 @@ class Producto extends Controller
             $filas = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
+        return $this->mapearFilasCatalogo($filas);
+    }
+
+    /**
+     * Convierte filas de productos al formato del catálogo/buscador
+     * (opciones de unidad y empaque). Lógica extraída intacta de
+     * buscarProductosAjax() para reutilizarla en el catálogo Odoo.
+     */
+    private function mapearFilasCatalogo($filas)
+    {
         $resultados = [];
         foreach ($filas as $p) {
             $tipoVenta = $p['tipo_venta'] ?? 'solo_unidad';
@@ -557,6 +567,43 @@ class Producto extends Controller
         }
 
         return $resultados;
+    }
+
+    /**
+     * Catálogo Odoo: LIKE con filtro opcional de categoría y paginación
+     * por offset. Devuelve el mismo formato que buscarProductosAjax().
+     */
+    public function catalogoOdoo($termino, $categoriaId = 0, $limite = 50, $offset = 0)
+    {
+        $termino = trim((string)$termino);
+        $terminoLike = ($termino === '' || $termino === '%') ? '%' : '%' . $termino . '%';
+        $limite = min(60, max(1, (int)$limite));
+        $offset = max(0, (int)$offset);
+        $categoriaId = (int)$categoriaId;
+
+        $sql = 'SELECT id, codigo_barras, nombre, precio_venta' . $this->selPrecioMayorista(null) . ', stock, stock_minimo,
+                        unidad_medida, permite_decimales,
+                        tipo_venta, nombre_empaque, unidades_por_empaque, precio_empaque, codigo_barras_empaque,
+                        tipo_impuesto, porcentaje_isv, imagen
+                 FROM productos
+                 WHERE (nombre LIKE :nombre OR codigo_barras LIKE :codigo OR codigo_barras_empaque LIKE :codigo_emp)';
+        if ($categoriaId > 0) {
+            $sql .= ' AND categoria_id = :categoria';
+        }
+        $sql .= ' ORDER BY nombre ASC LIMIT :limite OFFSET :offset';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':nombre', $terminoLike, PDO::PARAM_STR);
+        $stmt->bindValue(':codigo', $terminoLike, PDO::PARAM_STR);
+        $stmt->bindValue(':codigo_emp', $terminoLike, PDO::PARAM_STR);
+        if ($categoriaId > 0) {
+            $stmt->bindValue(':categoria', $categoriaId, PDO::PARAM_INT);
+        }
+        $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $this->mapearFilasCatalogo($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function obtenerProductosBajoStock($pagina = 1, $porPagina = 30)

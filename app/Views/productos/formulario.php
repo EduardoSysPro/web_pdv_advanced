@@ -1,5 +1,5 @@
 <?php $tituloPagina = $titulo; require APP_PATH . 'Views/layouts/pos_header.php'; ?>
-<section class="catalogo-encabezado"><div><span class="eyebrow">F3 / Catálogo</span><h1><?php echo htmlspecialchars($titulo); ?></h1><p>Completa la información comercial y de inventario.</p></div><a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>productos">Volver al catálogo</a></section>
+<section class="catalogo-encabezado"><div><span class="eyebrow">F3 / Catálogo</span><h1><?php echo htmlspecialchars($titulo); ?></h1><p>Completa la información comercial y de inventario.</p></div><a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>productos"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al catálogo</a></section>
 <section class="tarjeta formulario-producto">
     <?php foreach (($errores ?? []) as $error): ?><div class="alerta alerta-error"><?php echo htmlspecialchars($error); ?></div><?php endforeach; ?>
     <form method="POST" action="<?php echo $accion; ?>" id="form-producto" enctype="multipart/form-data">
@@ -9,7 +9,7 @@
                 <label for="codigo_barras">Código de barras</label>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <input id="codigo_barras" name="codigo_barras" value="<?php echo htmlspecialchars($producto['codigo_barras'] ?? ''); ?>" maxlength="50" class="codigo-barras-input" style="flex:1;">
-                    <button type="button" id="generar-codigo-interno" class="btn-pos btn-secondary" style="white-space:nowrap;">Generar Código</button>
+                    <button type="button" id="generar-codigo-interno" class="btn-pos btn-pos-secondary">Generar Código</button>
                 </div>
                 <div id="barcode-preview-wrapper" style="display:none; margin-top:10px; background: var(--pos-panel-2); border:1px solid var(--pos-border); border-radius:8px; padding:8px; text-align:center;">
                     <svg id="barcode-preview" style="max-width:100%; height:70px;"></svg>
@@ -140,7 +140,7 @@
                         <label for="codigo_barras_empaque">Código de barras exclusivo del empaque (opcional)</label>
                         <div style="display:flex; gap:8px; align-items:center;">
                             <input id="codigo_barras_empaque" name="codigo_barras_empaque" value="<?php echo htmlspecialchars($producto['codigo_barras_empaque'] ?? ''); ?>" maxlength="50" placeholder="Escanea el código de la caja si viene de fábrica" style="flex:1;">
-                            <button type="button" id="btn-gen-codigo-empaque" class="btn-pos btn-secondary" style="white-space:nowrap;">Generar Código</button>
+                            <button type="button" id="btn-gen-codigo-empaque" class="btn-pos btn-pos-secondary">Generar Código</button>
                         </div>
                     </div>
                 </div>
@@ -152,8 +152,8 @@
             </div>
         </div>
 
-        <div class="ganancia-calculo"><span>Ganancia (Unidad): <strong id="ganancia">0.00%</strong></span><button type="button" class="btn-pos btn-secondary" id="sugerir-precio">Sugerir venta +30%</button></div>
-        <div class="form-acciones"><a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>productos">Cancelar</a><button class="btn-pos btn-success" type="submit">Guardar Producto</button></div>
+        <div class="ganancia-calculo"><span>Ganancia (Unidad): <strong id="ganancia">0.00%</strong></span><button type="button" class="btn-pos btn-pos-secondary" id="sugerir-precio">Sugerir venta +30%</button></div>
+        <div class="form-acciones"><a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>productos"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancelar</a><button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar Producto</button></div>
     </form>
 </section>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>

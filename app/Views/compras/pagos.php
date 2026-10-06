@@ -2,8 +2,8 @@
 <section class="catalogo-encabezado">
     <div><span class="eyebrow">Compras / Proveedores</span><h1>Cuentas por pagar</h1><p>Facturas de compra a crédito pendientes de pago y su historial de abonos.</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>compras">Volver a Compras</a>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>proveedores">Proveedores</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>compras">Volver a Compras</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>proveedores">Proveedores</a>
     </div>
 </section>
 <?php if ($mensaje): ?><div class="alerta alerta-exito"><?php echo htmlspecialchars($mensaje); ?></div><?php endif; ?>
@@ -25,8 +25,8 @@
                 <option value="<?php echo (int)$prov['id']; ?>" <?php echo ((int)$proveedorId === (int)$prov['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($prov['nombre']); ?></option>
             <?php endforeach; ?>
         </select>
-        <button class="btn-pos-primary" type="submit">Filtrar</button>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>compras/pagos">Limpiar</a>
+        <button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-filter" aria-hidden="true"></i> Filtrar</button>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>compras/pagos"><i class="fa-solid fa-eraser" aria-hidden="true"></i> Limpiar</a>
     </form>
     <div class="tabla-responsive">
         <table class="tabla-catalogo">
@@ -44,7 +44,7 @@
                         <td><?php echo formatearMoneda($compra['total']); ?></td>
                         <td><?php echo formatearMoneda($compra['abonado']); ?></td>
                         <td><strong style="color:#b45309;"><?php echo formatearMoneda($compra['saldo_pendiente']); ?></strong></td>
-                        <td><a class="btn-pos btn-primary btn-pequeno" href="<?php echo URL_BASE; ?>compras/ver/<?php echo (int)$compra['id']; ?>">Abonar / Ver</a></td>
+                        <td><a class="btn-pos btn-pos-primary btn-pequeno" href="<?php echo URL_BASE; ?>compras/ver/<?php echo (int)$compra['id']; ?>">Abonar / Ver</a></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

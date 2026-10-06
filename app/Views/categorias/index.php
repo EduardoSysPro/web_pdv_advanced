@@ -6,8 +6,8 @@
         <p>Organiza tu inventario por familias, tipos o líneas de venta.</p>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>productos">Volver a productos</a>
-        <a class="btn-pos btn-success" href="<?php echo URL_BASE; ?>categorias/crear">+ Nueva categoría</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>productos"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a productos</a>
+        <a class="btn-pos btn-pos-primary" href="<?php echo URL_BASE; ?>categorias/crear"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nueva categoría</a>
     </div>
 </section>
 <?php if ($mensaje): ?><div class="alerta alerta-exito"><?php echo htmlspecialchars($mensaje); ?></div><?php endif; ?>
@@ -37,9 +37,9 @@
                             <td><?php echo (int)($categoria['total_productos'] ?? 0); ?></td>
                             <td>
                                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                    <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>categorias/editar/<?php echo (int)$categoria['id']; ?>">Editar</a>
+                                    <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>categorias/editar/<?php echo (int)$categoria['id']; ?>">Editar</a>
                                     <form method="POST" action="<?php echo URL_BASE; ?>categorias/eliminar/<?php echo (int)$categoria['id']; ?>" onsubmit="return confirm('¿Deseas eliminar esta categoría?');" style="display:inline;"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-                                        <button type="submit" class="btn-pos btn-danger">Eliminar</button>
+                                        <button type="submit" class="btn-pos btn-pos-danger">Eliminar</button>
                                     </form>
                                 </div>
                             </td>

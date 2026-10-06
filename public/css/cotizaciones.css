@@ -198,6 +198,46 @@
 .cot-resumen-acciones { display: flex; flex-direction: column; gap: 8px; }
 .cot-resumen-acciones .btn { width: 100%; }
 
+/* Botones de la fila de acciones (se usan en la vista móvil, donde no
+   carga pos.css): misma medida y variantes que el estándar btn-pos,
+   autocontenidos para no depender de otras hojas. */
+.cot-resumen-acciones .btn-pos,
+.cot-resumen-acciones .btn-pos-primary,
+.cot-resumen-acciones .btn-pos-secondary,
+.cot-resumen-acciones .btn-pos-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.cot-resumen-acciones .btn-pos-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #fff;
+}
+
+.cot-resumen-acciones .btn-pos-secondary {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #334155;
+}
+
+.cot-resumen-acciones .btn-pos-danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+
 .cot-alerta-flotante { position: sticky; top: 8px; z-index: 20; margin-bottom: 12px; }
 
 /* ---- Ver ---- */

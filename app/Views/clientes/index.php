@@ -8,7 +8,7 @@
     </div>
     <div>
         <a class="btn-pos btn-pos-primary" href="<?php echo URL_BASE; ?>clientes/cartera">Cartera CxC</a>
-        <button class="btn-pos btn-success" type="button" onclick="document.getElementById('nuevo-cliente').hidden=false">+ Nuevo Cliente</button>
+        <button class="btn-pos btn-pos-primary" type="button" onclick="document.getElementById('nuevo-cliente').hidden=false"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo Cliente</button>
     </div>
 </section>
 
@@ -31,8 +31,8 @@
             <option value="minorista" <?php echo $tipo === 'minorista' ? 'selected' : ''; ?>>Minoristas</option>
             <option value="mayorista" <?php echo $tipo === 'mayorista' ? 'selected' : ''; ?>>Mayoristas</option>
         </select>
-        <button class="btn btn-primario">Buscar</button>
-        <a class="btn btn-ligero" href="<?php echo URL_BASE; ?>clientes">Limpiar</a>
+        <button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar</button>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>clientes"><i class="fa-solid fa-eraser" aria-hidden="true"></i> Limpiar</a>
     </form>
     <p><small><?php echo (int)$paginacion['total']; ?> cliente(s) · página <?php echo (int)$paginacion['pagina']; ?> de <?php echo (int)$paginacion['paginas']; ?></small></p>
 
@@ -72,8 +72,8 @@
                             <?php echo $moraCliente > 0.005 ? formatearMoneda($moraCliente) : '—'; ?>
                         </td>
                         <td class="acciones">
-                            <a class="btn btn-pequeno btn-primario" href="<?php echo URL_BASE; ?>clientes/editar/<?php echo (int)$cliente['id']; ?>">Editar</a>
-                            <a class="btn btn-pequeno btn-exito" href="<?php echo URL_BASE; ?>clientes/estado-cuenta/<?php echo (int)$cliente['id']; ?>">Estado de cuenta</a>
+                            <a class="btn-pos btn-pos-primary btn-pequeno" href="<?php echo URL_BASE; ?>clientes/editar/<?php echo (int)$cliente['id']; ?>">Editar</a>
+                            <a class="btn-pos btn-pos-primary btn-pequeno" href="<?php echo URL_BASE; ?>clientes/estado-cuenta/<?php echo (int)$cliente['id']; ?>">Estado de cuenta</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -89,17 +89,17 @@
         ?>
         <div class="paginacion">
             <?php if ($paginacion['pagina'] > 1): ?>
-                <a class="btn btn-pequeno btn-ligero" href="<?php echo $basePag . ($paginacion['pagina'] - 1); ?>">« Anterior</a>
+                <a class="btn-pos btn-pos-secondary btn-pequeno" href="<?php echo $basePag . ($paginacion['pagina'] - 1); ?>">« Anterior</a>
             <?php endif; ?>
             <?php for ($p = $desde; $p <= $hasta; $p++): ?>
                 <?php if ($p === $paginacion['pagina']): ?>
-                    <span class="btn btn-pequeno btn-primario"><?php echo $p; ?></span>
+                    <span class="btn-pos btn-pos-primary btn-pequeno"><?php echo $p; ?></span>
                 <?php else: ?>
-                    <a class="btn btn-pequeno btn-ligero" href="<?php echo $basePag . $p; ?>"><?php echo $p; ?></a>
+                    <a class="btn-pos btn-pos-secondary btn-pequeno" href="<?php echo $basePag . $p; ?>"><?php echo $p; ?></a>
                 <?php endif; ?>
             <?php endfor; ?>
             <?php if ($paginacion['pagina'] < $paginacion['paginas']): ?>
-                <a class="btn btn-pequeno btn-ligero" href="<?php echo $basePag . ($paginacion['pagina'] + 1); ?>">Siguiente »</a>
+                <a class="btn-pos btn-pos-secondary btn-pequeno" href="<?php echo $basePag . ($paginacion['pagina'] + 1); ?>">Siguiente »</a>
             <?php endif; ?>
         </div>
     <?php endif; ?>

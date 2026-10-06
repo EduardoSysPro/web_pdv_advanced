@@ -715,6 +715,30 @@
         renderizarPestanas();
         renderizarTabla();
         renderizarTotales();
+        // Gancho para la vista Odoo (zona de cliente): odoo.js lo define si existe.
+        if (typeof window.POS_odooRefrescar === 'function') {
+            try { window.POS_odooRefrescar(); } catch (e) { /* noop */ }
+        }
+    }
+
+    /**
+     * Define el cliente del ticket activo (zona de cliente de la vista Odoo).
+     * El modal de cobro lo lee con prellenarClienteDesdeTicket(), así que no
+     * se duplica lógica: basta con guardarlo en el ticket.
+     */
+    function definirClienteTicket(cliente) {
+        const ticket = obtenerTicketActivo();
+        if (!ticket) return false;
+        ticket.cliente = {
+            id: Number((cliente && cliente.id) || 0),
+            nombre: String((cliente && (cliente.nombre || cliente.nombre_completo)) || ''),
+            rtn: String((cliente && (cliente.rtn || cliente.rtn_identidad)) || ''),
+            telefono: String((cliente && cliente.telefono) || ''),
+            direccion: String((cliente && cliente.direccion) || '')
+        };
+        guardarEstado();
+        renderizarTodo();
+        return true;
     }
 
     /**
@@ -1685,7 +1709,13 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
                 }
             }
 
-            // F10 -> Abrir / alternar búsqueda de productos
+            // Ctrl+K (buscador universal del tema minimalista) y F10 -> Abrir / alternar búsqueda de productos
+            // Ctrl+K es solo un alias: reutiliza el mismo modal de F10, sin tocar F6-F12.
+            if ((e.ctrlKey || e.metaKey) && String(e.key || '').toLowerCase() === 'k') {
+                e.preventDefault();
+                abrirModalBusquedaProductos();
+                return;
+            }
             if (e.key === 'F10') {
                 e.preventDefault();
                 abrirModalBusquedaProductos();
@@ -2116,6 +2146,11 @@ const clienteNombre = clienteNombreInput && clienteNombreInput !== '' ? clienteN
     // Exponer funciones útiles para enlaces externos (vista lista cotizaciones, etc.)
     window.POS_cargarCotizacion = cargarCotizacionEnTicket;
     window.POS_abrirModalCotizaciones = abrirModalCotizaciones;
+
+    // API mínima para la vista Odoo (catálogo con imágenes + zona de cliente).
+    window.POS_agregarProducto = agregarProductoAlTicket;
+    window.POS_ticketActivo = obtenerTicketActivo;
+    window.POS_definirCliente = definirClienteTicket;
 
 })();
 

@@ -6,9 +6,9 @@
         <p>Administra precios, existencias y categorías.</p>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <a class="btn-pos btn-success" href="<?php echo URL_BASE; ?>productos/crear">+ Nuevo Producto</a>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>productos/exportar-csv?busqueda=<?php echo urlencode($busqueda); ?>&categoria_id=<?php echo urlencode((string)$categoriaId); ?>">Exportar CSV (etiquetas)</a>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>categorias">Gestionar categorías</a>
+        <a class="btn-pos btn-pos-primary" href="<?php echo URL_BASE; ?>productos/crear"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo Producto</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>productos/exportar-csv?busqueda=<?php echo urlencode($busqueda); ?>&categoria_id=<?php echo urlencode((string)$categoriaId); ?>"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Exportar CSV (etiquetas)</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>categorias"><i class="fa-solid fa-tags" aria-hidden="true"></i> Gestionar categorías</a>
     </div>
 </section>
 <?php if ($mensaje): ?><div class="alerta alerta-exito"><?php echo htmlspecialchars($mensaje); ?></div><?php endif; ?>
@@ -21,8 +21,8 @@
                 <option value="<?php echo (int)$categoria['id']; ?>" <?php echo (string)$categoriaId === (string)$categoria['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($categoria['nombre']); ?></option>
             <?php endforeach; ?>
         </select>
-        <button class="btn-pos btn-primary" type="submit">Buscar</button>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>productos">Limpiar</a>
+        <button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar</button>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>productos"><i class="fa-solid fa-eraser" aria-hidden="true"></i> Limpiar</a>
     </form>
     <div class="tabla-responsive">
         <table class="table-pos tabla-catalogo">
@@ -73,7 +73,7 @@
                             </div>
                         <?php endif; ?>
                     </td>
-                    <td class="acciones"><a class="btn-pos btn-primary btn-pequeno" href="<?php echo URL_BASE; ?>productos/editar/<?php echo (int)$producto['id']; ?>">Editar</a><form method="POST" action="<?php echo URL_BASE; ?>productos/eliminar/<?php echo (int)$producto['id']; ?>" onsubmit="return confirm('¿Eliminar este producto?');"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>"><button class="btn-pos btn-danger btn-pequeno" type="submit">Eliminar</button></form></td>
+                    <td class="acciones"><a class="btn-pos btn-pos-primary btn-pequeno" href="<?php echo URL_BASE; ?>productos/editar/<?php echo (int)$producto['id']; ?>">Editar</a><form method="POST" action="<?php echo URL_BASE; ?>productos/eliminar/<?php echo (int)$producto['id']; ?>" onsubmit="return confirm('¿Eliminar este producto?');"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>"><button class="btn-pos btn-pos-danger btn-pequeno" type="submit">Eliminar</button></form></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

@@ -60,6 +60,8 @@ $router->post('/ventas/buscar-producto', 'VentasController@buscarProducto');
 $router->get('/ventas/buscar-producto',  'VentasController@buscarProducto');
 $router->get('/ventas/buscar-productos', 'VentasController@buscarProductosAjax');
     $router->post('/ventas/buscar-productos', 'VentasController@buscarProductosAjax');
+    $router->get('/ventas/catalogo', 'VentasController@catalogo');
+    $router->get('/ventas/catalogo-categorias', 'VentasController@categoriasCatalogo');
     $router->get('/ventas/historial-hoy', 'VentasController@historialHoy');
 $router->get('/ventas/buscarClientePorRtn', 'VentasController@buscarClientePorRtn');
 $router->post('/ventas/buscarClientePorRtn', 'VentasController@buscarClientePorRtn');

@@ -17,7 +17,7 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <script>(function(){try{var t=localStorage.getItem('web_pdv_tema')||'claro';if(t==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
+    <script>(function(){try{var t=localStorage.getItem('web_pdv_tema')||'claro';if(t==='oscuro'||t==='minimal')document.documentElement.setAttribute('data-tema',t);}catch(e){}})();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?php echo htmlspecialchars(csrf_token()); ?>">
@@ -29,6 +29,7 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/estilos.css">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/pos.css">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/dark.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/dark.css'); ?>">
+    <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/minimal.css?v=<?php echo filemtime(PUBLIC_PATH . 'css/minimal.css'); ?>">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>css/soporte.css">
     <link rel="icon" type="image/x-icon" href="<?php echo URL_BASE; ?>favicon.ico">
 </head>
@@ -91,8 +92,10 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
                     <span class="pos-branch-badge"><i class="fa-solid fa-store" aria-hidden="true"></i><?php echo htmlspecialchars($_SESSION['sucursal_nombre'] ?? 'Mi Negocio'); ?></span>
                     <div class="pos-context-item"><i class="fa-solid fa-cash-register"></i><span class="pos-context-label">Caja</span><strong><?php echo htmlspecialchars($_SESSION['caja_nombre'] ?? 'Caja 01'); ?></strong></div>
                 </div>
-                <div class="pos-header-clock"><i class="fa-regular fa-calendar"></i><time id="info-fecha-hora"><?php echo date('d/m/Y H:i'); ?></time></div>
-                <button class="pos-sidebar-toggle pos-boton-tema" id="pos-boton-tema" type="button" aria-label="Cambiar tema claro/oscuro"><i class="fa-solid fa-moon"></i></button>
+                <div class="pos-header-right">
+                    <div class="pos-header-clock"><i class="fa-regular fa-calendar"></i><time id="info-fecha-hora"><?php echo date('d/m/Y H:i'); ?></time></div>
+                    <button class="pos-sidebar-toggle pos-boton-tema" id="pos-boton-tema" type="button" aria-label="Cambiar tema (claro / minimalista / oscuro)" title="Cambiar tema: claro → minimalista → oscuro"><i class="fa-solid fa-moon"></i></button>
+                </div>
             </header>
 
             <main class="app-main pos-modulo-main <?php echo htmlspecialchars($claseMain ?? ''); ?>">

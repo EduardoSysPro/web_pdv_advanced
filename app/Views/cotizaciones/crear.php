@@ -4,7 +4,7 @@
 
 <section class="cotizaciones-editor-cabecera">
     <div class="cotizaciones-editor-titulo">
-        <a class="btn btn-secondary btn-sm" href="<?php echo URL_BASE; ?>cotizaciones"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>cotizaciones"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver</a>
         <div>
             <span class="eyebrow"><?php echo $esAdmin ? 'Administración' : 'Ventas'; ?></span>
             <h1><?php echo $cotizacion ? 'Editar cotización' : 'Nueva cotización'; ?></h1>
@@ -30,7 +30,7 @@
                 <div id="cot-cliente-contenido">
                 <div class="cot-cliente-barra">
                     <p class="cot-ayuda-rtn">Escribe el <strong>RTN / Identidad</strong> y selecciona el cliente para autocompletar sus datos.</p>
-                    <button type="button" class="btn btn-secondary btn-sm" id="cot-btn-registrar-cliente"><i class="fa-solid fa-user-plus"></i> Registrar cliente</button>
+                    <button type="button" class="btn-pos btn-pos-primary btn-pequeno" id="cot-btn-registrar-cliente"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Registrar cliente</button>
                 </div>
                 <div class="cot-cliente-buscar" id="cot-cliente-buscar" style="display:none;">
                     <input type="text" id="cot-cliente-selector" list="cot-lista-clientes" placeholder="Buscar un cliente existente...">
@@ -131,9 +131,9 @@
             </div>
 
             <div class="cot-resumen-acciones">
-                <button type="button" class="btn btn-exito" id="cot-btn-guardar"><i class="fa-solid fa-check"></i> Guardar cotización</button>
-                <button type="button" class="btn btn-secondary" id="cot-btn-imprimir"><i class="fa-solid fa-print"></i> Guardar e imprimir</button>
-                <a class="btn btn-secondary" href="<?php echo URL_BASE; ?>cotizaciones">Cancelar</a>
+                <button type="button" class="btn-pos btn-pos-primary" id="cot-btn-guardar"><i class="fa-solid fa-check" aria-hidden="true"></i> Guardar cotización</button>
+                <button type="button" class="btn-pos btn-pos-secondary" id="cot-btn-imprimir"><i class="fa-solid fa-print" aria-hidden="true"></i> Guardar e imprimir</button>
+                <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>cotizaciones"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancelar</a>
             </div>
         </aside>
     </div>
@@ -167,8 +167,8 @@ $clientesJson = array_map(static function ($cliente) {
                 <div id="mc-error" class="alerta alerta-error" style="display:none;"></div>
             </div>
             <div class="campo-ancho form-acciones">
-                <button type="button" class="btn btn-secondary" id="mc-cancelar">Cancelar</button>
-                <button type="submit" class="btn btn-exito" id="mc-guardar"><i class="fa-solid fa-floppy-disk"></i> Guardar cliente</button>
+                    <button type="button" class="btn-pos btn-pos-secondary" id="mc-cancelar"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancelar</button>
+                    <button type="submit" class="btn-pos btn-pos-primary" id="mc-guardar"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar cliente</button>
             </div>
         </form>
     </div>

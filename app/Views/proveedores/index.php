@@ -2,8 +2,8 @@
 <section class="catalogo-encabezado">
     <div><span class="eyebrow">Compras / Proveedores</span><h1>Proveedores</h1><p>Maestro de proveedores con su condición tributaria y saldo pendiente de cuentas por pagar.</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>compras/pagos">Cuentas por pagar</a>
-        <a class="btn-pos-primary" href="<?php echo URL_BASE; ?>proveedores/crear">+ Nuevo proveedor</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>compras/pagos">Cuentas por pagar</a>
+        <a class="btn-pos btn-pos-primary" href="<?php echo URL_BASE; ?>proveedores/crear"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo proveedor</a>
     </div>
 </section>
 <?php if ($mensaje): ?><div class="alerta alerta-exito"><?php echo htmlspecialchars($mensaje); ?></div><?php endif; ?>
@@ -11,8 +11,8 @@
 <section class="tarjeta">
     <form method="GET" action="<?php echo URL_BASE; ?>proveedores" class="busqueda-inventario" style="margin-bottom:12px;">
         <input class="form-control-pos" type="search" name="busqueda" placeholder="Buscar por nombre, RTN o contacto" value="<?php echo htmlspecialchars($busqueda); ?>">
-        <button class="btn-pos-primary" type="submit">Buscar</button>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>proveedores">Limpiar</a>
+        <button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar</button>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>proveedores"><i class="fa-solid fa-eraser" aria-hidden="true"></i> Limpiar</a>
     </form>
     <div class="tabla-responsive">
         <table class="tabla-catalogo">
@@ -28,10 +28,10 @@
                         <td><?php echo htmlspecialchars($prov['telefono'] ?? '—'); ?></td>
                         <td><?php echo (float)$prov['saldo_pendiente'] > 0 ? '<strong style="color:#b45309;">' . formatearMoneda($prov['saldo_pendiente']) . '</strong>' : '—'; ?></td>
                         <td style="white-space:nowrap;">
-                            <a class="btn-pos btn-secondary btn-pequeno" href="<?php echo URL_BASE; ?>proveedores/editar/<?php echo (int)$prov['id']; ?>">Editar</a>
+                            <a class="btn-pos btn-pos-secondary btn-pequeno" href="<?php echo URL_BASE; ?>proveedores/editar/<?php echo (int)$prov['id']; ?>">Editar</a>
                             <form method="POST" action="<?php echo URL_BASE; ?>proveedores/eliminar/<?php echo (int)$prov['id']; ?>" style="display:inline;" onsubmit="return confirm('¿Eliminar este proveedor? Se conservarán sus compras registradas.');">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-                                <button class="btn-pos btn-danger btn-pequeno" type="submit">Eliminar</button>
+                                <button class="btn-pos btn-pos-danger btn-pequeno" type="submit">Eliminar</button>
                             </form>
                         </td>
                     </tr>

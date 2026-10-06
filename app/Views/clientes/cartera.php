@@ -13,7 +13,7 @@ require APP_PATH . 'Views/layouts/pos_header.php';
     </div>
     <div>
         <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>clientes">Clientes</a>
-        <button class="btn-pos btn-pos-primary" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn-pos btn-pos-primary" type="button" onclick="window.print()"><i class="fa-solid fa-print" aria-hidden="true"></i> Imprimir</button>
     </div>
 </section>
 
@@ -66,7 +66,7 @@ require APP_PATH . 'Views/layouts/pos_header.php';
                         <td><?php echo $f['vencido'] > 0.005 ? (int)$f['mora_max'] . ' días (' . htmlspecialchars($f['bucket']['etiqueta']) . ')' : '—'; ?></td>
                         <td><?php echo !empty($f['ultima_compra']) ? date('d/m/Y', strtotime($f['ultima_compra'])) : '—'; ?></td>
                         <td class="acciones">
-                            <a class="btn btn-pequeno btn-exito" href="<?php echo URL_BASE; ?>clientes/estado-cuenta/<?php echo (int)$f['id']; ?>">Estado de cuenta</a>
+                            <a class="btn-pos btn-pos-primary btn-pequeno" href="<?php echo URL_BASE; ?>clientes/estado-cuenta/<?php echo (int)$f['id']; ?>">Estado de cuenta</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

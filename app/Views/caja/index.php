@@ -5,7 +5,7 @@
         <h1>Corte de Caja</h1>
         <p>Controla el efectivo y cierra tu jornada con precisión.</p>
     </div>
-    <a class="btn-pos btn-pos-primary" href="<?php echo URL_BASE; ?>ventas">Volver a ventas</a>
+    <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>ventas"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a ventas</a>
 </section>
 
 <?php if ($error): ?>
@@ -35,7 +35,7 @@
                             <span style="font-size: 12px; color: #666;">Monto declarado</span>
                             <strong><?php echo formatearMoneda($corte['monto']); ?></strong>
                         </div>
-                        <a href="<?php echo URL_BASE; ?>caja/ticket/<?php echo (int)$corte['id']; ?>" class="btn-pos btn-primary" style="text-align: center; text-decoration: none; padding: 8px; font-size: 13px;">Imprimir</a>
+                        <a href="<?php echo URL_BASE; ?>caja/ticket/<?php echo (int)$corte['id']; ?>" class="btn-pos btn-pos-primary" style="text-align: center;"><i class="fa-solid fa-print" aria-hidden="true"></i> Imprimir</a>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -54,7 +54,7 @@
                 <label for="fondo_inicial">Fondo inicial (L)</label>
                 <input class="form-control-pos" id="fondo_inicial" name="fondo_inicial" type="number" min="0" step="0.01" value="0.00" required autofocus>
             </div>
-            <button class="btn-pos btn-pos-success" type="submit">Abrir Caja</button>
+            <button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Abrir Caja</button>
         </form>
     </section>
 <?php else: ?>
@@ -102,7 +102,7 @@
                 <input class="form-control-pos" id="concepto" name="concepto" maxlength="255" placeholder="Ej. Compra de bolsas / fondo para cambio" required>
             </div>
 
-            <button class="btn-pos btn-pos-primary" type="submit" id="btn-movimiento">Registrar ingreso</button>
+            <button class="btn-pos btn-pos-primary" type="submit" id="btn-movimiento"><i class="fa-solid fa-check" aria-hidden="true"></i> Registrar ingreso</button>
         </form>
     </section>
 
@@ -132,7 +132,7 @@
                 <strong id="diferencia">L 0.00</strong>
             </div>
 
-            <button class="btn-pos btn-pos-danger" type="submit">Cerrar Caja</button>
+            <button class="btn-pos btn-pos-danger" type="submit"><i class="fa-solid fa-lock" aria-hidden="true"></i> Cerrar Caja</button>
         </form>
     </section>
 

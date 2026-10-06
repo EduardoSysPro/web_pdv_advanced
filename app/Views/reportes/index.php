@@ -76,8 +76,8 @@ $linkExtra = '&vendedor_id=' . (int)($vendedorId ?? 0) . '&caja_id=' . (int)($ca
             </select>
         </div>
 
-        <button type="submit" class="btn btn-primario">
-            <i class="fas fa-filter"></i> Filtrar
+        <button type="submit" class="btn-pos btn-pos-primary">
+            <i class="fa-solid fa-filter" aria-hidden="true"></i> Filtrar
         </button>
     </form>
 </section>
@@ -221,7 +221,7 @@ function rep_delta($valor) {
                         </td>
                         <td><?php echo formatearMoneda($venta['total']); ?></td>
                         <td>
-                            <a class="btn btn-pequeno btn-primario" target="_blank" href="<?php echo URL_BASE; ?>ventas/ticket/<?php echo (int)$venta['id']; ?>">
+                            <a class="btn-pos btn-pos-primary btn-pequeno" target="_blank" href="<?php echo URL_BASE; ?>ventas/ticket/<?php echo (int)$venta['id']; ?>">
                                 Ver ticket
                             </a>
                         </td>

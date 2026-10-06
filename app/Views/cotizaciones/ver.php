@@ -7,7 +7,7 @@ $etiquetasEstado = ['pendiente' => 'Pendiente', 'facturada' => 'Facturada', 'can
 ?>
 <section class="cotizaciones-editor-cabecera">
     <div class="cotizaciones-editor-titulo">
-        <a class="btn btn-secondary btn-sm" href="<?php echo URL_BASE; ?>cotizaciones"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+        <a class="btn-pos btn-pos-secondary btn-pequeno" href="<?php echo URL_BASE; ?>cotizaciones"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver</a>
         <div>
             <span class="eyebrow">Cotización</span>
             <h1><?php echo htmlspecialchars($cotizacion['folio']); ?></h1>
@@ -16,15 +16,15 @@ $etiquetasEstado = ['pendiente' => 'Pendiente', 'facturada' => 'Facturada', 'can
         <span class="estado-cotizacion estado-<?php echo htmlspecialchars($cotizacion['estado']); ?>"><?php echo $etiquetasEstado[$cotizacion['estado']] ?? $cotizacion['estado']; ?></span>
     </div>
     <div class="cotizaciones-editor-acciones" style="display:flex; gap:8px;">
-        <a class="btn btn-secondary" target="_blank" href="<?php echo URL_BASE; ?>cotizaciones/imprimir/<?php echo (int)$cotizacion['id']; ?>"><i class="fa-solid fa-print"></i> Imprimir</a>
+        <a class="btn-pos btn-pos-primary" target="_blank" href="<?php echo URL_BASE; ?>cotizaciones/imprimir/<?php echo (int)$cotizacion['id']; ?>"><i class="fa-solid fa-print" aria-hidden="true"></i> Imprimir</a>
         <?php if ($cotizacion['estado'] === 'pendiente'): ?>
             <?php if ($esCajador): ?>
-                <a class="btn btn-exito" href="<?php echo URL_BASE; ?>ventas?cotizar=<?php echo (int)$cotizacion['id']; ?>"><i class="fa-solid fa-cash-register"></i> Facturar en caja</a>
+                <a class="btn-pos btn-pos-primary" href="<?php echo URL_BASE; ?>ventas?cotizar=<?php echo (int)$cotizacion['id']; ?>"><i class="fa-solid fa-cash-register" aria-hidden="true"></i> Facturar en caja</a>
             <?php elseif ((int)$cotizacion['vendedor_id'] === (int)$_SESSION['id']): ?>
-                <a class="btn btn-secondary" href="<?php echo URL_BASE; ?>cotizaciones/editar/<?php echo (int)$cotizacion['id']; ?>"><i class="fa-solid fa-pen"></i> Editar</a>
+                <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>cotizaciones/editar/<?php echo (int)$cotizacion['id']; ?>"><i class="fa-solid fa-pen" aria-hidden="true"></i> Editar</a>
                 <form method="POST" action="<?php echo URL_BASE; ?>cotizaciones/cancelar/<?php echo (int)$cotizacion['id']; ?>" onsubmit="return confirm('¿Cancelar esta cotización?');">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-                    <button type="submit" class="btn btn-danger"><i class="fa-solid fa-ban"></i> Cancelar</button>
+                    <button type="submit" class="btn-pos btn-pos-danger"><i class="fa-solid fa-ban" aria-hidden="true"></i> Cancelar cotización</button>
                 </form>
             <?php endif; ?>
         <?php endif; ?>

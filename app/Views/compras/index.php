@@ -2,9 +2,9 @@
 <section class="catalogo-encabezado">
     <div><span class="eyebrow">Compras / Proveedores</span><h1>Ingreso de Facturas de Compra</h1><p>Registra la factura fiscal o recibo del proveedor, incluye gastos operativos y actualiza inventario y costos.</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>proveedores">Proveedores</a>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>compras/pagos">Cuentas por pagar</a>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>inventario">Volver a Inventario</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>proveedores">Proveedores</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>compras/pagos">Cuentas por pagar</a>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>inventario">Volver a Inventario</a>
     </div>
 </section>
 
@@ -26,7 +26,7 @@
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <button class="btn-pos-primary" type="button" id="btn-nuevo-proveedor">+ Nuevo</button>
+                <button class="btn-pos btn-pos-primary" type="button" id="btn-nuevo-proveedor"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo</button>
             </div>
         </div>
         <div class="campo">
@@ -110,8 +110,8 @@
 
     <div class="busqueda-inventario" style="margin-bottom:12px;">
         <input class="form-control-pos" type="search" id="buscador-producto-compra" placeholder="Buscar por código de barras o nombre del producto" autocomplete="off">
-        <button class="btn-pos-primary" type="button" id="btn-buscar-producto-compra">Buscar</button>
-        <button class="btn-pos btn-secondary" type="button" id="btn-agregar-gasto">+ Gasto operativo</button>
+        <button class="btn-pos btn-pos-primary" type="button" id="btn-buscar-producto-compra"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar</button>
+        <button class="btn-pos btn-pos-secondary" type="button" id="btn-agregar-gasto"><i class="fa-solid fa-plus" aria-hidden="true"></i> Gasto operativo</button>
     </div>
     <div id="resultados-producto-compra" class="resultados-inventario" style="display:none;"></div>
 
@@ -152,8 +152,8 @@
         <div class="campo"><label><strong>Total a pagar</strong></label><div class="form-control-pos" id="total-general" style="background:#f7fafc; font-weight:800; font-size:1.1rem;">L 0.00</div></div>
     </div>
     <div class="form-acciones">
-        <button class="btn-pos btn-secondary" type="button" onclick="window.location.href='<?php echo URL_BASE; ?>inventario'">Cancelar</button>
-        <button class="btn-pos-success" type="button" id="btn-guardar-compra">Registrar compra</button>
+        <button class="btn-pos btn-pos-secondary" type="button" onclick="window.location.href='<?php echo URL_BASE; ?>inventario'"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancelar</button>
+        <button class="btn-pos btn-pos-primary" type="button" id="btn-guardar-compra"><i class="fa-solid fa-check" aria-hidden="true"></i> Registrar compra</button>
     </div>
 </section>
 
@@ -174,8 +174,8 @@
             <option value="recibida" <?php echo $estado === 'recibida' ? 'selected' : ''; ?>>Recibida</option>
             <option value="anulada" <?php echo $estado === 'anulada' ? 'selected' : ''; ?>>Anulada</option>
         </select>
-        <button class="btn-pos-primary" type="submit">Filtrar</button>
-        <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>compras">Limpiar</a>
+        <button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-filter" aria-hidden="true"></i> Filtrar</button>
+        <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>compras"><i class="fa-solid fa-eraser" aria-hidden="true"></i> Limpiar</a>
     </form>
     <div class="tabla-responsive">
         <table class="tabla-catalogo">
@@ -198,11 +198,11 @@
                         <td><?php echo $compra['saldo_pendiente'] > 0 ? '<strong style="color:#b45309;">' . formatearMoneda($compra['saldo_pendiente']) . '</strong>' : '—'; ?></td>
                         <td><span class="badge" style="background:<?php echo $esAnulada ? '#fee2e2;color:#991b1b;' : '#dcfce7;color:#166534;'; ?>"><?php echo $esAnulada ? 'Anulada' : 'Recibida'; ?></span></td>
                         <td style="white-space:nowrap;">
-                            <a class="btn-pos btn-secondary btn-pequeno" href="<?php echo URL_BASE; ?>compras/ver/<?php echo (int)$compra['id']; ?>">Ver</a>
+                            <a class="btn-pos btn-pos-secondary btn-pequeno" href="<?php echo URL_BASE; ?>compras/ver/<?php echo (int)$compra['id']; ?>">Ver</a>
                             <?php if (!$esAnulada): ?>
                                 <form method="POST" action="<?php echo URL_BASE; ?>compras/anular/<?php echo (int)$compra['id']; ?>" style="display:inline;" onsubmit="return confirm('¿Anular esta compra? El inventario se revertirá.');">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
-                                    <button class="btn-pos btn-danger btn-pequeno" type="submit">Anular</button>
+                                    <button class="btn-pos btn-pos-danger btn-pequeno" type="submit">Anular</button>
                                 </form>
                             <?php endif; ?>
                         </td>
@@ -225,8 +225,8 @@
             <div class="campo"><label>Correo</label><input class="form-control-pos" id="nuevo-prov-correo"></div>
         </div>
         <div class="form-acciones">
-            <button class="btn-pos btn-secondary" type="button" onclick="document.getElementById('modal-proveedor').hidden=true">Cancelar</button>
-            <button class="btn-pos-success" type="button" id="btn-guardar-proveedor-ajax">Guardar proveedor</button>
+            <button class="btn-pos btn-pos-secondary" type="button" onclick="document.getElementById('modal-proveedor').hidden=true"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancelar</button>
+            <button class="btn-pos btn-pos-primary" type="button" id="btn-guardar-proveedor-ajax"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar proveedor</button>
         </div>
     </div>
 </div>
@@ -246,8 +246,8 @@
             </select></div>
         </div>
         <div class="form-acciones">
-            <button class="btn-pos btn-secondary" type="button" onclick="document.getElementById('modal-gasto').hidden=true">Cancelar</button>
-            <button class="btn-pos-success" type="button" id="btn-agregar-gasto-confirmar">Agregar gasto</button>
+            <button class="btn-pos btn-pos-secondary" type="button" onclick="document.getElementById('modal-gasto').hidden=true"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancelar</button>
+            <button class="btn-pos btn-pos-primary" type="button" id="btn-agregar-gasto-confirmar"><i class="fa-solid fa-check" aria-hidden="true"></i> Agregar gasto</button>
         </div>
     </div>
 </div>
@@ -514,7 +514,7 @@
                 '<td><input type="number" min="0" step="0.01" class="form-control-pos input-costo" value="' + item.costo.toFixed(2) + '" style="width:120px;"></td>' +
                 '<td>' + etiquetaIsv + '</td>' +
                 '<td class="celda-subtotal">' + moneda(item.cantidad * item.costo) + '</td>' +
-                '<td><button type="button" class="btn-pos btn-danger btn-pequeno btn-quitar">Quitar</button></td>';
+                '<td><button type="button" class="btn-pos btn-pos-danger btn-pequeno btn-quitar">Quitar</button></td>';
 
             if (item.tipo === 'producto') {
                 var inputCantidad = fila.querySelector('.input-cantidad');

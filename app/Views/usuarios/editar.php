@@ -5,7 +5,7 @@
         <h1>Editar usuario</h1>
         <p>Actualiza los datos del acceso y la asignación del usuario.</p>
     </div>
-    <a class="btn btn-secondary" href="<?php echo URL_BASE; ?>usuarios">Volver</a>
+    <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>usuarios"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver</a>
 </section>
 
 <section class="tarjeta card-form usuarios-formulario">
@@ -63,7 +63,7 @@
         </div>
 
         <div class="form-acciones" style="grid-column: 1 / -1;">
-            <button class="btn btn-primario" type="submit">Guardar cambios</button>
+            <button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar cambios</button>
         </div>
     </form>
 </section>

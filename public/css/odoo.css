@@ -1,0 +1,662 @@
+/* ============================================================
+   Web PDV Advanced - VISTA ODOO DE VENTAS
+   Alternativa a la vista de tabla: catálogo visual con imágenes
+   a la izquierda, ticket + cobro a la derecha y zona de cliente
+   arriba. Se activa con data-vista="odoo" en .pos-ventas-main
+   (persistido en localStorage por odoo.js).
+   Solo maquetación: toda la lógica (carrito, cobro, atajos F6-F12,
+   multi-ticket) sigue siendo la de pos.js sin cambios.
+   Paleta por variables: funciona en claro, oscuro y minimalista.
+   ============================================================ */
+
+/* ---------- Estado por defecto (vista tabla): Odoo oculto ---------- */
+#odoo-barra-cliente,
+#odoo-catalogo {
+    display: none;
+}
+
+/* Toggle activo */
+.odoo-vista-toggle.is-activo {
+    border-color: var(--pos-azul-brand);
+    background: var(--pos-azul-muy-claro);
+    color: var(--pos-azul-brand);
+}
+
+.odoo-vista-toggle.is-activo .pos-action-icon {
+    color: var(--pos-azul-brand);
+}
+
+/* ============================================================
+   MODO ODOO: rejilla catálogo | ticket
+   ============================================================ */
+
+.pos-ventas-main[data-vista="odoo"] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 440px;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    gap: 12px;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Blindaje anti-desborde: ningún hijo puede estirar la rejilla */
+.pos-ventas-main[data-vista="odoo"] > * {
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Fila superior: cliente a todo el ancho */
+.pos-ventas-main[data-vista="odoo"] #odoo-barra-cliente {
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: 1;
+}
+
+/* Catálogo: columna izquierda, ocupa las 4 filas del ticket */
+.pos-ventas-main[data-vista="odoo"] #odoo-catalogo {
+    display: flex;
+    grid-column: 1;
+    grid-row: 2 / span 4;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+}
+
+/* Columna derecha: ticket (código compacto, pestañas, tabla, cobro) */
+.pos-ventas-main[data-vista="odoo"] .pos-codigo-barra {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 0;
+    padding: 10px 12px 8px;
+}
+
+.pos-ventas-main[data-vista="odoo"] .cb-fila-principal {
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin-bottom: 8px;
+}
+
+.pos-ventas-main[data-vista="odoo"] .cb-label {
+    display: none;
+}
+
+.pos-ventas-main[data-vista="odoo"] .cb-input {
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+}
+
+.pos-ventas-main[data-vista="odoo"] .cb-btn-agregar {
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 0.8rem;
+}
+
+/* Ticket simplificado: quedan Buscar (F10), Cargar cotización y el toggle.
+   Borrar (Supr/F6), Cantidad (F7), Precio (F8) y Cancelar (F9) siguen
+   disponibles por teclado; sus botones solo se ocultan en esta vista. */
+.pos-ventas-main[data-vista="odoo"] #btn-borrar-art,
+.pos-ventas-main[data-vista="odoo"] #btn-cantidad,
+.pos-ventas-main[data-vista="odoo"] #btn-precio,
+.pos-ventas-main[data-vista="odoo"] #btn-cancelar-todo {
+    display: none;
+}
+
+.pos-ventas-main[data-vista="odoo"] .cb-fila-secundaria .pos-tecla {
+    display: none;
+}
+
+/* El total gigante ya muestra el monto: se ocultan las filas duplicadas */
+.pos-ventas-main[data-vista="odoo"] .totales-izquierda {
+    display: none;
+}
+
+.pos-ventas-main[data-vista="odoo"] .pos-tabs-bar {
+    grid-column: 2;
+    grid-row: 3;
+    padding: 0;
+}
+
+.pos-ventas-main[data-vista="odoo"] .pos-tabla-contenedor {
+    grid-column: 2;
+    grid-row: 4;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+}
+
+.pos-ventas-main[data-vista="odoo"] .pos-totales {
+    grid-column: 2;
+    grid-row: 5;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--pos-borde);
+    border-radius: var(--pos-radio);
+    box-shadow: var(--pos-sombra-soft);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.pos-ventas-main[data-vista="odoo"] .totales-derecha {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+.pos-ventas-main[data-vista="odoo"] .total-gigante-contenedor {
+    align-items: center;
+    text-align: center;
+}
+
+.pos-ventas-main[data-vista="odoo"] .btn-cobrar-gigante {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Ticket compacto: se ocultan Código y Existencia (siguen visibles en
+   vista tabla y en el modal F10); la tabla respira sin scroll lateral. */
+.pos-ventas-main[data-vista="odoo"] #pos-tabla th:nth-child(2),
+.pos-ventas-main[data-vista="odoo"] #pos-tabla td:nth-child(2),
+.pos-ventas-main[data-vista="odoo"] #pos-tabla th:nth-child(7),
+.pos-ventas-main[data-vista="odoo"] #pos-tabla td:nth-child(7) {
+    display: none;
+}
+
+.pos-ventas-main[data-vista="odoo"] .pos-tabla thead th {
+    white-space: nowrap;
+    padding: 10px 10px;
+}
+
+.pos-ventas-main[data-vista="odoo"] .pos-tabla tbody td {
+    padding: 10px;
+    font-size: 0.85rem;
+}
+
+.pos-ventas-main[data-vista="odoo"] .totales-izquierda {
+    min-width: 0;
+}
+
+.pos-ventas-main[data-vista="odoo"] .total-gigante {
+    font-size: clamp(1.5rem, 1.8vw, 2rem);
+}
+
+.pos-ventas-main[data-vista="odoo"] .btn-cobrar-gigante {
+    min-height: 56px;
+    padding: 0 18px;
+}
+
+.pos-ventas-main[data-vista="odoo"] .btn-cobrar-texto {
+    font-size: 1.2rem;
+}
+
+/* ============================================================
+   ZONA CLIENTE (arriba, todo el ancho)
+   ============================================================ */
+
+.odoo-barra-cliente {
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: var(--pos-card-bg);
+    border: 1px solid var(--pos-borde);
+    border-radius: var(--pos-radio);
+    padding: 10px 14px;
+    box-shadow: var(--pos-sombra-soft);
+}
+
+.odoo-cliente-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1 1 220px;
+}
+
+.odoo-cliente-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--pos-azul-muy-claro);
+    color: var(--pos-azul-brand);
+    font-size: 1rem;
+}
+
+.odoo-cliente-datos {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.odoo-cliente-datos strong {
+    color: var(--pos-texto);
+    font-size: 0.95rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.odoo-cliente-datos span {
+    color: var(--pos-texto-soft);
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.odoo-cliente-cotizacion {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--pos-azul-muy-claro);
+    color: var(--pos-azul-brand);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+/* [hidden] debe ganar siempre a los display de este archivo */
+.odoo-cliente-cotizacion[hidden],
+.odoo-cliente-buscador[hidden],
+.odoo-cliente-resultados[hidden] {
+    display: none !important;
+}
+
+.odoo-cliente-acciones {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.odoo-cliente-buscador {
+    position: relative;
+    flex: 1 1 100%;
+}
+
+.odoo-cliente-buscador[hidden] {
+    display: none;
+}
+
+.odoo-cliente-buscador input {
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--pos-borde);
+    border-radius: 10px;
+    background: var(--pos-panel);
+    color: var(--pos-texto);
+    font-size: 0.88rem;
+    outline: none;
+}
+
+.odoo-cliente-buscador input:focus {
+    border-color: var(--pos-azul-brand);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.odoo-cliente-resultados {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 60;
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--pos-panel);
+    border: 1px solid var(--pos-borde);
+    border-radius: 10px;
+    box-shadow: var(--pos-sombra);
+}
+
+.odoo-cliente-resultados[hidden] {
+    display: none;
+}
+
+.odoo-cliente-opcion {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    border-bottom: 1px solid var(--pos-borde);
+    background: transparent;
+    color: var(--pos-texto);
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.odoo-cliente-opcion:last-child {
+    border-bottom: none;
+}
+
+.odoo-cliente-opcion:hover {
+    background: var(--pos-azul-muy-claro);
+}
+
+.odoo-cliente-opcion strong {
+    font-weight: 700;
+}
+
+.odoo-cliente-opcion small {
+    color: var(--pos-texto-soft);
+    font-size: 0.75rem;
+}
+
+/* ============================================================
+   CATÁLOGO VISUAL (izquierda, con scroll)
+   ============================================================ */
+
+.odoo-catalogo {
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    background: var(--pos-card-bg);
+    border: 1px solid var(--pos-borde);
+    border-radius: var(--pos-radio);
+    box-shadow: var(--pos-sombra-soft);
+}
+
+.odoo-catalogo-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--pos-borde);
+}
+
+.odoo-catalogo-cabecera .cb-label {
+    white-space: nowrap;
+}
+
+.odoo-catalogo-input {
+    min-height: 40px;
+    font-size: 0.88rem;
+}
+
+.odoo-catalogo-categorias {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    min-height: 50px;
+    align-items: center;
+    padding: 10px 14px 4px;
+    scrollbar-width: thin;
+}
+
+.odoo-cat {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--pos-borde);
+    border-radius: 999px;
+    background: var(--pos-panel-2);
+    color: var(--pos-texto-soft);
+    font-size: 0.76rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.odoo-cat:hover {
+    border-color: var(--pos-azul-brand);
+    color: var(--pos-azul-brand);
+}
+
+.odoo-cat.is-activo {
+    background: var(--pos-azul-brand);
+    border-color: var(--pos-azul-brand);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.22);
+}
+
+.odoo-cat-total {
+    opacity: 0.7;
+    font-weight: 800;
+    font-size: 0.7rem;
+}
+
+.odoo-catalogo-estado {
+    margin: 0;
+    padding: 8px 14px;
+    color: var(--pos-texto-soft);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.odoo-catalogo-mas {
+    flex: 1 1 100%;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 20px;
+    margin: 4px 0 6px;
+    border: 1px solid var(--pos-borde);
+    border-radius: 999px;
+    background: var(--pos-panel);
+    color: var(--pos-texto);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--pos-sombra-soft);
+}
+
+.odoo-catalogo-mas:hover {
+    border-color: var(--pos-azul-brand);
+    color: var(--pos-azul-brand);
+}
+
+.odoo-catalogo-mas:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.odoo-catalogo-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-content: flex-start;
+    align-items: flex-start;
+    padding: 6px 14px 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 100%;
+}
+
+.odoo-catalogo-grid::-webkit-scrollbar {
+    width: 10px;
+}
+
+.odoo-catalogo-grid::-webkit-scrollbar-thumb {
+    background: var(--pos-borde-strong);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.odoo-catalogo-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Layout de bloque simple: imposible que el contenido se solape o colapse */
+.odoo-producto {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--pos-borde);
+    border-radius: 12px;
+    background: var(--pos-panel);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    padding: 0;
+    text-align: left;
+    font: inherit;
+    color: var(--pos-texto);
+}
+
+.odoo-producto:hover {
+    border-color: var(--pos-azul-brand);
+    box-shadow: var(--pos-sombra);
+}
+
+.odoo-producto:active {
+    border-color: var(--pos-azul-brand);
+}
+
+/* 5 por fila en escritorio; las filas flex nunca se solapan */
+.odoo-producto {
+    flex: 0 0 calc(20% - 10px);
+    max-width: calc(20% - 10px);
+    min-width: 0;
+}
+
+@media (max-width: 640px) {
+    .odoo-producto {
+        flex-basis: calc(33.333% - 8px);
+        max-width: calc(33.333% - 8px);
+    }
+}
+
+.odoo-producto-img {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 110px;
+    min-height: 110px;
+    background: var(--pos-panel-2);
+    border-bottom: 1px solid var(--pos-borde);
+    overflow: hidden;
+    color: var(--pos-texto-soft);
+    font-size: 2rem;
+}
+
+.odoo-producto-img img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.odoo-producto-cuerpo {
+    display: block;
+    padding: 10px 12px 12px;
+}
+
+.odoo-producto-nombre {
+    display: block;
+    font-size: 0.84rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--pos-texto);
+    max-height: 2.6em;
+    overflow: hidden;
+    margin: 0 0 6px;
+}
+
+.odoo-producto-precio {
+    display: inline-block;
+    font-size: 1.02rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--pos-azul-brand);
+    background: var(--pos-azul-muy-claro);
+    border-radius: 999px;
+    padding: 3px 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    margin: 0 0 6px;
+}
+
+.odoo-producto-stock {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--pos-panel-2);
+    color: var(--pos-texto-soft);
+    white-space: nowrap;
+}
+
+.odoo-producto-stock.is-bajo {
+    background: rgba(234, 179, 8, 0.15);
+    color: #b45309;
+}
+
+.odoo-producto-stock.is-cero {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--pos-rojo);
+}
+
+.odoo-catalogo-vacio {
+    flex: 1 1 100%;
+    text-align: center;
+    color: var(--pos-texto-soft);
+    padding: 40px 16px;
+    font-size: 0.88rem;
+}
+
+/* ============================================================
+   RESPONSIVE: apilar en pantallas angostas
+   ============================================================ */
+
+@media (max-width: 980px) {
+    .pos-ventas-main[data-vista="odoo"] {
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .pos-ventas-main[data-vista="odoo"] #odoo-barra-cliente {
+        order: 0;
+    }
+
+    .pos-ventas-main[data-vista="odoo"] .pos-codigo-barra {
+        order: 1;
+    }
+
+    .pos-ventas-main[data-vista="odoo"] #odoo-catalogo {
+        order: 2;
+        min-height: 280px;
+        max-height: 38vh;
+        flex: 0 0 auto;
+    }
+
+    .pos-ventas-main[data-vista="odoo"] .pos-tabs-bar {
+        order: 3;
+    }
+
+    .pos-ventas-main[data-vista="odoo"] .pos-tabla-contenedor {
+        order: 4;
+        overflow: visible;
+    }
+
+    .pos-ventas-main[data-vista="odoo"] .pos-totales {
+        order: 5;
+    }
+}

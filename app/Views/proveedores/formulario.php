@@ -12,7 +12,7 @@ require APP_PATH . 'Views/layouts/pos_header.php';
         <h1><?php echo $esEdicion ? 'Editar proveedor' : 'Nuevo proveedor'; ?></h1>
         <p>Registra al proveedor y define si es contribuyente (con crédito fiscal) o no contribuyente.</p>
     </div>
-    <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>proveedores">Volver a proveedores</a>
+    <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>proveedores"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a proveedores</a>
 </section>
 
 <section class="tarjeta formulario-producto">
@@ -51,8 +51,8 @@ require APP_PATH . 'Views/layouts/pos_header.php';
         </div>
 
         <div class="form-acciones" style="grid-column: 1 / -1;">
-            <a class="btn-pos btn-secondary" href="<?php echo URL_BASE; ?>proveedores">Cancelar</a>
-            <button class="btn-pos btn-success" type="submit">Guardar proveedor</button>
+            <a class="btn-pos btn-pos-secondary" href="<?php echo URL_BASE; ?>proveedores"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Cancelar</a>
+            <button class="btn-pos btn-pos-primary" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar proveedor</button>
         </div>
     </form>
 </section>

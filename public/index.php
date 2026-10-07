@@ -144,6 +144,9 @@ $router->get('/reportes/filtrar', 'ReportesController@index');
 $router->get('/reportes/imprimir', 'ReportesController@imprimir');
 $router->get('/reportes/exportar', 'ReportesController@exportar');
 
+$router->get('/auditoria', 'AuditoriaController@index');
+$router->get('/auditoria/exportar', 'AuditoriaController@exportar');
+
 $router->get('/soporte', 'SoporteController@index');
 
 $router->get('/comprobantes', 'ComprobantesController@index');

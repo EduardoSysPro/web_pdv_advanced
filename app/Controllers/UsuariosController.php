@@ -35,6 +35,7 @@ class UsuariosController extends Controller
         try {
             $this->modelo->insertar($datos);
             $_SESSION['mensaje_usuarios'] = 'Usuario creado correctamente.';
+            $this->registrarAuditoria('usuarios', 'crear', ['entidad_tipo' => 'usuario', 'descripcion' => 'Usuario creado: ' . $datos['usuario'] . ' (' . $datos['rol'] . ')']);
         } catch (Throwable $e) {
             $_SESSION['error_usuarios'] = 'No se pudo crear el usuario. Verifica que el nombre de usuario no esté repetido.';
         }
@@ -76,6 +77,7 @@ class UsuariosController extends Controller
         try {
             $this->modelo->actualizar($usuarioId, $datos);
             $_SESSION['mensaje_usuarios'] = 'Usuario actualizado correctamente.';
+            $this->registrarAuditoria('usuarios', 'actualizar', ['entidad_tipo' => 'usuario', 'entidad_id' => (string)$usuarioId, 'descripcion' => 'Usuario actualizado: ' . $datos['usuario']]);
         } catch (Throwable $e) {
             $_SESSION['error_usuarios'] = 'No se pudo actualizar el usuario. Verifica que el nombre de usuario no esté repetido.';
         }

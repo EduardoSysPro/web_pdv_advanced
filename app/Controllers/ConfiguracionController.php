@@ -82,6 +82,7 @@ class ConfiguracionController extends Controller
 
         $this->modeloConfiguracion->guardar($datos);
         $_SESSION['mensaje_configuracion'] = 'Configuración actualizada correctamente.';
+        $this->registrarAuditoria('configuracion', 'configurar', ['descripcion' => 'Configuración del negocio actualizada']);
         $this->redirigir('configuracion');
     }
 

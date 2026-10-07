@@ -45,8 +45,9 @@ class ProveedoresController extends Controller
             $this->redirigir('proveedores/crear');
         }
         try {
-            $this->modelo->insertar($datos);
+            $id = $this->modelo->insertar($datos);
             $_SESSION['mensaje_proveedores'] = 'Proveedor creado correctamente.';
+            $this->registrarAuditoria('proveedores', 'crear', ['entidad_tipo' => 'proveedor', 'entidad_id' => (string)$id, 'descripcion' => 'Proveedor creado: ' . $datos['nombre']]);
         } catch (Throwable $e) {
             $_SESSION['mensaje_proveedores'] = 'No se pudo guardar el proveedor: ' . $e->getMessage();
         }
@@ -78,6 +79,7 @@ class ProveedoresController extends Controller
         try {
             $this->modelo->actualizar($id, $datos);
             $_SESSION['mensaje_proveedores'] = 'Proveedor actualizado correctamente.';
+            $this->registrarAuditoria('proveedores', 'actualizar', ['entidad_tipo' => 'proveedor', 'entidad_id' => (string)$id, 'descripcion' => 'Proveedor actualizado: ' . $datos['nombre']]);
         } catch (Throwable $e) {
             $_SESSION['mensaje_proveedores'] = 'No se pudo actualizar el proveedor: ' . $e->getMessage();
         }
@@ -91,6 +93,7 @@ class ProveedoresController extends Controller
         if ($this->modelo->existeId($id)) {
             $this->modelo->eliminar($id);
             $_SESSION['mensaje_proveedores'] = 'Proveedor eliminado.';
+            $this->registrarAuditoria('proveedores', 'eliminar', ['entidad_tipo' => 'proveedor', 'entidad_id' => (string)$id, 'descripcion' => 'Proveedor eliminado #' . $id]);
         } else {
             $_SESSION['mensaje_proveedores'] = 'El proveedor no existe.';
         }

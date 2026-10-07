@@ -71,6 +71,11 @@ class ComprasController extends Controller
         try {
             $this->modeloCompra->anular($id);
             $_SESSION['mensaje_compras'] = 'Compra anulada y su inventario revertido correctamente.';
+            $this->registrarAuditoria('compras', 'anular', [
+                'entidad_tipo' => 'compra',
+                'entidad_id' => (string)$id,
+                'descripcion' => 'Compra #' . $id . ' anulada (inventario revertido)',
+            ]);
         } catch (Throwable $e) {
             $_SESSION['mensaje_compras'] = 'No se pudo anular la compra: ' . $e->getMessage();
         }
@@ -87,6 +92,13 @@ class ComprasController extends Controller
         try {
             $this->modeloCompra->registrarPago($compraId, $monto, $formaPago, $observacion, (int)$_SESSION['id']);
             $_SESSION['mensaje_compras'] = 'Pago registrado correctamente.';
+            $this->registrarAuditoria('compras', 'pago', [
+                'entidad_tipo' => 'compra',
+                'entidad_id' => (string)$compraId,
+                'descripcion' => 'Abono a compra #' . $compraId . ' - L ' . number_format($monto, 2) . ' (' . $formaPago . ')',
+                'monto' => $monto,
+                'datos' => ['forma_pago' => $formaPago],
+            ]);
         } catch (Throwable $e) {
             $_SESSION['mensaje_compras'] = 'No se pudo registrar el pago: ' . $e->getMessage();
         }
@@ -153,6 +165,11 @@ class ComprasController extends Controller
                 echo json_encode(['exito' => false, 'mensaje' => 'No se pudo crear el proveedor.']);
                 return;
             }
+            $this->registrarAuditoria('proveedores', 'crear', [
+                'entidad_tipo' => 'proveedor',
+                'entidad_id' => (string)$proveedorId,
+                'descripcion' => 'Proveedor creado desde compras: ' . $nombre,
+            ]);
             echo json_encode([
                 'exito' => true,
                 'mensaje' => 'Proveedor creado correctamente.',
@@ -181,6 +198,13 @@ class ComprasController extends Controller
 
         try {
             $resultado = $this->modeloCompra->registrarCompra($datos);
+            $this->registrarAuditoria('compras', 'crear', [
+                'entidad_tipo' => 'compra',
+                'entidad_id' => $resultado['folio'] ?? (string)($resultado['compra_id'] ?? ''),
+                'descripcion' => 'Compra ' . ($resultado['folio'] ?? '') . ' registrada - Total L ' . number_format((float)($resultado['total'] ?? 0), 2),
+                'monto' => (float)($resultado['total'] ?? 0),
+                'datos' => $resultado,
+            ]);
             echo json_encode([
                 'exito' => true,
                 'mensaje' => 'Compra ' . $resultado['folio'] . ' registrada. Inventario y costos actualizados.',

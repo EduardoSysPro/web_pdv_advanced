@@ -56,6 +56,7 @@ class CategoriasController extends Controller
 
         $this->modelo->insertar($datos);
         $_SESSION['mensaje_categorias'] = 'Categoría creada correctamente.';
+        $this->registrarAuditoria('categorias', 'crear', ['entidad_tipo' => 'categoria', 'descripcion' => 'Categoría creada: ' . $datos['nombre']]);
         $this->redirigir('categorias');
     }
 
@@ -99,6 +100,7 @@ class CategoriasController extends Controller
 
         $this->modelo->actualizar($id, $datos);
         $_SESSION['mensaje_categorias'] = 'Categoría actualizada correctamente.';
+        $this->registrarAuditoria('categorias', 'actualizar', ['entidad_tipo' => 'categoria', 'entidad_id' => (string)$id, 'descripcion' => 'Categoría actualizada: ' . $datos['nombre']]);
         $this->redirigir('categorias');
     }
 
@@ -116,6 +118,7 @@ class CategoriasController extends Controller
 
             $this->modelo->eliminar($id);
             $_SESSION['mensaje_categorias'] = 'Categoría eliminada correctamente.';
+            $this->registrarAuditoria('categorias', 'eliminar', ['entidad_tipo' => 'categoria', 'entidad_id' => (string)$id, 'descripcion' => 'Categoría eliminada #' . $id]);
         }
 
         $this->redirigir('categorias');

@@ -862,6 +862,24 @@ class VentasController extends Controller
             $pdo->commit();
             Producto::invalidarCacheStockBajo();
 
+            $this->registrarAuditoria('ventas', 'crear', [
+                'entidad_tipo' => $tipoComprobante === 'factura' ? 'factura' : 'recibo',
+                'entidad_id' => $folio,
+                'descripcion' => ($tipoComprobante === 'factura' ? 'Factura ' : 'Recibo ') . $folio . ' - ' . ucfirst($metodoPago) . ' - Total L ' . number_format($total, 2),
+                'monto' => $total,
+                'datos' => ['venta_id' => $ventaId, 'metodo_pago' => $metodoPago, 'cliente_id' => $clienteId ?: null, 'tipo_comprobante' => $tipoComprobante],
+            ], $pdo);
+
+            if ($cotizacionId > 0) {
+                $this->registrarAuditoria('cotizaciones', 'facturar', [
+                    'entidad_tipo' => 'cotizacion',
+                    'entidad_id' => (string)$cotizacionId,
+                    'descripcion' => 'Cotización #' . $cotizacionId . ' facturada como ' . $folio . ' - Total L ' . number_format($total, 2),
+                    'monto' => $total,
+                    'datos' => ['cotizacion_id' => $cotizacionId, 'venta_id' => $ventaId, 'folio_venta' => $folio],
+                ], $pdo);
+            }
+
             echo json_encode([
                 'exito'   => true,
                 'mensaje' => 'Venta registrada exitosamente.',

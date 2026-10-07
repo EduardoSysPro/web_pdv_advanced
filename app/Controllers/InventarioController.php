@@ -66,6 +66,7 @@ class InventarioController extends Controller
             ]);
             $pdo->commit();
             $_SESSION['mensaje_inventario'] = 'Ajuste de stock registrado correctamente.';
+            $this->registrarAuditoria('inventario', 'ajuste', ['entidad_tipo' => 'producto', 'entidad_id' => (string)$productoId, 'descripcion' => 'Ajuste ' . $tipo . ' x' . $cantidad . ' prod #' . $productoId . ' - ' . $motivo, 'datos' => ['tipo' => $tipo, 'cantidad' => $cantidad, 'motivo' => $motivo]]);
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             $_SESSION['error_inventario'] = $e->getMessage();

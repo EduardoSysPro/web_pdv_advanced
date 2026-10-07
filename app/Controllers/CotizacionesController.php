@@ -190,6 +190,14 @@ class CotizacionesController extends Controller
             $this->modeloCotizacion->reemplazarDetalle($cotizacionId, $procesado['items']);
             $pdo->commit();
 
+            $this->registrarAuditoria('cotizaciones', 'crear', [
+                'entidad_tipo' => 'cotizacion',
+                'entidad_id' => $folio,
+                'descripcion' => 'Cotización ' . $folio . ' creada - Total L ' . number_format((float)$procesado['total'], 2),
+                'monto' => (float)$procesado['total'],
+                'datos' => ['cotizacion_id' => $cotizacionId],
+            ], $pdo);
+
             echo json_encode(['exito' => true, 'mensaje' => 'Cotización guardada correctamente.', 'folio' => $folio, 'cotizacion_id' => $cotizacionId, 'url_imprimir' => URL_BASE . 'cotizaciones/imprimir/' . $cotizacionId]);
         } catch (Throwable $e) {
             if (isset($pdo) && $pdo->inTransaction()) {
@@ -246,6 +254,14 @@ class CotizacionesController extends Controller
             $this->modeloCotizacion->reemplazarDetalle($id, $procesado['items']);
             $pdo->commit();
 
+            $this->registrarAuditoria('cotizaciones', 'actualizar', [
+                'entidad_tipo' => 'cotizacion',
+                'entidad_id' => $cotizacion['folio'] ?? (string)$id,
+                'descripcion' => 'Cotización ' . ($cotizacion['folio'] ?? ('#' . $id)) . ' actualizada - Total L ' . number_format((float)$procesado['total'], 2),
+                'monto' => (float)$procesado['total'],
+                'datos' => ['cotizacion_id' => $id],
+            ], $pdo);
+
             echo json_encode(['exito' => true, 'mensaje' => 'Cotización actualizada correctamente.', 'folio' => $cotizacion['folio'], 'cotizacion_id' => $id, 'url_imprimir' => URL_BASE . 'cotizaciones/imprimir/' . $id]);
         } catch (Throwable $e) {
             if (isset($pdo) && $pdo->inTransaction()) {
@@ -271,6 +287,12 @@ class CotizacionesController extends Controller
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && $cotizacion['estado'] === 'pendiente') {
             $this->modeloCotizacion->cancelar($id);
             $_SESSION['mensaje_cotizaciones'] = 'Cotización ' . $cotizacion['folio'] . ' cancelada.';
+            $this->registrarAuditoria('cotizaciones', 'cancelar', [
+                'entidad_tipo' => 'cotizacion',
+                'entidad_id' => $cotizacion['folio'] ?? (string)$id,
+                'descripcion' => 'Cotización ' . ($cotizacion['folio'] ?? ('#' . $id)) . ' cancelada',
+                'datos' => ['cotizacion_id' => $id],
+            ]);
         } else {
             $_SESSION['error_cotizaciones'] = 'Solo se pueden cancelar cotizaciones pendientes.';
         }

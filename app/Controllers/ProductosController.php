@@ -94,6 +94,7 @@ class ProductosController extends Controller
         }
         $this->modeloProducto->insertar($datos);
         $_SESSION['mensaje_productos'] = 'Producto creado correctamente.';
+        $this->registrarAuditoria('productos', 'crear', ['entidad_tipo' => 'producto', 'entidad_id' => $datos['codigo_barras'] ?? '', 'descripcion' => 'Producto creado: ' . ($datos['nombre'] ?? '')]);
         $this->redirigir('productos');
     }
 
@@ -155,6 +156,7 @@ class ProductosController extends Controller
             $this->redirigir('productos/editar/' . $id);
         }
         $_SESSION['mensaje_productos'] = 'Producto actualizado correctamente.';
+        $this->registrarAuditoria('productos', 'actualizar', ['entidad_tipo' => 'producto', 'entidad_id' => (string)$id, 'descripcion' => 'Producto actualizado: ' . ($datos['nombre'] ?? ('#' . $id))]);
         $this->redirigir('productos');
     }
 
@@ -169,6 +171,7 @@ class ProductosController extends Controller
                 $this->eliminarArchivoImagen((string)$producto['imagen']);
             }
             $_SESSION['mensaje_productos'] = 'Producto eliminado correctamente.';
+            $this->registrarAuditoria('productos', 'eliminar', ['entidad_tipo' => 'producto', 'entidad_id' => (string)$id, 'descripcion' => 'Producto eliminado #' . $id]);
         }
         $this->redirigir('productos');
     }

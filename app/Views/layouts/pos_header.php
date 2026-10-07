@@ -59,7 +59,7 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
                     <a class="pos-sidebar-link <?php echo $esRutaActiva('comprobantes') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>comprobantes" data-tooltip="Comprobantes"><i class="fa-solid fa-receipt"></i><span>Reimpresión</span></a>
                 <?php endif; ?>
                 <?php if ($esAdministrador): ?>
-                    <?php $adminAbierto = $esRutaActiva('compras') || $esRutaActiva('proveedores') || $esRutaActiva('reportes') || $esRutaActiva('configuracion') || $esRutaActiva('usuarios') || $esRutaActiva('soporte'); ?>
+                    <?php $adminAbierto = $esRutaActiva('compras') || $esRutaActiva('proveedores') || $esRutaActiva('reportes') || $esRutaActiva('auditoria') || $esRutaActiva('configuracion') || $esRutaActiva('usuarios') || $esRutaActiva('soporte'); ?>
                     <div class="pos-sidebar-divider" aria-hidden="true"></div>
                     <button type="button" class="pos-sidebar-section <?php echo $adminAbierto ? 'is-open' : ''; ?>" id="pos-sidebar-admin-toggle" aria-expanded="<?php echo $adminAbierto ? 'true' : 'false'; ?>" aria-controls="pos-sidebar-admin-submenu" data-tooltip="Administración">
                         <i class="fa-solid fa-briefcase"></i><span>Administración</span><i class="fa-solid fa-chevron-down pos-sidebar-section-chevron" aria-hidden="true"></i>
@@ -68,6 +68,7 @@ $esRutaActiva = static function ($ruta) use ($rutaActual) {
                         <a class="pos-sidebar-link <?php echo $esRutaActiva('compras') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>compras" data-tooltip="Compras"><i class="fa-solid fa-truck-ramp-box"></i><span>Compras</span></a>
                         <a class="pos-sidebar-link <?php echo $esRutaActiva('proveedores') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>proveedores" data-tooltip="Proveedores"><i class="fa-solid fa-handshake"></i><span>Proveedores</span></a>
                         <a class="pos-sidebar-link <?php echo $esRutaActiva('reportes') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>reportes" data-tooltip="Reportes"><i class="fa-solid fa-chart-line"></i><span>Reportes</span></a>
+                        <a class="pos-sidebar-link <?php echo $esRutaActiva('auditoria') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>auditoria" data-tooltip="Auditoría"><i class="fa-solid fa-clock-rotate-left"></i><span>Auditoría</span></a>
                         <a class="pos-sidebar-link <?php echo $esRutaActiva('configuracion') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>configuracion" data-tooltip="Configuración"><i class="fa-solid fa-gear"></i><span>Configuración</span></a>
                         <a class="pos-sidebar-link <?php echo $esRutaActiva('usuarios') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>usuarios" data-tooltip="Usuarios"><i class="fa-solid fa-user-gear"></i><span>Usuarios</span></a>
                         <a class="pos-sidebar-link <?php echo $esRutaActiva('soporte') ? 'is-active' : ''; ?>" href="<?php echo URL_BASE; ?>soporte" data-tooltip="Soporte"><i class="fa-solid fa-circle-question"></i><span>Soporte</span></a>

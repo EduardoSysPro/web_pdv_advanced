@@ -149,4 +149,23 @@ class Controller
             exit;
         }
     }
+
+    /**
+     * Registra un evento en la bitácora central (auditoria_logs).
+     * Nunca interrumpe el flujo: los fallos se ignoran.
+     */
+    protected function registrarAuditoria($modulo, $accion, array $datos = [], $pdo = null)
+    {
+        try {
+            $ruta = APP_PATH . 'Models' . DIRECTORY_SEPARATOR . 'Auditoria.php';
+            if (!class_exists('Auditoria', false) && file_exists($ruta)) {
+                require_once $ruta;
+            }
+            if (class_exists('Auditoria')) {
+                Auditoria::registrar($modulo, $accion, $datos, $pdo);
+            }
+        } catch (Throwable $e) {
+            // No romper la operación principal por un fallo de auditoría.
+        }
+    }
 }

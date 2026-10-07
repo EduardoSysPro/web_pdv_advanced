@@ -68,6 +68,10 @@ class AuthController extends Controller
         if (!$usuarioValidado) {
             $this->modeloLoginIntento->registrar($usuario, $ipCliente);
             $_SESSION['error_login'] = 'Usuario o contraseña incorrectos.';
+            $this->registrarAuditoria('auth', 'login_fallido', [
+                'descripcion' => 'Intento fallido de acceso: ' . $usuario,
+                'datos' => ['usuario_intento' => $usuario],
+            ]);
             $this->redirigir('login');
         }
 
@@ -89,6 +93,12 @@ class AuthController extends Controller
         $_SESSION['ultimo_acceso'] = time();
 
         unset($_SESSION['usuario_intento']);
+
+        $this->registrarAuditoria('auth', 'login', [
+            'entidad_tipo' => 'usuario',
+            'entidad_id' => (string)$usuarioValidado['id'],
+            'descripcion' => 'Inicio de sesión: ' . ($usuarioValidado['nombre'] ?? $usuario),
+        ]);
 
         // Si el usuario es Vendedor (o Cajero Móvil, ahora vendedor) -> va al módulo de cotizaciones
         if (in_array($_SESSION['rol'], ['vendedor', 'cajero_movil'], true)) {
@@ -121,6 +131,16 @@ class AuthController extends Controller
         }
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
+        }
+
+        $nombreSalida = $_SESSION['nombre'] ?? null;
+        $idSalida = isset($_SESSION['id']) ? (int)$_SESSION['id'] : null;
+        if ($nombreSalida !== null || $idSalida) {
+            $this->registrarAuditoria('auth', 'logout', [
+                'entidad_tipo' => 'usuario',
+                'entidad_id' => $idSalida ? (string)$idSalida : null,
+                'descripcion' => 'Cierre de sesión: ' . ($nombreSalida ?? ''),
+            ]);
         }
 
         $_SESSION = [];

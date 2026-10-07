@@ -69,6 +69,7 @@ class CajaController extends Controller
             $turnoId = $this->modeloCaja->registrarApertura($usuarioId, $monto);
             $_SESSION['mensaje_caja'] = 'Caja abierta correctamente.';
             $_SESSION['ultimo_corte_id'] = $turnoId;
+            $this->registrarAuditoria('caja', 'apertura', ['entidad_tipo' => 'turno', 'entidad_id' => (string)$turnoId, 'descripcion' => 'Apertura de caja - Fondo L ' . number_format($monto, 2), 'monto' => $monto]);
         } catch (Throwable $e) {
             $_SESSION['error_caja'] = 'No se pudo abrir la caja: ' . $e->getMessage();
         }
@@ -122,6 +123,7 @@ class CajaController extends Controller
 
         if ($guardado) {
             $_SESSION['mensaje_caja'] = $tipo === 'ingreso' ? 'Ingreso registrado correctamente.' : 'Egreso registrado correctamente.';
+            $this->registrarAuditoria('caja', $tipo, ['entidad_tipo' => 'movimiento', 'descripcion' => ucfirst($tipo) . ' de caja - L ' . number_format($monto, 2) . ' - ' . $concepto, 'monto' => $monto]);
         } else {
             $_SESSION['error_caja'] = 'No se pudo registrar el movimiento.';
         }
@@ -159,6 +161,7 @@ class CajaController extends Controller
             $this->modeloCaja->registrarMovimientoUsuario($usuarioId, $turnoId, 'cierre', $montoDeclarado, 'Cierre de caja');
             $_SESSION['mensaje_caja'] = 'Cierre de caja realizado correctamente.';
             $_SESSION['ultimo_corte_id'] = $turnoId;
+            $this->registrarAuditoria('caja', 'cierre', ['entidad_tipo' => 'turno', 'entidad_id' => (string)$turnoId, 'descripcion' => 'Cierre de caja - Declarado L ' . number_format($montoDeclarado, 2) . ' (dif. L ' . number_format($diferencia, 2) . ')', 'monto' => $montoDeclarado]);
         } catch (Throwable $e) {
             $_SESSION['error_caja'] = 'No se pudo cerrar la caja: ' . $e->getMessage();
         }
